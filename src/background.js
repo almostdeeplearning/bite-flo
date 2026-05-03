@@ -2,6 +2,10 @@
 
 let stopped = false;
 
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
+
 // On service worker startup, purge any stale ai_prompt_*/ai_state_*/ai_tab_* keys
 // so cs_ai.js does not auto-inject leftover jobs from a previous session.
 chrome.storage.local.get(null).then(all => {
@@ -262,6 +266,7 @@ async function runAIStructure({ rawResponses, template, targetAI, fullAuto }) {
 // ════════════════════════════════════════════════════════════
 async function handleDistill({ content, fmt, targetAI, wikiTpl, fullAuto }) {
   stopped = false;
+  console.log('[BG] handleDistill received: targetAI=', targetAI, '| fullAuto=', fullAuto, '| contentLen=', content?.length, '| hasTpl=', !!wikiTpl);
   const defaultWiki = `請將以下原文整理成 Wikipedia 條目風格的 markdown：包含簡介段落、## 背景、## 主要內容（子節）、## 相關概念、## 參考來源。只輸出 markdown。\n\n{{content}}`;
   const tpl = wikiTpl || defaultWiki;
   // If template has no {{content}} placeholder, append the content after the prompt
@@ -269,8 +274,15 @@ async function handleDistill({ content, fmt, targetAI, wikiTpl, fullAuto }) {
     ? tpl.replace('{{content}}', content)
     : tpl + '\n\n' + content;
   const tag = `DISTILL_${(fmt || 'wiki').toUpperCase()}`;
+  console.log('[BG] handleDistill: tag=', tag, '| finalPromptLen=', prompt.length);
   logD(`整理 ${fmt || 'wiki'}.md…`, 'info');
-  await sendToAI(prompt, targetAI, fullAuto, tag);
+  // Grok uses direct executeScript injection (same mechanism as ETL).
+  // cs_ai.js is not registered for x.com, so the normal sendToAI storage approach won't work.
+  if (targetAI === 'grok') {
+    await handleDistillGrok(prompt, tag, fullAuto);
+  } else {
+    await sendToAI(prompt, targetAI, fullAuto, tag);
+  }
 }
 
 async function handleVerifyWiki({ content, targetAI, wikiTpl, fullAuto }) {
@@ -283,10 +295,71 @@ async function handleVerifyWiki({ content, targetAI, wikiTpl, fullAuto }) {
   await sendToAI(prompt, targetAI, fullAuto, 'VERIFY_WIKI');
 }
 
+// ── Grok Distill: direct injection via executeScript (cs_ai.js is not on x.com) ──
+async function handleDistillGrok(prompt, tag, fullAuto) {
+  logD('Grok Distill：準備開啟並注入…', 'info');
+  console.log('[BG] handleDistillGrok: fullAuto=', fullAuto, '| promptLen=', prompt.length);
+
+  if (!fullAuto) {
+    chrome.tabs.create({ url: 'https://x.com/i/grok' });
+    logD('半自動：已開啟 Grok，請手動貼入並等待回應', 'warn');
+    return;
+  }
+
+  const existing = await chrome.tabs.query({ url: 'https://x.com/i/grok*' });
+  let grokTab;
+  if (existing.length) {
+    grokTab = existing[0];
+    await chrome.tabs.update(grokTab.id, { active: true });
+    await chrome.tabs.reload(grokTab.id);
+    console.log('[BG] handleDistillGrok: reloading existing tab', grokTab.id);
+  } else {
+    grokTab = await chrome.tabs.create({ url: 'https://x.com/i/grok' });
+    console.log('[BG] handleDistillGrok: opened new tab', grokTab.id);
+  }
+
+  logD('等待 Grok 頁面載入 (3s)…', 'info');
+  await sleep(3000);
+
+  try {
+    console.log('[BG] handleDistillGrok: injecting prompt into tab', grokTab.id);
+    await execInTab(grokTab.id, injectToGrok, [prompt]);
+    logD('Grok 注入完成，等待回應 (max 35s)…', 'info');
+    console.log('[BG] handleDistillGrok: injection done, polling…');
+  } catch(e) {
+    console.error('[BG] handleDistillGrok: injection failed:', e.message);
+    bcast({ type: 'ERROR', text: 'Grok 注入失敗: ' + e.message });
+    return;
+  }
+
+  const response = await pollGrok(grokTab.id, 35000, prompt);
+  console.log('[BG] handleDistillGrok: pollGrok result length =', response?.length ?? 0);
+
+  if (!response) {
+    bcast({ type: 'ERROR', text: 'Grok Distill 逾時 (35s)' });
+    return;
+  }
+
+  logD(`Grok 回應 ${response.length} 字，整理完成`, 'success');
+
+  const fmt  = tag.replace('DISTILL_', '').toLowerCase();
+  const ts   = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  const name = `${fmt}_${ts}.md`;
+  const d    = await chrome.storage.local.get(['library', 'autoDownload', 'distillFolder', 'draftFolder', 'distillAutoSave']);
+  const lib  = d.library || [];
+  if (d.distillAutoSave !== false) {
+    if (d.autoDownload) await downloadMd(name, response, d.distillFolder || d.draftFolder || '');
+    lib.unshift({ name, fmt, content: response, chars: response.length, date: new Date().toLocaleDateString('zh-TW') });
+    await chrome.storage.local.set({ library: lib });
+  }
+  bcast({ type: 'DISTILL_DONE', results: [{ name, content: response, fmt }] });
+}
+
 // ── Pending distill results storage ──────────────────────────────────────────
 const pendingDistill = {};
 
 async function sendToAI(prompt, targetAI, fullAuto, tag) {
+  console.log('[BG] sendToAI: tag=', tag, '| ai=', targetAI, '| fullAuto=', fullAuto, '| promptLen=', prompt.length);
   // Store prompt for content script
   await chrome.storage.local.set({ [`ai_prompt_${tag}`]: prompt, [`ai_state_${tag}`]: 'waiting' });
 

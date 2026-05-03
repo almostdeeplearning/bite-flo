@@ -150,13 +150,16 @@ The current project does not contain React components or standalone CSS files. T
 
 Primary UI surfaces found in the codebase:
 
-- Sidebar navigation for Extract, Distill, Prompts, and Config.
+- Sidebar navigation for Extract, Distill, Custom Flow, Prompts, Schema, and Settings.
 - Topbar with current workflow title and optional AI target selector.
 - Extract workflow with step indicators, prompt selection, run controls, logs, Grok response previews, AI structure controls, and review table.
 - Distill workflow with source text capture, markdown format cards, prompt picker, AI selector, logs, and generated result preview.
-- Prompt Manager with a two-pane series-and-prompts layout.
-- Settings sections for automation, download folders, prompt templates, popup size, font size, and text contrast.
+- Custom Flow workflow with 5 collapsible Block Cards (Source / Task / Format / AI / Run), per-block delay settings, and a run-all control.
+- Prompt Manager with a horizontal series tab bar and expandable prompt cards.
+- Schema tab with expandable schema cards for format template management.
+- Settings sections for automation, download folders, font size, and text contrast.
 - CSP-safe UI glue is kept in an external script so the extension can satisfy MV3 security rules.
+- Distill Block logic is split into 5 plain-script files under `src/blocks/`, loaded before `popup.js`.
 
 ## Visual Direction
 
@@ -212,16 +215,15 @@ Recommended scale:
 
 ## Layout
 
-The popup is a fixed-height, split-shell application:
+The primary UI is a Chrome Side Panel (`sidepanel.html`), fixed at the right side of the browser. Width is user-controlled by dragging; height fills the browser window.
 
-- Body width defaults to `780px`; supported widths are `500px`, `640px`, and `780px`.
-- Body height defaults to `600px`; Chrome action popup height should not exceed `600px`.
-- The left sidebar is fixed at `72px`.
-- The topbar is fixed at `52px`.
-- Main panels scroll vertically inside `.panel-scroll`.
-- Content padding is `24px`.
-- Section padding is `20px`.
-- Prompt Manager intentionally breaks out to a full-height two-pane layout with `margin: -24px`.
+- The left sidebar is fixed at `44px`.
+- The topbar is fixed at `44px`.
+- Main panels scroll vertically inside `.panel-scroll` or `.panel-fill`.
+- Content padding is `16px`.
+- Prompt Manager and Schema use `.panel-fill` with full-height flex layout.
+- Custom Flow uses `.panel-scroll` with a vertically stacked block card layout.
+- `popup.html` is retained as a development reference only and does not reflect Side Panel dimensions.
 
 Maintain clear spatial grouping:
 
@@ -443,6 +445,23 @@ Distill format cards are small selectable cards:
 - Description uses `10px` muted text.
 
 These cards represent output modes, not marketing cards.
+
+### Custom Flow Block Cards
+
+Custom Flow uses a vertical stack of collapsible Block Cards (`.cf-card`):
+
+- Background `bg2`.
+- Border `line`.
+- Radius `6px`.
+- Collapsed state (`.cf-collapsed`): only the card header is visible; body is hidden.
+- Active state (`.cf-active`): border brightens to `text2` to indicate the block is currently executing.
+- Card header (`.cf-card-head`): contains a numeric badge, title, delay selector, and show/hide toggle button.
+- Card body (`.cf-card-body`): full content area; padding `14px`.
+- Delay selector (`.cf-delay-sel`): small dropdown for 無延遲 / 2s / 5s / 10s / 20s / 自訂.
+- Custom delay input (`.cf-delay-custom`): appears only when "自訂" is selected.
+- Run-all bar (`.cf-run-bar`): sits above Card 1; contains the primary "▶▶ 一鍵跑完全部" button and a hint label.
+
+Follow the same card visual language as the Prompts and Schema tabs. Do not make block cards visually heavier than section cards.
 
 ### Prompt Manager
 

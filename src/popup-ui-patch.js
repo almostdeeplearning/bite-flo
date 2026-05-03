@@ -52,6 +52,7 @@ function initStepState() {
 const topbarLabels = {
   extract:  '<span>X ETL</span> — 萃取工作流',
   distill:  '<span>DISTILL</span> — 長文整理',
+  flow:     '<span>FLOW</span> — 自訂流程',
   prompts:  '<span>PROMPTS</span> — Prompt 管理',
   schema:   '<span>SCHEMA</span> — 格式模板庫',
   settings: '<span>CONFIG</span> — 設定',

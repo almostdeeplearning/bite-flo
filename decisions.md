@@ -91,20 +91,20 @@
 - **Alternatives considered:** 固定自動存檔、無法跳過；加入「預覽後決定是否存檔」的二步驟確認流程。
 - **Expected impact:** 使用者可根據當次目的靈活選擇：勾選時走完整存檔流程，不勾選時直接在 AI 視窗討論，Popup 保持不變。
 
-## Decision 10（待評估）
-- **Decision:** 將 Extension UI 從 Popup 升級為 Chrome Side Panel。
+## Decision 10
+- **Decision:** 將 Extension UI 從 Popup 升級為 Chrome Side Panel，作為唯一 UI。
 - **Date:** 2026-04-22
-- **Status:** 🟡 已評估，尚未實作，日後視需求決定。
+- **Status:** ✅ 已實作（2026-05-03）
 - **Reason:** Popup 在頁面導航時（如 x.com 點入單篇 post）會強制關閉；Side Panel 可在導航過程中保持開啟，且位置固定在右側不受影響。
 - **Alternatives considered:** 維持 Popup（已做 Tab 記憶作為短期改善）；Content Script 浮動面板（CSS 隔離困難、工作量更大）；Web App（會失去 content script 萃取與 AI Tab 自動化，不適合）。
 - **Expected impact:** 解決導航關閉問題、Popup 位置限制問題，使用者可一邊瀏覽 x.com 一邊操作工具。
 - **Implementation notes:**
-  - manifest.json：加 `sidePanel` 權限，移除 `action.default_popup`，加 `side_panel.default_path`
-  - 新增 `side_panel.html`（複製自 popup.html）
-  - background.js：監聽 `chrome.action.onClicked` → 呼叫 `chrome.sidePanel.open()`
-  - popup.js 幾乎不用改，改名為 `side_panel.js`
-  - 估計工作量：3–5 小時
-  - 限制：Side Panel 固定在視窗右側，無法像 Popup 浮動定位
+  - manifest.json：加 `sidePanel` 權限，移除 `action.default_popup`，加 `side_panel.default_path: sidepanel.html`
+  - 新增 `sidepanel.html`（基於 popup.html，移除固定尺寸，body 改為 100% 填滿 panel）
+  - background.js：在 `onInstalled` 中呼叫 `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`，不使用 `chrome.action.onClicked`
+  - popup.js 保持不動，sidepanel.html 暫時仍載入 popup.js（TODO：未來重命名為 sidepanel.js）
+  - Settings Tab 移除「介面寬度」與「視窗高度」設定；字體大小與文字對比保留
+  - 限制：Side Panel 固定在視窗右側，無法像 Popup 浮動定位；寬度由使用者拖曳決定
 
 ## Decision 15
 - **Decision:** Chrome Extension 頁面禁止使用 inline JavaScript；所有 `<script>...</script>` 與 inline event handler 都必須搬到外部 JS 檔案。
@@ -217,9 +217,59 @@
 - **Alternatives considered:** 保留左側欄但縮小寬度；以下拉選單取代系列清單；讓系列清單與 Prompt 清單同在一個垂直捲動區。
 - **Expected impact:** 系列切換動作從「點選清單項目」改為「點選頂部 Tab」，視覺層次更清晰；Prompt Card 列表取得完整寬度，可展示更多資訊且不需要水平捲動。
 
+## Decision 31
+- **Decision:** 將 Distill Tab 的邏輯拆解為 5 個內部 Block 物件（DistillSourceBlock、DistillTaskBlock、DistillFormatBlock、DistillAIBlock、DistillRunBlock），全部保留在 `src/popup.js` 內。
+- **Date:** 2026-05-03
+- **Status:** ✅ 已實作（2026-05-03）
+- **Reason:** Distill Tab 邏輯散落於全域變數、`loadSettings()`、`bindAll()`、`listenBg()` 之間，未來要加入「自訂流程」功能時難以安全插入新狀態；先以 Block 封裝讓各模組的責任邊界明確，再開始擴充功能。
+- **Alternatives considered:** 直接在 `bindAll()` 內加入自訂流程邏輯（責任過重，難以維護）；拆至獨立檔案如 `distill-blocks.js`（此次不做，日後清理時再評估）；用 class 語法取代 plain object（過度設計，現有需求不需要繼承）。
+- **Expected impact:** 各 Block 透過 `init(storageData)` 獨立初始化、透過 public getter 互通（`getContent()`、`getSelectedPrompt()`、`getSelectedSchema()`、`getAI()`），不再依賴全域 distill 變數；為「自訂流程」功能提供清楚的插入點。
+- **Implementation notes:**
+  - `loadSettings()` 改為回傳 `d`（整份 storage）；各 Block 的 `init(d)` 自行取所需欄位
+  - 每個 Block 有 `isInitialized` guard，防止重複綁定事件
+  - `DistillRunBlock.startDistill()` 只透過 public interface 取值，不讀全域變數
+  - 全域 distill 狀態變數（`distillAI`、`distillSeriesId` 等）移除，改由各 Block 內部持有
+  - Bug 修正：`DistillAIBlock` 原本誤用 `.ai-btn` selector，正確選擇器為 `.ai-pill`
+  - `addSchema()` / `delSchema()` / schema cards `input` 事件改呼叫 `DistillFormatBlock._renderPicker()`
+
 ## Decision 30
 - **Decision:** 整體 UI 改採緊湊型設計語言，以側欄 44px、頂欄 44px、縮小按鈕 padding 為基準，並引入 `btn-ghost` 次要按鈕樣式。
 - **Date:** 2026-05-01
 - **Reason:** 原有介面在 Popup 有限空間內佔用過多邊距與按鈕高度，導致主要內容的可視區域偏小；工具型介面應優先保留給實際工作內容的空間，而非 chrome（邊框、工具列）本身。
 - **Alternatives considered:** 僅縮減特定區域的間距；改為抽屜式側欄以節省空間；將部分操作移至右鍵選單。
 - **Expected impact:** 在相同 Popup 尺寸下，主要工作區可視高度增加；主要操作（btn-primary）與次要操作（btn-ghost）在視覺上有清楚的層級區分，減少操作介面的視覺雜訊。
+
+## Decision 32
+- **Decision:** 新增「自訂流程」（Custom Flow）Tab，以 5 個可獨立顯示／隱藏的 Block Card（Source、Task、Format、AI、Run）組成使用者可自由組合的自動化管線。
+- **Date:** 2026-05-03
+- **Reason:** 使用者需要一個比 Distill Tab 更靈活的工作流入口：可選擇性啟用特定步驟、預覽每個步驟的選擇狀態、一鍵依序執行，而不必每次都完整走過 Distill 的固定路徑。
+- **Alternatives considered:** 在 Distill Tab 加入「進階模式」開關以暴露更多選項（耦合度高，難以獨立演化）；讓使用者用拖曳排序決定執行順序（此階段不需要，延後評估）。
+- **Expected impact:** Distill Tab 維持原有固定流程不變；Custom Flow Tab 提供可組合的替代路徑，兩者共享相同的 Prompt 庫、Schema 庫與 background 訊息通道，不需要重複定義資料或新增 message type。
+
+## Decision 33
+- **Decision:** 以模組層級的 `activeDistillContext` 變數作為 background 訊息的路由器，決定 `LOG_DISTILL`、`DISTILL_DONE`、`ERROR` 應派送至 Distill Tab 還是 Custom Flow。
+- **Date:** 2026-05-03
+- **Reason:** Distill Tab 與 Custom Flow 共用相同的 `START_DISTILL` 訊息與 background 回應訊息；若無路由機制，兩個控制器都會收到對方的訊息或互相干擾。
+- **Alternatives considered:** 為 Custom Flow 定義獨立的訊息類型（需修改 background.js，改動範圍擴大）；在每條訊息加入 `source` 欄位讓 background 端決定回傳目標（background 不應持有 UI 路由狀態）；以 Promise 封裝整個 distill 生命週期（需重構 background 訊息模型）。
+- **Expected impact:** background.js 不需要任何修改；popup.js 以單一變數追蹤當前活躍的流程，發送前設定、收到 DISTILL_DONE 或 ERROR 後清除，確保兩個 Tab 的流程不會互相污染。
+
+## Decision 34
+- **Decision:** 當 Distill 的目標 AI 為 Grok 時，改用 `executeScript` 直接注入（同 ETL 的 `injectToGrok` + `pollGrok` 路徑），而非透過 `cs_ai.js` 的 storage 佇列方式。
+- **Date:** 2026-05-03
+- **Reason:** `cs_ai.js` 只在 `chatgpt.com`、`gemini.google.com`、`claude.ai` 三個 domain 上執行，不涵蓋 `x.com`；`cs_grok.js` 雖然在 `x.com/i/grok` 上執行，但只負責 ETL 的頁面就緒通知，不處理 Distill 任務。兩者的設計差距導致 Grok 作為 Distill 目標時，storage 中的 prompt 永遠無人取用，注入永遠不會發生。
+- **Alternatives considered:** 將 `cs_ai.js` 的 manifest 覆蓋範圍擴大至 `x.com`（可能與 cs_grok.js 產生衝突且難以維護）；讓 cs_grok.js 同時處理 Distill prompt 注入（職責混亂）；只支援 Grok 半自動模式（使用者體驗降級）。
+- **Expected impact:** Grok 作為 Distill 與 Custom Flow 的目標 AI 時可完整自動化執行，不需修改 manifest 或任何 content script；Grok 的注入行為與 ETL 一致，由 background.js 直接控制。
+
+## Decision 35
+- **Decision:** 在 Custom Flow 的「一鍵跑完全部」功能中，每個 Block 執行完畢後套用該 Block 各自設定的延遲時間，以 `setTimeout` 實作等待，而不移植 ETL 的 `pollGrok` 輪詢邏輯。
+- **Date:** 2026-05-03
+- **Reason:** Custom Flow 的延遲目的是讓使用者控制步驟之間的節奏（例如等待頁面載入、給 AI 回應時間），不是等待特定 DOM 穩定狀態；`pollGrok` 是針對 Grok 回應穩定性設計的，引入 Custom Flow 會增加不必要的複雜度。
+- **Alternatives considered:** 對所有 Block 套用全域統一延遲（無法針對不同步驟調整）；移植 `pollGrok` 輪詢邏輯（過度設計，與現有 ETL 邏輯耦合）；完全不提供延遲（使用者無法控制步驟節奏）。
+- **Expected impact:** 使用者可為每個 Block 獨立設定延遲秒數（含自訂輸入），設定值持久儲存；延遲邏輯簡單透明，日後可視需要升級為更精細的等待機制。
+
+## Decision 36
+- **Decision:** 將 5 個 Distill Block 物件從 `src/popup.js` 遷移至 `src/blocks/*.js` 獨立檔案，以 plain `<script>` tag 在 popup.js 之前載入，不使用 ES module。
+- **Date:** 2026-05-03
+- **Reason:** popup.js 因包含 5 個 Block 定義而過於龐大，降低可讀性與未來擴充的安全性；抽檔可讓每個 Block 有明確的單一檔案歸屬，也為 ETL、DST 未來共用這些 Block 做準備。
+- **Alternatives considered:** 以 ES module（`type="module"`）+ `import` 語法管理依賴（需要解決跨檔案 mutable state 的共享問題，且需修改 popup-ui-patch.js 的全域存取方式，改動範圍較大）；以構建工具（如 esbuild）打包（增加開發流程依賴，與 Extension 直接載入原始碼的簡易開發模型不符）。
+- **Expected impact:** popup.js 行數顯著減少，各 Block 檔案各司其職；Block 方法只在 `DOMContentLoaded` 之後被呼叫，此時 popup.js 已完整執行，`$`、`esc`、`series` 等全域名稱均可用，行為與重構前完全一致；未來若需讓 ETL 或 DST 使用相同 Block，只需在對應 HTML 加入 script tag。

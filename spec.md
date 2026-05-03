@@ -8,11 +8,12 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 ## Current Surface
 
-- Primary UI: Chrome action popup.
-- Future candidate: Chrome Side Panel when persistent workspace size becomes more important than popup simplicity.
+- Primary UI: Chrome Side Panel（`sidepanel.html`）。點擊 Extension 圖示開啟，固定在瀏覽器右側，頁面導航時保持開啟。
+- `popup.html` 保留作為開發參考，不再被 Extension 載入。
 - Core UI tabs:
   - X ETL
   - Distill
+  - Custom Flow（自訂流程）
   - Prompt Manager
   - Schema
   - Settings
@@ -48,27 +49,39 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - Allow the user to decide whether AI results should be auto-saved and returned to the popup.
 - Keep recent distill outputs accessible from the Distill tab.
 
+### Custom Flow
+
+- Provide 5 independent Block Cards: Source, Task, Format, AI, Run.
+- Allow each Block to be individually shown or hidden across sessions.
+- Allow configuring a per-Block delay (seconds) applied after each Block executes in run-all mode.
+- Provide a "一鍵跑完全部" button that executes visible Blocks in order, applying delays between them.
+- Source block: grab text from the active page.
+- Task block: select a prompt from the Prompt Manager library; show a prompt preview.
+- Format block: select a schema template; show a schema preview.
+- AI block: select a target AI (GPT, Gemini, Claude, Grok).
+- Run block: combine content + prompt + schema, inject into the selected AI, and display the result.
+- When the target AI is Grok, use direct injection (same mechanism as X ETL).
+- Run-all always operates in full-auto mode regardless of the global automation setting.
+
 ### Prompt Manager
 
 - Allow creating prompt series.
 - Allow adding, editing, deleting, and loading prompts from a series.
 - Store prompt series locally.
-- Make prompt series available to X ETL and Distill flows.
+- Make prompt series available to X ETL, Distill, and Custom Flow.
 
 ### Schema
 
 - Allow creating, editing, renaming, and deleting format templates.
 - Each template has a name and a prompt text body.
-- Templates are available as schema pickers in X ETL and Distill.
+- Templates are available as schema pickers in X ETL, Distill, and Custom Flow.
 - Built-in defaults (wiki.md, YAML, Table, Markdown) are seeded on first use.
 
 ### Settings
 
 - Store automation settings.
 - Store output folder settings for extract and distill workflows.
-- Store popup UI preferences:
-  - width
-  - height up to Chrome popup limit
+- Store UI preferences:
   - font size
   - text contrast
 
@@ -77,15 +90,15 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - Must comply with Chrome Extension MV3 CSP.
 - Must not use inline scripts or inline event handlers in extension HTML.
 - Must preserve user settings in `chrome.storage.local`.
-- Must keep UI responsive within Chrome action popup limits.
+- Must keep UI responsive within the Side Panel (no fixed width/height assumptions).
 - Must keep workflows usable even when content scripts or AI selectors need future updates.
 - Must keep documentation current enough for future sessions to resume safely.
 
 ## Constraints
 
-- Chrome action popup max size is approximately `800x600`.
-- Popup closes when focus leaves the popup; this is a platform behavior.
-- Chrome cannot download directly to arbitrary system paths, only permitted download locations.
+- Side Panel 固定在瀏覽器右側；寬度由使用者拖曳決定，高度等於瀏覽器視窗高度。
+- `chrome.storage.local` 只在同一 Chrome Profile 內保存，無法跨 Profile 同步。
+- Chrome 只允許下載至 Downloads 目錄或其子目錄，無法寫入任意系統路徑。
 - AI automation relies on current DOM selectors and authenticated browser sessions.
 
 ## Documentation Responsibilities

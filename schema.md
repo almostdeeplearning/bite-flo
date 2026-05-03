@@ -30,6 +30,18 @@ This document summarizes the current data contracts used by the extension. It is
 | `extractSchemaId` | `string \| null` | Schema selected in X ETL |
 | `distillSchemaId` | `string \| null` | Schema selected in Distill |
 
+### Custom Flow State
+
+| Key | Type | Purpose |
+|---|---|---|
+| `cfCardVisible` | `{ source, task, format, ai, run: boolean }` | Per-block show/hide state |
+| `cfBlockDelays` | `{ source, task, format, ai, run: number }` | Per-block delay in seconds |
+| `cfSeriesId` | `string \| null` | Selected prompt series in Custom Flow |
+| `cfPromptIdx` | `number \| null` | Selected prompt index in Custom Flow |
+| `cfSchemaId` | `string \| null` | Selected schema in Custom Flow |
+| `cfAI` | `AiTarget` | Selected target AI in Custom Flow |
+| `cfAutoSave` | `boolean` | Whether Custom Flow results auto-save to library |
+
 ### AI And Automation
 
 | Key | Type | Purpose |
@@ -52,8 +64,6 @@ This document summarizes the current data contracts used by the extension. It is
 
 | Key | Type | Purpose |
 |---|---|---|
-| `popupWidth` | `number` | Popup width preset |
-| `popupHeight` | `number` | Popup height preset, max 600 |
 | `popupFontSize` | `"standard" \| "comfortable" \| "large"` | Font size mode |
 | `popupTextContrast` | `"standard" \| "bright" \| "max"` | Text contrast mode |
 
@@ -99,10 +109,12 @@ type LibraryDoc = {
 | Type | Purpose |
 |---|---|
 | `START_EXTRACT` | Start Grok extraction loop (combined prompt+schema text already embedded) |
-| `START_DISTILL` | Start AI distill flow |
+| `START_DISTILL` | Start AI distill flow; sent by both Distill Tab and Custom Flow |
 | `DOWNLOAD_MD` | Download provided markdown content |
 | `DOWNLOAD_MD_BY_NAME` | Download a document from `library` |
 | `STOP` | Stop current workflow |
+
+Note: `START_DISTILL` from Custom Flow always includes `fullAuto: true`. The module-level `activeDistillContext` variable in `popup.js` routes `LOG_DISTILL` / `DISTILL_DONE` / `ERROR` responses to the correct handler (`DistillRunBlock` or `CustomFlowController`).
 
 ### Content Script / Background To Popup
 
@@ -137,4 +149,5 @@ The schema template replaces the old `grokTpl` / `structureTpl` and the AI post-
 - HTML extension pages must load scripts externally to satisfy MV3 CSP.
 - `grokTpl`, `noteTpl`, `wikiTpl` storage keys are legacy. On first load, if `schemaTemplates` is empty, defaults are seeded from these values if present, then `schemaTemplates` is persisted. After migration the legacy keys are ignored.
 - If a storage key is renamed, keep legacy fallback behavior until existing user data can be migrated.
-- If Side Panel is added, storage contracts should remain the same unless there is a deliberate migration.
+- Side Panel migration is complete. Storage contracts are unchanged from the Popup era.
+- Grok as a Distill AI target uses `handleDistillGrok()` in `background.js` (direct `executeScript` injection), not the `cs_ai.js` storage-queue approach. This applies to both Distill Tab and Custom Flow.

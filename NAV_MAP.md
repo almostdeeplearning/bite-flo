@@ -5,19 +5,34 @@ This document maps the current Chrome Extension UI, DOM IDs, JavaScript bindings
 ## Entry Points
 
 - `manifest.json`
-  - `action.default_popup`: `popup.html`
+  - `side_panel.default_path`: `sidepanel.html` (primary UI — Chrome Side Panel)
+  - `action.default_popup`: removed; clicking the extension icon opens the Side Panel via `setPanelBehavior`
   - `background.service_worker`: `src/background.js`
   - content scripts:
     - `src/cs_grok.js` on `https://x.com/i/grok*`
     - `src/cs_ai.js` on ChatGPT, Gemini, Claude
 
-- `popup.html`
-  - Loads `src/popup.js`
-  - Loads `src/popup-ui-patch.js`
+- `sidepanel.html`
+  - Primary UI entry point; based on `popup.html` with fixed dimensions removed.
+  - Body fills Side Panel height (`100%`); width is user-controlled by dragging the panel edge.
+  - Load order: `src/blocks/*.js` (5 files) → `src/popup.js` → `src/popup-ui-patch.js`.
   - Must not contain inline `<script>...</script>` or inline event handlers.
+
+- `src/blocks/` (5 plain-script files, loaded before popup.js)
+  - `DistillSourceBlock.js` — source text capture and page grabbing
+  - `DistillTaskBlock.js` — prompt series selection and prompt picker
+  - `DistillFormatBlock.js` — schema template selection and preview
+  - `DistillAIBlock.js` — target AI selection
+  - `DistillRunBlock.js` — distill execution, result display, and library rendering
+  - Each file defines one `const Block = {...}` object. Methods call globals (`$`, `esc`, `series`, etc.) at runtime after popup.js has loaded.
+
+- `popup.html`
+  - Retained as development/preview reference only. Not loaded by the extension.
 
 - `src/popup.js`
   - Main workflow logic, storage, message sending, render functions, and event binding.
+  - Distill Tab logic is organized into 5 Block objects: `DistillSourceBlock`, `DistillTaskBlock`, `DistillFormatBlock`, `DistillAIBlock`, `DistillRunBlock`. Each block owns its own state and event bindings; inter-block communication uses public getters only.
+  - Height/width UI preference functions removed (`applyPopupHeight` deleted; width init removed).
 
 - `src/popup-ui-patch.js`
   - CSP-safe UI glue for sidebar navigation, step state, and distill prompt preview visibility.
@@ -30,6 +45,7 @@ Sidebar buttons use `data-tab` and map to panel IDs:
 |---|---|---|---|
 | Extract | `.nav-item[data-tab="extract"]` | `tab-extract` | X/Grok ETL workflow |
 | Distill | `.nav-item[data-tab="distill"]` | `tab-distill` | Long-form text capture and markdown generation |
+| Flow | `.nav-item[data-tab="flow"]` | `tab-flow` | Custom Flow — composable 5-block automation pipeline |
 | Prompts | `.nav-item[data-tab="prompts"]` | `tab-prompts` | Prompt series manager |
 | Schema | `.nav-item[data-tab="schema"]` | `tab-schema` | Format template library |
 | Settings | `.nav-item[data-tab="settings"]` | `tab-settings` | Automation, local storage, and layout |
@@ -213,14 +229,14 @@ DOM IDs:
 - `distillSelectedPromptArea` — shown when a prompt is selected
 - `distillSelectedPromptText` — preview of selected prompt text
 
-JS bindings:
+JS bindings (owned by `DistillSourceBlock`, `DistillTaskBlock`, `DistillFormatBlock`):
 
-- `saveDraftBtn click` calls `saveDraft()`
-- `distillSchemaSel change` updates `distillSchemaId`, then `updateDistillSchemaPreview()`
-- `clearDistillSchemaBtn click` clears `distillSchemaId`
-- `distillSeriesSel change` updates `distillSeriesId`, clears `distillPromptIdx`, renders prompt list
-- `clearDistillPromptBtn click` clears selected series/prompt
-- `distillPromptList click [data-action="selectDistillPrompt"]` calls `selectDistillPrompt(idx)`
+- `saveDraftBtn click` → `DistillRunBlock.saveDraft()`
+- `distillSchemaSel change` → `DistillFormatBlock` updates internal `schemaId`, calls `_updatePreview()`
+- `clearDistillSchemaBtn click` → `DistillFormatBlock` clears `schemaId`
+- `distillSeriesSel change` → `DistillTaskBlock` updates internal `seriesId`, clears `promptIdx`, re-renders
+- `clearDistillPromptBtn click` → `DistillTaskBlock` clears selection
+- `distillPromptList click [data-action="selectDistillPrompt"]` → `DistillTaskBlock._selectPrompt(idx)`
 - `initDistillSelectedPromptArea()` in `src/popup-ui-patch.js` shows/hides preview based on `data-empty`
 
 Storage keys:
@@ -243,10 +259,10 @@ DOM IDs:
 - `distillAutoSave`
 - `distillLog`
 
-JS bindings:
+JS bindings (owned by `DistillAIBlock` and `DistillRunBlock`):
 
-- AI selector buttons update `distillAI`
-- `distillBtn click` calls `startDistill()`
+- AI selector buttons (`.ai-pill`) → `DistillAIBlock` updates internal `ai`, saves to storage
+- `distillBtn click` → `DistillRunBlock.startDistill()` (reads other blocks via public getters)
 - `stopDistillBtn click` sends `STOP`
 - `distillAutoSave change` stores setting immediately
 
@@ -300,7 +316,7 @@ DOM IDs:
 
 Render function:
 
-- `renderDistillLibrary()`
+- `DistillRunBlock.renderLibrary()`
 
 Storage key:
 
@@ -497,29 +513,117 @@ Storage keys:
 
 DOM classes:
 
-- `.width-btn[data-w]`
-- `.height-btn[data-h]`
 - `.font-btn[data-font]`
 - `.contrast-btn[data-contrast]`
 
 JS helpers:
 
-- `applyPopupHeight(h)`
 - `applyPopupFontSize(size)`
 - `applyPopupTextContrast(mode)`
 
 Storage keys:
 
-- `popupWidth`
-- `popupHeight`
 - `popupFontSize`
 - `popupTextContrast`
 
 Notes:
 
-- Chrome action popup max size is 800x600 px. Height options should not exceed 600 unless the UI migrates to Side Panel.
+- Width and height controls removed (Side Panel width is user-dragged; height fills browser window).
 - Text contrast uses body classes: `contrast-bright`, `contrast-max`
 - Font size uses body classes: `font-comfortable`, `font-large`
+
+## Custom Flow Tab
+
+Panel: `tab-flow`
+
+### Run-All Bar
+
+DOM IDs:
+- `cfRunAllBtn` — executes all visible blocks in order; disabled during execution
+
+### Block Cards (common pattern)
+
+Each block uses:
+- `[data-cf-card="<name>"]` — the card element; `.cf-collapsed` hides the body; `.cf-active` highlights during run-all
+- `[data-cf-toggle="<name>"]` — show/hide toggle button
+- `[data-cf-delay-for="<name>"]` — delay `<select>` (options: 0 / 2 / 5 / 10 / 20 / custom)
+- `[data-cf-custom-for="<name>"]` — custom delay `<input>`, shown only when "自訂" is selected
+
+### Block 1 — Source
+
+DOM IDs:
+- `cfGrabPageBtn`
+- `cfRawText`
+- `cfCharCount`
+
+JS owner: `CustomFlowController`
+
+### Block 2 — Task
+
+DOM IDs:
+- `cfSeriesSel`
+- `cfClearPromptBtn`
+- `cfPromptList`
+- `cfSelectedPromptText` — `<pre>` prompt preview; `data-empty="1"` shows placeholder
+
+JS owner: `CustomFlowController`
+
+### Block 3 — Format
+
+DOM IDs:
+- `cfSchemaSel`
+- `cfClearSchemaBtn`
+- `cfSchemaPreview`
+
+JS owner: `CustomFlowController`
+
+### Block 4 — AI
+
+DOM IDs:
+- `cfAiSelect` — container for `.ai-pill` buttons (`gpt` / `gemini` / `claude` / `grok`)
+
+JS owner: `CustomFlowController`
+
+### Block 5 — Run
+
+DOM IDs:
+- `cfAutoSave`
+- `cfRunBtn`
+- `cfStopBtn`
+- `cfSaveDraftBtn`
+- `cfCopyBtn`
+- `cfDlBtn`
+- `cfLog`
+- `cfResultSection`
+- `cfResultName`
+- `cfResultText`
+
+JS owner: `CustomFlowController`
+
+### CustomFlowController
+
+Defined in `src/popup.js`. Key methods:
+
+- `init(d)` — binds all events, restores state from storage
+- `toggleCard(name)` — show/hide a block; persists to `cfCardVisible`
+- `runAll()` — executes visible blocks in order; builds `pipeline` state; applies per-block delay; calls `_runWithPipeline()`
+- `_runWithPipeline(pipeline)` — combines content + prompt + schema, sends `START_DISTILL` with `fullAuto: true`
+- `startFlow()` — manual run; reads current state; uses `fullAuto` from storage setting
+- `getContent()`, `getSelectedPrompt()`, `getSelectedSchema()`, `getAI()` — public getters
+
+Message routing:
+
+- `activeDistillContext` (module-level `let`) is set to `'flow'` before `START_DISTILL` and cleared after `DISTILL_DONE` / `ERROR`.
+- `listenBg()` routes `LOG_DISTILL` and `DISTILL_DONE` to `CustomFlowController` when `activeDistillContext === 'flow'`, otherwise to `DistillRunBlock`.
+
+Storage keys (Custom Flow):
+- `cfCardVisible` — `{ source, task, format, ai, run }` booleans
+- `cfBlockDelays` — `{ source, task, format, ai, run }` delay seconds
+- `cfSeriesId`
+- `cfPromptIdx`
+- `cfSchemaId`
+- `cfAI`
+- `cfAutoSave`
 
 ## Background Message Map
 
@@ -528,7 +632,7 @@ Handled by `src/background.js`:
 | Message type | Sent from | Purpose | Main response |
 |---|---|---|---|
 | `START_EXTRACT` | `startExtract()` | Send combined prompt+schema text to Grok and collect responses | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
-| `START_DISTILL` | `startDistill()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
+| `START_DISTILL` | `startDistill()` / `_runWithPipeline()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
 | `DOWNLOAD_MD` | multiple UI actions | Download a named markdown file | none |
 | `DOWNLOAD_MD_BY_NAME` | library download action | Download document stored in `library` | none |
 | `AI_RESPONSE` | content script | Return AI response text to background | consumed internally |
@@ -584,31 +688,38 @@ Output:
 
 UI settings:
 
-- `popupWidth`
-- `popupHeight`
 - `popupFontSize`
 - `popupTextContrast`
 
+Custom Flow:
+
+- `cfCardVisible`
+- `cfBlockDelays`
+- `cfSeriesId`
+- `cfPromptIdx`
+- `cfSchemaId`
+- `cfAI`
+- `cfAutoSave`
+
 ## CSP And Event Binding Rules
 
-- Do not add inline `<script>...</script>` to `popup.html`.
+- Do not add inline `<script>...</script>` to `sidepanel.html`.
 - Do not add `onclick`, `onchange`, `oninput`, or other inline event handlers.
 - Add UI-only glue to `src/popup-ui-patch.js`.
 - Add core workflow behavior to `src/popup.js`.
+- Add new Block objects under `src/blocks/` and register the `<script>` tag in `sidepanel.html` before `popup.js`.
 - After editing, run:
 
 ```powershell
 node --check src\popup.js
 node --check src\popup-ui-patch.js
-rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" popup.html
+rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" sidepanel.html
 ```
 
-## Migration Notes For Side Panel
+## Side Panel Notes
 
-If migrating to Side Panel:
+Migration to Side Panel is complete as of 2026-05-03. The primary UI is `sidepanel.html`; `popup.html` is retained as a development reference only.
 
-- Keep the same panel IDs and storage keys where possible.
-- Move or reuse `popup.html` as `sidepanel.html`.
-- Keep `src/popup-ui-patch.js` external; Side Panel has the same CSP constraints.
-- Revisit height controls: Side Panel does not use the same 600 px action popup height limit.
-- Sidebar navigation can remain unchanged.
+- Panel IDs, storage keys, and sidebar navigation are unchanged from the Popup era.
+- `src/popup.js` is still named as such but loaded by `sidepanel.html` (TODO: rename to `sidepanel.js`).
+- CSP constraints are the same as Popup: all scripts must be external files.
