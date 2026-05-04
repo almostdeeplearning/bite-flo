@@ -273,3 +273,24 @@
 - **Reason:** popup.js 因包含 5 個 Block 定義而過於龐大，降低可讀性與未來擴充的安全性；抽檔可讓每個 Block 有明確的單一檔案歸屬，也為 ETL、DST 未來共用這些 Block 做準備。
 - **Alternatives considered:** 以 ES module（`type="module"`）+ `import` 語法管理依賴（需要解決跨檔案 mutable state 的共享問題，且需修改 popup-ui-patch.js 的全域存取方式，改動範圍較大）；以構建工具（如 esbuild）打包（增加開發流程依賴，與 Extension 直接載入原始碼的簡易開發模型不符）。
 - **Expected impact:** popup.js 行數顯著減少，各 Block 檔案各司其職；Block 方法只在 `DOMContentLoaded` 之後被呼叫，此時 popup.js 已完整執行，`$`、`esc`、`series` 等全域名稱均可用，行為與重構前完全一致；未來若需讓 ETL 或 DST 使用相同 Block，只需在對應 HTML 加入 script tag。
+
+## Decision 37
+- **Decision:** 將主 UI 腳本從 `src/popup.js` 重命名為 `src/sidepanel.js`，並同步更新所有參照（`sidepanel.html`、`popup.html`、`NAV_MAP.md`、`status.md`）。
+- **Date:** 2026-05-04
+- **Reason:** 檔案名稱與其角色不符——自 Side Panel 遷移完成後，主要 UI 入口為 `sidepanel.html`，對應腳本應反映此語意，減少未來開發者的認知負擔。
+- **Alternatives considered:** 保留 `popup.js` 名稱不動（會持續造成混淆，尤其是 `popup.html` 現在只是開發參考用）；改用 `main.js` 等通用名稱（語意過於寬泛，無法一眼辨識與 Side Panel 的對應關係）。
+- **Expected impact:** 所有腳本參照與文件均指向 `src/sidepanel.js`；`popup.html` 同步更新（雖然不再被 Extension 載入），確保開發參考一致性；行為完全不變。
+
+## Decision 38
+- **Decision:** 移除 `sidepanel.html` 中 `#tab-prompts` 與 `#tab-schema` 的 `style="margin:-24px"` 內聯樣式。
+- **Date:** 2026-05-04
+- **Reason:** 這兩個 `panel-fill` 面板用負 margin 抵消父容器 `panel-scroll` 的 `padding: 24px`，使卡片列表能貼邊顯示。然而在 flex 高度計算下，負 margin 會導致子元素總高度溢出，讓 `cards-scroll`（`flex: 1`）佔用超過視窗高度的空間，將 `add-row`（固定在底部的「＋ 新增」列）完全推出可見範圍外，造成使用者看不到新增按鈕。
+- **Alternatives considered:** 改用 `padding: 0` 覆蓋父層 padding（需配合父層 CSS 修改，有連鎖影響）；以絕對定位固定 `add-row` 到底部（會脫離 flex flow，增加維護複雜度）；保留負 margin 並對 `cards-scroll` 加上明確 `max-height` 計算（脆弱，依賴具體像素值）。
+- **Expected impact:** `add-row` 恢復正常顯示；Prompts 與 Schema Tab 的「新增 Prompt」與「新增 Schema」按鈕對使用者可見；`panel-fill` 的 flex 高度計算恢復正確，不再溢出視窗。
+
+## Decision 39
+- **Decision:** 在 Prompt 與 Schema 編輯器的 `input` 事件後，加入防抖動（debounce, 800 ms）的 `_showSaveToast()` 提示，顯示「✓ 已儲存」。
+- **Date:** 2026-05-04
+- **Reason:** 自動儲存已實作（每次 `input` 觸發 `chrome.storage.local.set`），但完全沒有視覺反饋，使用者不知道編輯結果是否已儲存，產生操作不確定感。
+- **Alternatives considered:** 在每個欄位旁加入靜態「自動儲存」說明文字（佔版面，且無法反映「剛剛存了」的即時感）；移除自動儲存，改用明確的「儲存」按鈕（破壞現有無縫編輯體驗）；顯示帶有時間戳的儲存狀態列（過於複雜，超出目前需求）。
+- **Expected impact:** 使用者在編輯 Prompt 文字、Schema 名稱或 Schema 內容後，800 ms 內會在畫面底部看到短暫的「✓ 已儲存」提示，確認儲存已發生；防抖動設計確保連續快速輸入時不會頻繁觸發 toast，僅在停止輸入後顯示一次。

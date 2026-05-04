@@ -1,6 +1,6 @@
 # Navigation Map
 
-This document maps the current Chrome Extension UI, DOM IDs, JavaScript bindings, background messages, and storage keys. Use it before changing `popup.html`, `src/popup.js`, `src/popup-ui-patch.js`, or migrating the popup to Side Panel.
+This document maps the current Chrome Extension UI, DOM IDs, JavaScript bindings, background messages, and storage keys. Use it before changing `popup.html`, `src/sidepanel.js`, `src/popup-ui-patch.js`, or migrating the popup to Side Panel.
 
 ## Entry Points
 
@@ -15,21 +15,21 @@ This document maps the current Chrome Extension UI, DOM IDs, JavaScript bindings
 - `sidepanel.html`
   - Primary UI entry point; based on `popup.html` with fixed dimensions removed.
   - Body fills Side Panel height (`100%`); width is user-controlled by dragging the panel edge.
-  - Load order: `src/blocks/*.js` (5 files) → `src/popup.js` → `src/popup-ui-patch.js`.
+  - Load order: `src/blocks/*.js` (5 files) → `src/sidepanel.js` → `src/popup-ui-patch.js`.
   - Must not contain inline `<script>...</script>` or inline event handlers.
 
-- `src/blocks/` (5 plain-script files, loaded before popup.js)
+- `src/blocks/` (5 plain-script files, loaded before sidepanel.js)
   - `DistillSourceBlock.js` — source text capture and page grabbing
   - `DistillTaskBlock.js` — prompt series selection and prompt picker
   - `DistillFormatBlock.js` — schema template selection and preview
   - `DistillAIBlock.js` — target AI selection
   - `DistillRunBlock.js` — distill execution, result display, and library rendering
-  - Each file defines one `const Block = {...}` object. Methods call globals (`$`, `esc`, `series`, etc.) at runtime after popup.js has loaded.
+  - Each file defines one `const Block = {...}` object. Methods call globals (`$`, `esc`, `series`, etc.) at runtime after sidepanel.js has loaded.
 
 - `popup.html`
   - Retained as development/preview reference only. Not loaded by the extension.
 
-- `src/popup.js`
+- `src/sidepanel.js`
   - Main workflow logic, storage, message sending, render functions, and event binding.
   - Distill Tab logic is organized into 5 Block objects: `DistillSourceBlock`, `DistillTaskBlock`, `DistillFormatBlock`, `DistillAIBlock`, `DistillRunBlock`. Each block owns its own state and event bindings; inter-block communication uses public getters only.
   - Height/width UI preference functions removed (`applyPopupHeight` deleted; width init removed).
@@ -52,7 +52,7 @@ Sidebar buttons use `data-tab` and map to panel IDs:
 
 Navigation is coordinated by:
 
-- `switchTab(name)` in `src/popup.js`
+- `switchTab(name)` in `src/sidepanel.js`
 - `initSidebarNavigation()` in `src/popup-ui-patch.js`
 - `topbarTitle` is updated by `setActiveNav(tab)` in `src/popup-ui-patch.js`
 
@@ -354,7 +354,7 @@ JS bindings (event delegation on `seriesCards`):
 - `.pcard-head click` toggles `expandedCardIdx`, re-renders
 - `[data-action="loadOneCard"] click` calls `loadOneCard(sid, idx)` — loads prompt into X ETL queue
 - `[data-action="delCard"] click` calls `delCard(idx)`
-- `.pcard-editor input` auto-saves `series[].prompts[idx].text`, updates char count, auto-grows textarea
+- `.pcard-editor input` auto-saves `series[].prompts[idx].text`, updates char count, auto-grows textarea, calls `_showSaveToast()`
 
 Render functions:
 
@@ -367,6 +367,7 @@ Helpers:
 
 - `excerpt(text)` — 72-char preview with ellipsis
 - `showToast(msg)` — bottom toast, 2.2 s auto-dismiss
+- `_showSaveToast()` — debounced wrapper (800 ms) around `showToast`; shows "✓ 已儲存" after the user stops typing; called by Prompt and Schema input handlers after `chrome.storage.local.set`
 
 State variables:
 
@@ -439,8 +440,8 @@ JS bindings (event delegation on `schemaCards`):
 
 - `.pcard-head click [data-saction="toggleSchema"]` toggles `expandedSchemaIdx`, re-renders
 - `[data-saction="delSchema"] click` calls `delSchema(idx)` with confirm dialog
-- `.pcard-editor input [data-saction="editSchema"]` auto-saves `schemaTemplates[idx].text`, updates char count, auto-grows textarea, refreshes pickers
-- `.schema-name-input input [data-saction="renameSchema"]` auto-saves `schemaTemplates[idx].name`, refreshes pickers
+- `.pcard-editor input [data-saction="editSchema"]` auto-saves `schemaTemplates[idx].text`, updates char count, auto-grows textarea, refreshes pickers, calls `_showSaveToast()`
+- `.schema-name-input input [data-saction="renameSchema"]` auto-saves `schemaTemplates[idx].name`, refreshes pickers, calls `_showSaveToast()`
 
 Render function:
 
@@ -602,7 +603,7 @@ JS owner: `CustomFlowController`
 
 ### CustomFlowController
 
-Defined in `src/popup.js`. Key methods:
+Defined in `src/sidepanel.js`. Key methods:
 
 - `init(d)` — binds all events, restores state from storage
 - `toggleCard(name)` — show/hide a block; persists to `cfCardVisible`
@@ -638,7 +639,7 @@ Handled by `src/background.js`:
 | `AI_RESPONSE` | content script | Return AI response text to background | consumed internally |
 | `STOP` | stop buttons | Stop current long-running workflow | none |
 
-Received by `src/popup.js` in `listenBg()`:
+Received by `src/sidepanel.js` in `listenBg()`:
 
 - `PROGRESS`
 - `LOG_EXTRACT`
@@ -706,12 +707,12 @@ Custom Flow:
 - Do not add inline `<script>...</script>` to `sidepanel.html`.
 - Do not add `onclick`, `onchange`, `oninput`, or other inline event handlers.
 - Add UI-only glue to `src/popup-ui-patch.js`.
-- Add core workflow behavior to `src/popup.js`.
-- Add new Block objects under `src/blocks/` and register the `<script>` tag in `sidepanel.html` before `popup.js`.
+- Add core workflow behavior to `src/sidepanel.js`.
+- Add new Block objects under `src/blocks/` and register the `<script>` tag in `sidepanel.html` before `sidepanel.js`.
 - After editing, run:
 
 ```powershell
-node --check src\popup.js
+node --check src\sidepanel.js
 node --check src\popup-ui-patch.js
 rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" sidepanel.html
 ```
@@ -721,5 +722,6 @@ rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" sidepanel.htm
 Migration to Side Panel is complete as of 2026-05-03. The primary UI is `sidepanel.html`; `popup.html` is retained as a development reference only.
 
 - Panel IDs, storage keys, and sidebar navigation are unchanged from the Popup era.
-- `src/popup.js` is still named as such but loaded by `sidepanel.html` (TODO: rename to `sidepanel.js`).
+- `src/sidepanel.js` is the main UI script, loaded by both `sidepanel.html` and `popup.html`. Renamed from `src/popup.js` on 2026-05-04 (Decision 37).
 - CSP constraints are the same as Popup: all scripts must be external files.
+- `panel-fill` panels (`#tab-prompts`, `#tab-schema`) must NOT have `style="margin:-24px"`. That negative margin causes flex height overflow and pushes `add-row` elements off-screen (Decision 38).

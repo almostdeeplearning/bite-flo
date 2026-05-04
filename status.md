@@ -1,8 +1,7 @@
 # Status Update
 
 ## Current Focus
-- Custom Flow Tab 已完成並通過端對端測試。
-- Distill Block 已安全抽檔至 `src/blocks/*.js`，架構整理完畢。
+- Prompts Tab 與 Schema Tab 的佈局錯誤已修正，新增按鈕與自動儲存提示均已恢復正常。
 - 下一步視使用者需求決定：ETL 強化、DST 共用 Block，或新增功能。
 
 ## Progress
@@ -18,9 +17,22 @@
   - `background.js` 新增 `handleDistillGrok()`，當目標 AI 為 Grok 時改用 `executeScript` + `injectToGrok` + `pollGrok` 直接注入，與 ETL 機制一致。
   - 此修正同時適用於 Distill Tab 與 Custom Flow。
 - **Distill Block 抽檔完成（2026-05-03）：**
-  - 5 個 Block 移至 `src/blocks/*.js`，以 plain `<script>` tag 載入於 popup.js 之前。
-  - popup.js 不使用 ES module，行為與重構前完全一致。
+  - 5 個 Block 移至 `src/blocks/*.js`，以 plain `<script>` tag 載入於 sidepanel.js 之前。
+  - sidepanel.js 不使用 ES module，行為與重構前完全一致。
   - decisions.md 已新增 Decision 32–36。
+- **`popup.js` → `sidepanel.js` 重命名完成（2026-05-04）：**
+  - `src/popup.js` 已重命名為 `src/sidepanel.js`。
+  - `sidepanel.html`、`popup.html`、`NAV_MAP.md` 已同步更新。
+  - decisions.md 已新增 Decision 37。
+- **Prompts / Schema Tab 佈局修正（2026-05-04）：**
+  - 移除 `#tab-prompts` 與 `#tab-schema` 的 `style="margin:-24px"` 內聯樣式。
+  - 原本負 margin 導致 `cards-scroll`（`flex: 1`）溢出視窗，`add-row`（新增按鈕列）被推出可見範圍外。
+  - 移除後，Prompts Tab 的「＋ 新增 Prompt」與 Schema Tab 的「＋ 新增 Schema」按鈕均恢復正常顯示。
+  - decisions.md 已新增 Decision 38。
+- **Prompt / Schema 編輯器自動儲存提示（2026-05-04）：**
+  - 新增 `_showSaveToast()` 防抖動函數（800 ms），在使用者停止輸入後顯示「✓ 已儲存」toast。
+  - 觸發點：`renderCards()` 的 `.pcard-editor` input handler（Prompt 內容編輯）、`bindAll()` 的 `editSchema` handler（Schema 內容編輯）、`renameSchema` handler（Schema 名稱編輯）。
+  - decisions.md 已新增 Decision 39。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
@@ -29,7 +41,6 @@
 
 ## Next Steps
 - 視需求決定下一個功能方向：ETL Tab 強化、DST 共用 Block、或 Custom Flow 進一步擴充。
-- `popup.js` 未來可重命名為 `sidepanel.js`（TODO 已標記於 sidepanel.html）。
 - 若未來需要，可讓 ETL 或 DST 直接使用 `src/blocks/*.js` 中的 Block 物件。
 
 ## Important Notes

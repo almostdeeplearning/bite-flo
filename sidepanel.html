@@ -1573,7 +1573,7 @@ body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 10px; }
     </div>
 
     <!-- ════ TAB: PROMPT MANAGER ════ -->
-    <div class="panel panel-fill" id="tab-prompts" style="margin:-24px">
+    <div class="panel panel-fill" id="tab-prompts">
 
       <!-- Series tab bar -->
       <div class="series-tabbar" id="seriesTabbar"></div>
@@ -1608,7 +1608,7 @@ body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 10px; }
     </div>
 
     <!-- ════ TAB: SCHEMA ════ -->
-    <div class="panel panel-fill" id="tab-schema" style="margin:-24px">
+    <div class="panel panel-fill" id="tab-schema">
       <div class="cards-scroll" id="schemaCards"></div>
       <div class="add-row" id="addSchemaRow">
         <div class="add-row-trigger" id="addSchemaTrigger">
@@ -1705,8 +1705,7 @@ body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 10px; }
 <script src="src/blocks/DistillFormatBlock.js"></script>
 <script src="src/blocks/DistillAIBlock.js"></script>
 <script src="src/blocks/DistillRunBlock.js"></script>
-<!-- TODO: refactor popup.js → sidepanel.js (or main-ui.js) in a future cleanup pass -->
-<script src="src/popup.js"></script>
+<script src="src/sidepanel.js"></script>
 <script src="src/popup-ui-patch.js"></script>
 
 </body>

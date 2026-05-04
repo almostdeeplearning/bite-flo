@@ -749,6 +749,7 @@ function bindAll() {
       if (schemaTemplates[idx]) {
         schemaTemplates[idx].text = ta.value;
         chrome.storage.local.set({ schemaTemplates });
+        _showSaveToast();
         renderExtractSchemaPicker();
         DistillFormatBlock._renderPicker();
         CustomFlowController._renderFormatPicker();
@@ -764,6 +765,7 @@ function bindAll() {
       if (schemaTemplates[idx]) {
         schemaTemplates[idx].name = nameInput.value;
         chrome.storage.local.set({ schemaTemplates });
+        _showSaveToast();
         renderExtractSchemaPicker();
         DistillFormatBlock._renderPicker();
         CustomFlowController._renderFormatPicker();
@@ -1164,6 +1166,12 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
+let _saveToastTimer = null;
+function _showSaveToast() {
+  clearTimeout(_saveToastTimer);
+  _saveToastTimer = setTimeout(() => showToast('已儲存'), 800);
+}
+
 function renderTabbar() {
   const bar = $('seriesTabbar');
   if (!bar) return;
@@ -1269,6 +1277,7 @@ function renderCards() {
       if (cur?.prompts[idx]) {
         cur.prompts[idx].text = ta.value;
         chrome.storage.local.set({ promptSeries: series });
+        _showSaveToast();
         const charEl = ta.closest('.pcard').querySelector('.pcard-chars');
         if (charEl) charEl.textContent = ta.value.length + ' 字';
         const prev = ta.closest('.pcard').querySelector('.pcard-preview');

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check src/sidepanel.js)",
+      "Bash(grep -v \"^$\")",
+      "Bash(node --check \"c:\\\\Users\\\\yun16\\\\OneDrive\\\\world\\\\projects\\\\products\\\\narrative-toolkit\\\\src\\\\sidepanel.js\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\yun16\\OneDrive\\world\\projects\\products\\narrative-toolkit\\src"
+    ]
+  }
+}
