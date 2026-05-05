@@ -294,3 +294,24 @@
 - **Reason:** 自動儲存已實作（每次 `input` 觸發 `chrome.storage.local.set`），但完全沒有視覺反饋，使用者不知道編輯結果是否已儲存，產生操作不確定感。
 - **Alternatives considered:** 在每個欄位旁加入靜態「自動儲存」說明文字（佔版面，且無法反映「剛剛存了」的即時感）；移除自動儲存，改用明確的「儲存」按鈕（破壞現有無縫編輯體驗）；顯示帶有時間戳的儲存狀態列（過於複雜，超出目前需求）。
 - **Expected impact:** 使用者在編輯 Prompt 文字、Schema 名稱或 Schema 內容後，800 ms 內會在畫面底部看到短暫的「✓ 已儲存」提示，確認儲存已發生；防抖動設計確保連續快速輸入時不會頻繁觸發 toast，僅在停止輸入後顯示一次。
+
+## Decision 40
+- **Decision:** 全面放大介面基礎字體：body 14px、按鈕 12px、label / field-label 11px、輸入框 15px。
+- **Date:** 2026-05-05
+- **Reason:** 原有字體（body 隱含系統預設、按鈕 9px、label 9px、輸入框 13px）在長時間使用時可讀性不足，尤其在高解析度螢幕上容易造成視覺疲勞；工具型介面應以內容可讀性為優先，而非刻意保持緊湊。
+- **Alternatives considered:** 僅放大特定元素、保持其他不變（造成字體層次不一致）；以使用者設定取代固定基礎值（增加使用者負擔，且基礎值本身就應該是合理的預設）；維持原有字體大小不變（可讀性問題持續存在）。
+- **Expected impact:** 整體介面在正常閱讀距離下更易辨識；按鈕文字與 label 的層次關係維持（12px vs 11px），不因放大而混淆；輸入框文字 15px 減少長文輸入時的辨識負擔；使用者仍可透過 Settings 的字體模式（comfortable / large）進一步調整，兩者疊加而非互相取代。
+
+## Decision 41
+- **Decision:** 將介面主色票調整為微暖色調：背景 `--bg` 從純黑 `#0A0A0A` 改為微暖深灰 `#13110F`；次要文字 `--text2` 從 `#888888` 提升至 `#B8B2A6`；靜音文字 `--text3` 從 `#444444` 提升至 `#7A7468`。
+- **Date:** 2026-05-05
+- **Reason:** 原有 `#0A0A0A` 純黑背景在長時間使用時對眼睛刺激較大；`#444444` 的 `text3` 在深色背景上對比比僅約 2.1:1，低於 WCAG AA 最低門檻（3:1），幾乎不可讀；`#888888` 的 `text2` 雖可讀但缺乏暖度，整體色調過冷。
+- **Alternatives considered:** 改為亮色主題（破壞既有的深色工具型產品識別）；只調整 `text3` 而保留純黑背景（治標不治本，整體冷暖不協調）；以 CSS filter 整體暖化（影響範圍難以控制，可能影響功能性顏色如 success / danger）。
+- **Expected impact:** 背景微暖化減少長時間使用的光暈感（halo effect）；`text3` 提升至約 4.2:1 的對比比，使 nav item、field-label、step text 等元素符合 WCAG AA 標準；`text2` 與 `text3` 的層次差距維持可辨識（`#B8B2A6` vs `#7A7468`），整體色調統一為暖灰系，與產品定位一致。
+
+## Decision 42
+- **Decision:** 建立 `.select-compact` 共用 CSS class，作為所有 `<select>` dropdown 的統一樣式層，套用 `appearance: none` 讓 CSS 完全接管渲染，不依賴 OS 原生 UI。
+- **Date:** 2026-05-05
+- **Reason:** Chrome 的 `<select>` 元素預設使用 OS 原生 UI 元件渲染，忽略 CSS `font-family` 與 `font-size` 設定，導致各 dropdown 字型與尺寸不一致，無法與介面其他元素對齊。在 Extension 環境中加入 `font-family: inherit` 的 reset 也無法解決此問題，因為根本原因在於渲染路徑而非繼承鏈。
+- **Alternatives considered:** 逐一對每個 `<select>` 加入 inline style 覆蓋（難以維護，無法保證一致性）；改用自訂 div + ul 實作 dropdown（工作量大，需處理無障礙與鍵盤操作）；接受原生樣式不做統一（字型不一致問題持續，違背工具型介面的設計標準）。
+- **Expected impact:** 所有 dropdown（ETL Prompt 選擇、Custom Flow Preset 選擇、Prompts tab 系列選擇）統一呈現為 `12px` Noto Sans TC、高度 `28px` 的緊湊樣式，與介面其他輸入元件視覺一致；自訂 SVG 箭頭維持視覺提示；新增 `<select>` 時只需套用 `.select-compact` 即可自動符合設計標準，不需逐案處理。

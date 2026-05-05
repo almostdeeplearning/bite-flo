@@ -25,6 +25,7 @@ This document maps the current Chrome Extension Side Panel UI, DOM IDs, JavaScri
     - `DistillFormatBlock.js` — schema template selection and preview
     - `DistillAIBlock.js` — target AI selection
     - `DistillRunBlock.js` — distill execution, result display, and library rendering
+  - Note: 雖然命名為 `Distill*Block`，這些 Block 目前已透過 `renderCF()` / getter 邏輯被 Custom Flow 部分共用，不應視為 Distill 專屬模組。
   - ETL blocks:
     - `ETLCard1Block.js` — Prompt card HTML
     - `ETLCard2Block.js` — Schema card HTML
@@ -261,6 +262,9 @@ Storage key:
 - `library`, filtered to `fmt === "extract"`
 
 ## Distill Tab
+
+> ⚠️ **Deprecated (Phase 1 off-ramp)**
+> This tab is no longer accessible from the UI. The following describes legacy structure kept for internal reference only.
 
 Panel: `tab-distill`
 
@@ -625,6 +629,8 @@ Notes:
 - Width and height controls removed (Side Panel width is user-dragged; height fills browser window).
 - Text contrast uses body classes: `contrast-bright`, `contrast-max`
 - Font size uses body classes: `font-comfortable`, `font-large`
+- **基礎 CSS 預設值（2026-05-05 更新）**：`body` font-size 14px；`.btn` 12px；`.label` / `.field-label` 11px；`.input` / `.ta` 15px；`--bg` `#13110F`（微暖深灰）；`--text2` `#B8B2A6`；`--text3` `#7A7468`。body class 覆蓋套疊於此基準之上。
+- **`.select-compact`（2026-05-05 更新）**：所有 `<select>` 元素（`extractSeriesSel`、`extractPromptList`、`cfPresetSel`、`seriesSelect`）統一使用此 class。Chrome `<select>` 預設走 OS native rendering，`font-family` 無效；`.select-compact` 以 `appearance: none` 繞過此限制，並內含自訂 SVG 箭頭與完整字型設定。
 
 ## Custom Flow Tab
 
@@ -714,6 +720,8 @@ Message routing:
 
 - `activeDistillContext` (module-level `let`) is set to `'flow'` before `START_DISTILL` and cleared after `DISTILL_DONE` / `ERROR`.
 - `listenBg()` routes `LOG_DISTILL` and `DISTILL_DONE` to `CustomFlowController` when `activeDistillContext === 'flow'`, otherwise to `DistillRunBlock`.
+
+> ⚠️ **Important**: `activeDistillContext` 是 `DISTILL_DONE` / `LOG_DISTILL` 訊息的唯一路由開關。若狀態未正確設定或清除，結果將被派送至錯誤的 UI handler。每次發送 `START_DISTILL` 前必須先設定此變數，收到 `DISTILL_DONE` 或 `ERROR` 後必須立即清除。
 
 Storage keys (Custom Flow):
 - `cfCardVisible` — `{ source, task, format, ai, run }` booleans

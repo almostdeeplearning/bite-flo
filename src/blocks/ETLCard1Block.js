@@ -13,9 +13,9 @@ const ETLCard1Block = {
         </div>
         <div class="cf-card-body etl-card-body" id="stepSection1">
           <div style="margin-bottom:10px">
-            <select id="extractSeriesSel" class="input" style="width:100%;height:32px;font-size:11px;padding:4px 8px"></select>
+            <select id="extractSeriesSel" class="select-compact"></select>
           </div>
-          <select id="extractPromptList" class="input extract-prompt-sel"></select>
+          <select id="extractPromptList" class="select-compact extract-prompt-sel"></select>
           <div id="extractPromptPreview" class="extract-prompt-preview"></div>
           <div class="prompt-stack" id="promptList">
             <div class="prompt-empty">尚無 Prompt — 從上方選取或直接新增</div>

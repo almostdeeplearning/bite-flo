@@ -7,16 +7,17 @@
 <style>
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+input, button, select, optgroup, textarea { font-family: inherit; font-size: inherit; }
 
 :root {
-  --bg:        #0a0a0a;
+  --bg:        #13110F;
   --bg2:       #111111;
   --bg3:       #1a1a1a;
   --line:      #222222;
   --line2:     #2e2e2e;
   --text:      #f0f0f0;
-  --text2:     #888888;
-  --text3:     #444444;
+  --text2:     #B8B2A6;
+  --text3:     #7A7468;
   --accent:    #f0f0f0;
   --accent-bg: rgba(240,240,240,0.06);
   --green:     #3ecf8e;
@@ -40,6 +41,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
+  font-size: 14px;
   width: 100%;
   height: 100%;
   display: flex;
@@ -212,7 +214,7 @@ body {
 /* ── Typography helpers ── */
 .label {
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--text3);
@@ -298,7 +300,7 @@ body {
 .field:last-child { margin-bottom: 0; }
 .field-label {
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text3);
@@ -314,7 +316,7 @@ body {
   padding: 10px 12px;
   color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
   transition: border-color .15s;
   line-height: 1.6;
@@ -322,6 +324,27 @@ body {
 .input:focus, .ta:focus { border-color: var(--line2); }
 .input::placeholder, .ta::placeholder { color: var(--text3); }
 .ta { resize: vertical; }
+/* ── Compact select (共用 dropdown 樣式) ── */
+.select-compact {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  padding: 0 26px 0 10px;
+  background: var(--bg3);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M0 0l4.5 5 4.5-5z' fill='%237A7468'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.select-compact:focus { border-color: var(--line2); }
 .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
 
 /* ── Buttons ── */
@@ -335,7 +358,7 @@ body {
   background: none;
   color: var(--text2);
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.2px;
   cursor: pointer;
@@ -952,10 +975,6 @@ body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 10px; }
 }
 .series-select {
   width: 100%;
-  height: 34px;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
 }
 .prompt-actions-bar {
   display: flex;
@@ -1197,9 +1216,7 @@ body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 10px; }
 .cf-preset-sel {
   min-width: 170px;
   max-width: 260px;
-  height: 28px;
-  font-size: 11px;
-  padding: 4px 8px;
+  width: auto;
 }
 .cf-run-status {
   min-width: 0;
@@ -1509,12 +1526,7 @@ body { flex-direction: column; }
 }
 /* Prompt series dropdown */
 .extract-prompt-sel {
-  width: 100%;
-  height: 36px;
-  font-size: 12px;
-  padding: 4px 10px;
   margin-bottom: 8px;
-  cursor: pointer;
 }
 /* Prompt preview below dropdown */
 .extract-prompt-preview {
@@ -1693,7 +1705,7 @@ body { flex-direction: column; }
           </div>
           <div class="cf-preset-bar">
             <span class="cf-preset-label">Preset：</span>
-            <select class="input cf-preset-sel" id="cfPresetSel">
+            <select class="select-compact cf-preset-sel" id="cfPresetSel">
               <option value="">尚無 Preset</option>
             </select>
             <button class="btn btn-xs" id="cfDeletePresetBtn">刪除</button>

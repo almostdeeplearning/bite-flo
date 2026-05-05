@@ -69,6 +69,7 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 - Allow creating prompt series.
 - Allow adding, editing, deleting, and loading prompts from a series.
+- Allow JSON export and import of prompt series for backup and transfer.
 - Store prompt series locally.
 - Make prompt series available to X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
 
@@ -76,6 +77,7 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 - Allow creating, editing, renaming, and deleting format templates.
 - Each template has a name and a prompt text body.
+- Allow JSON export and import of schema templates for backup and transfer.
 - Templates are available as schema pickers in X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
 - Built-in defaults (wiki.md, YAML, Table, Markdown) are seeded on first use.
 
@@ -84,8 +86,8 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - Store automation settings.
 - Store output folder settings for extract and distill workflows.
 - Store UI preferences:
-  - font size
-  - text contrast
+  - font size（standard / comfortable / large；套疊於基礎 CSS 預設值 body 14px）
+  - text contrast（standard / bright / max；套疊於基礎色票 `--text2` `#B8B2A6`、`--text3` `#7A7468`、`--bg` `#13110F`）
 
 ## Non-Functional Requirements
 
@@ -96,6 +98,7 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - ETL Card DOM must be created synchronously at the start of DOMContentLoaded before `popup-ui-patch.js` checks step IDs.
 - Must keep workflows usable even when content scripts or AI selectors need future updates.
 - Must keep documentation current enough for future sessions to resume safely.
+- All `<select>` elements must use the `.select-compact` CSS class (not `.input`). Chrome renders `<select>` with OS native UI by default, ignoring CSS `font-family`; `appearance: none` in `.select-compact` is required for consistent font rendering.
 
 ## Constraints
 

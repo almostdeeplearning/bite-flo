@@ -70,6 +70,8 @@ This document summarizes the current data contracts used by the extension. It is
 | `popupFontSize` | `"standard" \| "comfortable" \| "large"` | Font size mode |
 | `popupTextContrast` | `"standard" \| "bright" \| "max"` | Text contrast mode |
 
+注意：storage 中的偏好設定以 body class 的形式套疊於基礎 CSS 預設值之上，基礎值本身不進 storage。基礎預設值（2026-05-05 更新）：body 14px、按鈕 12px、label 11px、輸入框 15px；`--bg` `#13110F`、`--text2` `#B8B2A6`、`--text3` `#7A7468`。
+
 ## Data Shapes
 
 ```ts

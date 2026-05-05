@@ -1853,7 +1853,7 @@ function renderTabbar() {
   const hasSeries = series.length > 0;
   bar.innerHTML = `
     <div class="series-select-wrap">
-      <select class="input series-select" id="seriesSelect"${hasSeries ? '' : ' disabled'}>
+      <select class="select-compact series-select" id="seriesSelect"${hasSeries ? '' : ' disabled'}>
         <option value="">${hasSeries ? '— 選擇 Prompt 系列 —' : '尚無 Prompt 系列'}</option>
         ${series.map(s => `
           <option value="${s.id}"${s.id === currentSeriesId ? ' selected' : ''}>
