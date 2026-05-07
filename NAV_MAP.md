@@ -738,6 +738,7 @@ Autosave rule:
 
 - Distill and Custom Flow now both persist the same autosave preference in `cfAutoSave`.
 - Both workflows include `autoSave` in the `START_DISTILL` payload.
+- `START_DISTILL.wikiTpl` is a runtime message field containing the composed prompt/template text for that run. It is not the legacy `chrome.storage.local["wikiTpl"]` key.
 - `background.js` uses the incoming `autoSave` message field as the single source of truth and no longer reads `distillAutoSave`.
 
 Preset UX rule:
@@ -754,10 +755,18 @@ Handled by `src/background.js`:
 |---|---|---|---|
 | `START_EXTRACT` | `startExtract()` | Send combined prompt+schema text to Grok and collect responses | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
 | `START_DISTILL` | `startDistill()` / `_runWithPipeline()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
+| `START_VERIFY_WIKI` | legacy verify-wiki sender path | Send wiki verification prompt to the selected AI | `LOG_DISTILL`, `DISTILL_DONE` |
+| `RUN_AI_STRUCTURE` | legacy post-structure sender path | Send raw responses to a second AI-structuring pass | `LOG_DISTILL`, `DISTILL_DONE` |
 | `DOWNLOAD_MD` | multiple UI actions | Download a named markdown file | none |
+| `DOWNLOAD_TEXT` | export/download helpers | Download text content with an explicit MIME type | none |
 | `DOWNLOAD_MD_BY_NAME` | library download action | Download document stored in `library` | none |
 | `AI_RESPONSE` | content script | Return AI response text to background | consumed internally |
 | `STOP` | stop buttons | Stop current long-running workflow | none |
+
+Message field note:
+
+- `START_DISTILL.wikiTpl` is part of the message payload and remains an active runtime dependency.
+- That field name should not be confused with the legacy storage key `wikiTpl`, which is migration-only and read only by `loadSettings()` when seeding `schemaTemplates`.
 
 Received by `src/sidepanel.js` in `listenBg()`:
 
@@ -794,6 +803,13 @@ Schema templates:
 - `schemaTemplates`
 - `extractSchemaId`
 - `distillSchemaId`
+
+Migration-only legacy storage:
+
+- `wikiTpl` — read only by `loadSettings()` when `schemaTemplates` is empty, to seed the initial `wiki.md` schema template
+- `noteTpl` — read only by `loadSettings()` when `schemaTemplates` is empty, to seed the initial `筆記.md` schema template
+- `wikiTpl` / `noteTpl` are migration and seed paths only, not the primary persisted schema data model; current editable templates live in `schemaTemplates`
+- `grokTpl` / `structureTpl` are deprecated docs residue only; they are not active runtime storage keys
 
 Automation:
 

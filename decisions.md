@@ -6,6 +6,7 @@
 - **Reason:** Users want to capture multiple X.com posts and save them locally before manually switching to GPT/Grok for verification.
 - **Alternatives considered:** Rely only on `chrome.storage.local` without local file downloads; use only the existing library without explicit draft support.
 - **Expected impact:** Improves workflow reliability by preserving drafts locally and allows users to manage and reuse captured content across extension sessions.
+- **Current status note:** `saveDraft`-related legacy handlers still exist in the current graph, but they are no longer part of the main product surface. The current user-facing flow is centered on Side Panel ETL and Custom Flow.
 
 ## Decision 2
 - **Decision:** Add a `verifyWiki` workflow button to generate `wiki.md` with a built-in truth-check section.
@@ -13,6 +14,7 @@
 - **Reason:** The user requested a more structured way to validate content and produce wiki-style markdown from captured text.
 - **Alternatives considered:** Keep only the original `startDistill` workflow; add a separate manual prompt template instead of a dedicated workflow.
 - **Expected impact:** Provides a clearer path for fact-checking and content output, making the extension more useful for research and documentation tasks.
+- **Current status note:** `verifyWiki`-related legacy handlers still exist in `background.js`, but they are not part of the current primary Side Panel workflow surface.
 
 ## Decision 3
 - **Decision:** Increase the popup UI size and enlarge controls for better usability.
@@ -55,6 +57,7 @@
 - **Reason:** 使用者反映預設 700px 太寬，在瀏覽 x.com 時視覺上不舒適；預設按鈕比滑竿操作更快，比 Side Panel 改造工作量小。
 - **Alternatives considered:** Range slider 連續調整；Chrome Side Panel API（僅支援右側、需重構）；Content Script 浮動面板（工作量大、CSS 隔離困難）。
 - **Expected impact:** 使用者可依螢幕空間與習慣快速切換介面寬度，設定即時套用並持久記憶，無需重新整理 Extension。
+- **Current status note:** 這個固定寬度按鈕方案已被後續的 Side Panel 方案取代；目前寬度由使用者直接拖曳 Side Panel 邊界調整。
 
 ## Decision 9
 - **Decision:** 將「長文整理」的 `skill.md` 格式改為 `筆記.md`（直接存原文），並移除「兩者都要」選項。
@@ -105,6 +108,7 @@
   - popup.js 保持不動，sidepanel.html 暫時仍載入 popup.js（TODO：未來重命名為 sidepanel.js）
   - Settings Tab 移除「介面寬度」與「視窗高度」設定；字體大小與文字對比保留
   - 限制：Side Panel 固定在視窗右側，無法像 Popup 浮動定位；寬度由使用者拖曳決定
+- **Current status note:** 以上 implementation notes 反映的是當時遷移階段的狀態。依目前 graph，`sidepanel.html` 實際載入的是 `src/sidepanel.js`，而 `src/popup.js` 已不存在。
 
 ## Decision 15
 - **Decision:** Chrome Extension 頁面禁止使用 inline JavaScript；所有 `<script>...</script>` 與 inline event handler 都必須搬到外部 JS 檔案。

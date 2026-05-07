@@ -72,6 +72,19 @@ This document summarizes the current data contracts used by the extension. It is
 
 注意：storage 中的偏好設定以 body class 的形式套疊於基礎 CSS 預設值之上，基礎值本身不進 storage。基礎預設值（2026-05-05 更新）：body 14px、按鈕 12px、label 11px、輸入框 15px；`--bg` `#13110F`、`--text2` `#B8B2A6`、`--text3` `#7A7468`。
 
+### Migration-Only Storage Keys
+
+| Key | Type | Current Use |
+|---|---|---|
+| `wikiTpl` | `string` | Legacy migration source only. Read by `loadSettings()` only when `schemaTemplates` is empty, to seed the initial `wiki.md` schema template. Not written back and not part of the active storage contract. |
+| `noteTpl` | `string` | Legacy migration source only. Read by `loadSettings()` only when `schemaTemplates` is empty, to seed the initial `筆記.md` schema template. Not written back and not part of the active storage contract. |
+
+Notes:
+
+- `wikiTpl` and `noteTpl` remain in code only as a compatibility bridge for older local storage.
+- `src/sidepanel.js` `loadSettings()` reads them only when `schemaTemplates` is empty, then seeds the initial templates and persists `schemaTemplates`.
+- The `wikiTpl` field used in `START_DISTILL` messages is a runtime message field, not this legacy storage key.
+
 ## Data Shapes
 
 ```ts
@@ -132,7 +145,10 @@ type CustomFlowPreset = {
 |---|---|
 | `START_EXTRACT` | Start Grok extraction loop (combined prompt+schema text already embedded); currently Grok-only regardless of `extractAI` |
 | `START_DISTILL` | Start AI distill flow; sent by both Distill Tab and Custom Flow |
+| `START_VERIFY_WIKI` | Start legacy wiki verification flow in `background.js`; not part of the current primary Side Panel product surface |
+| `RUN_AI_STRUCTURE` | Start legacy AI post-structuring flow in `background.js`; retained as a runtime handler but not used by the current ETL UI |
 | `DOWNLOAD_MD` | Download provided markdown content |
+| `DOWNLOAD_TEXT` | Download provided text content with an explicit MIME type |
 | `DOWNLOAD_MD_BY_NAME` | Download a document from `library` |
 | `STOP` | Stop current workflow |
 
@@ -140,6 +156,7 @@ Notes:
 
 - `START_DISTILL` from Custom Flow always includes `fullAuto: true`.
 - `START_DISTILL` now includes `autoSave`, and `background.js` treats that message field as the source of truth for autosave behavior.
+- `START_DISTILL.wikiTpl` is the composed prompt/template text sent for the current run. It is a message payload field, not the legacy `chrome.storage.local["wikiTpl"]` key.
 - The module-level `activeDistillContext` variable in `src/sidepanel.js` routes `LOG_DISTILL` / `DISTILL_DONE` / `ERROR` responses to the correct handler (`DistillRunBlock` or `CustomFlowController`).
 - Legacy `distillAutoSave` has been migrated out of storage. Distill and Custom Flow now both use `cfAutoSave` as the persisted checkbox state.
 
@@ -170,14 +187,16 @@ The X ETL pipeline no longer routes raw responses through a separate AI structur
 4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into Grok.
 5. Card 05: Grok responses are collected and displayed as markdown; user copies or saves the result as a `.md` file.
 
-The schema template replaces the old `grokTpl` / `structureTpl` and the AI post-processing step. There is no intermediate structured table review stage.
+The schema template system replaces the old post-structuring concept. `grokTpl` / `structureTpl` may still appear in older notes, but they are deprecated docs residue rather than active runtime storage keys or supported runtime contracts. There is no intermediate structured table review stage.
 
 Current limitation: `extractAI` is persisted and reflected in Card 03, but it is not yet wired into `startExtract()`. Actual extraction still opens `x.com/i/grok` and uses Grok injection.
 
 ## Compatibility Notes
 
 - HTML extension pages must load scripts externally to satisfy MV3 CSP.
-- `grokTpl`, `noteTpl`, `wikiTpl` storage keys are legacy. On first load, if `schemaTemplates` is empty, defaults are seeded from these values if present, then `schemaTemplates` is persisted. After migration the legacy keys are ignored.
+- `wikiTpl` and `noteTpl` are migration-only storage keys. `loadSettings()` reads them only when `schemaTemplates` is empty, seeds the initial schema templates, and then persists `schemaTemplates`.
+- `grokTpl` and `structureTpl` are deprecated docs residue only. Current runtime code does not read or write them.
+- `START_VERIFY_WIKI`, `RUN_AI_STRUCTURE`, and `DOWNLOAD_TEXT` still exist as runtime message handlers in the current graph, but they are legacy/compatibility-oriented paths rather than the main Side Panel workflow surface.
 - Because migration only runs when `schemaTemplates` is empty, a partially populated `schemaTemplates` value may not receive missing default templates automatically.
 - If a storage key is renamed, keep legacy fallback behavior until existing user data can be migrated.
 - Side Panel migration is complete. Storage contracts are unchanged from the Popup era.
