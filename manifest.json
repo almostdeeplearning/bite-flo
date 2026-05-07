@@ -3,7 +3,7 @@
   "name": "Narrative Toolkit",
   "version": "1.0.0",
   "description": "Grok萃取 + 長文整理 → skill.md / wiki.md",
-  "permissions": ["storage", "scripting", "tabs", "downloads", "activeTab"],
+  "permissions": ["storage", "scripting", "tabs", "downloads", "activeTab", "sidePanel"],
   "host_permissions": [
     "https://x.com/*",
     "https://www.threads.net/*",
@@ -39,7 +39,9 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "Narrative Toolkit"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   }
 }

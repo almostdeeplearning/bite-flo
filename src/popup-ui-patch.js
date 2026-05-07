@@ -12,25 +12,25 @@ if (typeof chrome === 'undefined' || !chrome.storage) {
   chrome.scripting = { executeScript: asyncNoop };
 }
 
-// Step state manager.
+// Step state manager (3 steps).
 function setStep(n) {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 3; i++) {
     const num = document.getElementById('sn' + i);
     const txt = document.getElementById('st' + i);
     if (!num || !txt) continue;
 
     if (i < n) {
-      num.className = 'step-num done';
-      txt.className = 'step-text done';
+      num.className = num.classList.contains('cf-card-num') ? 'cf-card-num etl-card-num done' : 'etl-num done';
+      txt.className = txt.classList.contains('cf-card-title') ? 'cf-card-title etl-card-title done' : 'etl-label done';
       num.textContent = '✓';
     } else if (i === n) {
-      num.className = 'step-num active';
-      txt.className = 'step-text active';
-      num.textContent = i;
+      num.className = num.classList.contains('cf-card-num') ? 'cf-card-num etl-card-num active' : 'etl-num active';
+      txt.className = txt.classList.contains('cf-card-title') ? 'cf-card-title etl-card-title active' : 'etl-label active';
+      num.textContent = String(i).padStart(2, '0');
     } else {
-      num.className = 'step-num';
-      txt.className = 'step-text';
-      num.textContent = i;
+      num.className = num.classList.contains('cf-card-num') ? 'cf-card-num etl-card-num' : 'etl-num';
+      txt.className = txt.classList.contains('cf-card-title') ? 'cf-card-title etl-card-title' : 'etl-label';
+      num.textContent = String(i).padStart(2, '0');
     }
   }
 }
@@ -39,29 +39,22 @@ function initStepState() {
   setStep(1);
 
   const stepObserver = new MutationObserver(() => {
-    const grok = document.getElementById('grokResponseSection');
-    const post = document.getElementById('postProcessSection');
-    const review = document.getElementById('reviewSection');
-    const hasGrok = grok && grok.style.display !== 'none';
-    const hasPost = post && post.style.display !== 'none';
-    const hasReview = review && review.style.display !== 'none';
-
-    if (hasReview) setStep(4);
-    else if (hasPost) setStep(3);
-    else if (hasGrok) setStep(2);
+    const result = document.getElementById('extractResultSection');
+    const hasResult = result && result.style.display !== 'none';
+    if (hasResult) setStep(3);
     else setStep(1);
   });
 
-  ['grokResponseSection', 'postProcessSection', 'reviewSection'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) stepObserver.observe(el, { attributes: true, attributeFilter: ['style'] });
-  });
+  const resultEl = document.getElementById('extractResultSection');
+  if (resultEl) stepObserver.observe(resultEl, { attributes: true, attributeFilter: ['style'] });
 }
 
 const topbarLabels = {
-  extract: '<span>X ETL</span> — 萃取工作流',
-  distill: '<span>DISTILL</span> — 長文整理',
-  prompts: '<span>PROMPTS</span> — Prompt 管理',
+  extract:  '<span>X ETL</span> — 萃取工作流',
+  distill:  '<span>DISTILL</span> — 長文整理',
+  flow:     '<span>FLOW</span> — 自訂流程',
+  prompts:  '<span>PROMPTS</span> — Prompt 管理',
+  schema:   '<span>SCHEMA</span> — 格式模板庫',
   settings: '<span>CONFIG</span> — 設定',
 };
 
@@ -100,23 +93,6 @@ function initSidebarNavigation() {
   });
 }
 
-function initFormatCards() {
-  document.querySelectorAll('.fmt-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.fmt-card').forEach(c =>
-        c.classList.toggle('active', c === card));
-      document.dispatchEvent(new CustomEvent('fmtChange', { detail: card.dataset.fmt }));
-    });
-  });
-
-  document.addEventListener('fmtChange', e => {
-    document.querySelectorAll('.fmt-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.fmt === e.detail);
-      if (b.dataset.fmt === e.detail) b.click();
-    });
-  });
-}
-
 function initDistillSelectedPromptArea() {
   const distillArea = document.getElementById('distillSelectedPromptArea');
   const distillText = document.getElementById('distillSelectedPromptText');
@@ -133,6 +109,5 @@ function initDistillSelectedPromptArea() {
 document.addEventListener('DOMContentLoaded', () => {
   initStepState();
   initSidebarNavigation();
-  initFormatCards();
   initDistillSelectedPromptArea();
 });

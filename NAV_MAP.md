@@ -1,85 +1,140 @@
 # Navigation Map
 
-This document maps the current Chrome Extension UI, DOM IDs, JavaScript bindings, background messages, and storage keys. Use it before changing `popup.html`, `src/popup.js`, `src/popup-ui-patch.js`, or migrating the popup to Side Panel.
+This document maps the current Chrome Extension Side Panel UI, DOM IDs, JavaScript bindings, background messages, and storage keys. Use it before changing `sidepanel.html`, `popup.html`, `src/sidepanel.js`, `src/popup-ui-patch.js`, or block files under `src/blocks/`.
 
 ## Entry Points
 
 - `manifest.json`
-  - `action.default_popup`: `popup.html`
+  - `side_panel.default_path`: `sidepanel.html` (primary UI — Chrome Side Panel)
+  - `action.default_popup`: removed; clicking the extension icon opens the Side Panel via `setPanelBehavior`
   - `background.service_worker`: `src/background.js`
   - content scripts:
     - `src/cs_grok.js` on `https://x.com/i/grok*`
     - `src/cs_ai.js` on ChatGPT, Gemini, Claude
 
-- `popup.html`
-  - Loads `src/popup.js`
-  - Loads `src/popup-ui-patch.js`
+- `sidepanel.html`
+  - Primary UI entry point; based on `popup.html` with fixed dimensions removed.
+  - Body fills Side Panel height (`100%`); width is user-controlled by dragging the panel edge.
+  - Load order: Distill block files → ETL Card block files → `src/sidepanel.js` → `src/popup-ui-patch.js`.
   - Must not contain inline `<script>...</script>` or inline event handlers.
 
-- `src/popup.js`
+- `src/blocks/` (plain-script files, loaded before sidepanel.js)
+  - Distill blocks:
+    - `DistillSourceBlock.js` — source text capture and page grabbing
+    - `DistillTaskBlock.js` — prompt series selection and prompt picker
+    - `DistillFormatBlock.js` — schema template selection and preview
+    - `DistillAIBlock.js` — target AI selection
+    - `DistillRunBlock.js` — distill execution, result display, and library rendering
+  - Note: 雖然命名為 `Distill*Block`，這些 Block 目前已透過 `renderCF()` / getter 邏輯被 Custom Flow 部分共用，不應視為 Distill 專屬模組。
+  - ETL blocks:
+    - `ETLCard1Block.js` — Prompt card HTML
+    - `ETLCard2Block.js` — Schema card HTML
+    - `ETLCard3Block.js` — Target AI card HTML
+    - `ETLCard4Block.js` — Run extract card HTML
+    - `ETLCard5Block.js` — Save result and recent extract library HTML
+  - Legacy, not loaded:
+    - `ETLStep1Block.js`
+    - `ETLStep2Block.js`
+    - `ETLStep3Block.js`
+  - Each active file defines one global `const ...Block = {...}` object. Methods call globals (`$`, `esc`, `series`, etc.) at runtime after sidepanel.js has loaded.
+
+- `popup.html`
+  - Retained as development/preview reference only. Not loaded by the extension.
+
+- `src/sidepanel.js`
   - Main workflow logic, storage, message sending, render functions, and event binding.
+  - Distill-related logic remains organized into 5 Block objects: `DistillSourceBlock`, `DistillTaskBlock`, `DistillFormatBlock`, `DistillAIBlock`, `DistillRunBlock`, but the Distill Tab UI is currently down-ranked and not initialized in Phase 1. The shared `renderCF()` / getter parts are still used by Custom Flow.
+  - ETL Tab DOM is rendered by `initETLTab()` using `ETLCard1–5Block`; this must run synchronously at the start of DOMContentLoaded before `popup-ui-patch.js` step-state initialization.
+  - Height/width UI preference functions removed (`applyPopupHeight` deleted; width init removed).
 
 - `src/popup-ui-patch.js`
-  - CSP-safe UI glue for sidebar navigation, step state, format cards, and distill prompt preview visibility.
+  - CSP-safe UI glue for Topnav-compatible navigation, step state, and distill prompt preview visibility.
 
 ## Top-Level Navigation
 
-Sidebar buttons use `data-tab` and map to panel IDs:
+The current UI uses a horizontally scrollable Topnav. The buttons still use `.nav-item[data-tab]` for compatibility and map to panel IDs:
 
 | Nav | Button selector | Panel ID | Purpose |
 |---|---|---|---|
 | Extract | `.nav-item[data-tab="extract"]` | `tab-extract` | X/Grok ETL workflow |
-| Distill | `.nav-item[data-tab="distill"]` | `tab-distill` | Long-form text capture and markdown generation |
+| Flow | `.nav-item[data-tab="flow"]` | `tab-flow` | Custom Flow — composable 5-block automation pipeline |
 | Prompts | `.nav-item[data-tab="prompts"]` | `tab-prompts` | Prompt series manager |
-| Settings | `.nav-item[data-tab="settings"]` | `tab-settings` | Automation, local storage, layout, and templates |
+| Schema | `.nav-item[data-tab="schema"]` | `tab-schema` | Format template library |
+| Settings | `.nav-item[data-tab="settings"]` | `tab-settings` | Automation, local storage, and layout |
 
 Navigation is coordinated by:
 
-- `switchTab(name)` in `src/popup.js`
+- `switchTab(name)` in `src/sidepanel.js`
 - `initSidebarNavigation()` in `src/popup-ui-patch.js`
 - `topbarTitle` is updated by `setActiveNav(tab)` in `src/popup-ui-patch.js`
+
+Topbar actions (shown/hidden per tab):
+
+- `topbarPromptsActions` — currently an empty compatibility container; Prompt actions now live inside the Prompts tab content area
+- `topbarSchemaActions` — currently an empty compatibility container; Schema actions now live inside the Schema tab content area
 
 Storage key:
 
 - `lastTab`
 
+Phase 1 Distill off-ramp note:
+
+- `tab-distill` still exists in `sidepanel.html` as a dormant DOM shell for now, but there is no topnav entry.
+- `switchTab('distill')` is now redirected to `flow`.
+- Distill `renderDistill()` / `init()` calls are disabled during `DOMContentLoaded`.
+
 ## Extract Tab
 
 Panel: `tab-extract`
 
-### Step Indicator
+### ETL Card Rendering
+
+The tab is rendered dynamically by `initETLTab()` in `src/sidepanel.js`.
+
+Active block files:
+
+- `ETLCard1Block.js` — Card 01 Prompt
+- `ETLCard2Block.js` — Card 02 Schema
+- `ETLCard3Block.js` — Card 03 Target AI
+- `ETLCard4Block.js` — Card 04 Run Extract
+- `ETLCard5Block.js` — Card 05 Save Result and recent extract library
+
+Important timing rule:
+
+- `initETLTab()` must be called at the start of DOMContentLoaded, before any `await`, so `popup-ui-patch.js` can find ETL DOM IDs during `initStepState()`.
+
+### Card Indicator
 
 DOM IDs:
 
 - `etlSteps`
-- `sn1`, `st1`: select prompt
-- `sn2`, `st2`: run extract
-- `sn3`, `st3`: send to AI
-- `sn4`, `st4`: review/output
+- `sn1`, `st1`: visible step indicator in Card 01
+- `sn2`, `st2`: hidden compatibility spans
+- `sn3`, `st3`: hidden compatibility spans
 
 Managed by:
 
-- `setStep(n)` in `src/popup-ui-patch.js`
-- Mutation observer watches:
-  - `grokResponseSection`
-  - `postProcessSection`
-  - `reviewSection`
+- `setStep(n)` in `src/popup-ui-patch.js` (loops 1–3)
+- Mutation observer watches `extractResultSection` style attribute:
+  - visible → step 3
+  - hidden → step 1
+- Card UI now uses the same `cf-card` / `cf-card-head` / `cf-card-body` shell as Custom Flow, with per-card collapse toggles via `data-etl-toggle`.
 
-### Step 1: Prompt Selection
+### Card 01: Prompt
 
 DOM IDs:
 
 - `stepSection1`
-- `extractSeriesSel`
-- `extractPromptList`
-- `promptList`
+- `extractSeriesSel` — series dropdown
+- `extractPromptList` — prompt dropdown (`<select>`)
+- `extractPromptPreview` — selected prompt preview area
+- `promptList` — legacy active prompt queue container; retained for compatibility with existing render/state code
 
 JS bindings:
 
 - `extractSeriesSel change` updates `extractSeriesId`, then `renderExtractPromptList()`
-- `extractPromptList click [data-action="addFromLib"]` calls `addFromLib(sid, idx)`
-- `promptList click [data-action="delPrompt"]` calls `delPrompt(idx)`
-- `promptList focusout [data-action="editPrompt"]` calls `editPrompt(idx, value)`
+- `extractPromptList change` updates the selected prompt preview
+- `promptList` delegated delete/edit bindings remain for compatibility with existing prompt queue behavior
 
 Render functions:
 
@@ -93,7 +148,46 @@ Storage keys:
 - `promptSeries`
 - `extractSeriesId`
 
-### Step 2: Grok Extract
+### Card 02: Schema
+
+DOM IDs:
+
+- `extractSchemaSel` — schema template dropdown (optional)
+- `extractSchemaPreview` — preview of selected schema text
+
+JS bindings:
+
+- `extractSchemaSel change` updates `extractSchemaId`, then `updateExtractSchemaPreview()`
+
+Render functions:
+
+- `renderExtractSchemaPicker()`
+- `updateExtractSchemaPreview()`
+
+Storage keys:
+
+- `extractSchemaId`
+- `schemaTemplates`
+
+### Card 03: Target AI
+
+DOM IDs:
+
+- `extractAiSel` — container for `.ai-pill` buttons
+
+JS bindings:
+
+- `.ai-pill click` updates module-level `extractAI`, toggles active pill state, and saves `extractAI` to `chrome.storage.local`
+
+Storage key:
+
+- `extractAI`
+
+Important current limitation:
+
+- `extractAI` is persisted UI state only. `startExtract()` does not yet use it; extraction still opens `x.com/i/grok` and sends `START_EXTRACT` to the Grok path.
+
+### Card 04: Run Extract
 
 DOM IDs:
 
@@ -108,7 +202,7 @@ DOM IDs:
 
 JS bindings:
 
-- `startBtn click` calls `startExtract()`
+- `startBtn click` calls `startExtract()` — concatenates selected prompt text and selected schema text as `prompt.text + "\n\n" + schema.text`
 - `stopBtn click` sends `STOP`
 
 Messages sent to background:
@@ -126,100 +220,24 @@ Messages received from background:
 Storage keys:
 
 - `delaySeconds`
-- `rawResponses`
-- `lastRawMd`
-- `lastRawMdName`
 
-### Grok Response Preview
+### Card 05: Save Result
 
 DOM IDs:
 
-- `grokResponseSection`
-- `grokResponseList`
-
-Render function:
-
-- `displayGrokResponses(responses)`
-
-Shown after:
-
-- `EXTRACT_DONE`
-- loading existing `rawResponses`
-
-### Step 3: AI Structure
-
-DOM IDs:
-
-- `postProcessSection`
-- `stepSection3`
-- `extractAiSelect`
-- `structureTpl`
-- `runStructureBtn`
-- `stopStructureBtn`
+- `extractResultSection` — hidden until extraction completes; visibility drives step indicator
+- `copyExtractBtn`
+- `saveExtractBtn`
+- `extractResultText`
 
 JS bindings:
 
-- AI selector buttons update `extractAI`
-- `structureTpl focusout` stores `grokTpl`
-- `runStructureBtn click` calls `runStructure()`
-- `stopStructureBtn click` sends `STOP`
+- `copyExtractBtn click` copies `lastExtractResult` to clipboard
+- `saveExtractBtn click` calls `saveExtractResult()` — downloads `.md`
 
-Messages sent to background:
+State variable:
 
-- `RUN_AI_STRUCTURE`
-- `STOP`
-
-Messages received from background:
-
-- `AI_STRUCTURE_DONE`
-- `ERROR`
-
-Storage keys:
-
-- `extractAI`
-- `grokTpl`
-- `fullAuto`
-- `rawResponses`
-- `pendingStructured`
-
-### Step 4: Review And Export
-
-DOM IDs:
-
-- `reviewSection`
-- `stepSection4`
-- `viewTextBtn`
-- `viewTableBtn`
-- `resultTextView`
-- `resultText`
-- `resultTableView`
-- `revHead`
-- `revBody`
-- `saveMdBtn`
-- `rejectBtn`
-- `revLog`
-
-JS bindings:
-
-- `viewTextBtn click` switches to raw text view
-- `viewTableBtn click` switches to table view
-- `revBody focusout [data-action="cellEdit"]` calls `cellEdit(ri, ci, value)`
-- `saveMdBtn click` calls `saveStructuredMd()`
-- `rejectBtn click` calls `rejectRedo()`
-
-Messages sent to background:
-
-- `DOWNLOAD_MD`
-
-Messages received from background:
-
-- `ERROR`
-
-Storage keys:
-
-- `pendingStructured`
-- `library`
-- `extractFolder`
+- `lastExtractResult` — in-memory markdown string, not persisted
 
 ### Extract Library
 
@@ -233,10 +251,7 @@ DOM IDs:
 JS bindings:
 
 - Toggle click opens/closes library list
-- Delegated library actions:
-  - `copyDocByName`
-  - `dlDocByName`
-  - `delDocByName`
+- Delegated library actions: `copyDocByName`, `dlDocByName`, `delDocByName`
 
 Render function:
 
@@ -244,9 +259,12 @@ Render function:
 
 Storage key:
 
-- `library`, filtered to `fmt === "structured"`
+- `library`, filtered to `fmt === "extract"`
 
 ## Distill Tab
+
+> ⚠️ **Deprecated (Phase 1 off-ramp)**
+> This tab is no longer accessible from the UI. The following describes legacy structure kept for internal reference only.
 
 Panel: `tab-distill`
 
@@ -268,47 +286,36 @@ Chrome APIs:
 - `chrome.tabs.query`
 - `chrome.scripting.executeScript`
 
-### Draft And Format Selection
+### Schema And Prompt Selection
 
 DOM IDs:
 
-- `saveDraftBtn`
-- `.fmt-card[data-fmt="note"]`
-- `.fmt-card[data-fmt="wiki"]`
-- hidden `.fmt-btn[data-fmt="note"]`
-- hidden `.fmt-btn[data-fmt="wiki"]`
+- `saveDraftBtn` — saves raw text as draft without AI
+- `distillSchemaSel` — schema template dropdown
+- `clearDistillSchemaBtn` — clears schema selection
+- `distillSchemaPreview` — `<pre>` preview of selected schema text
+- `distillSeriesSel` — series dropdown for prompt picker
+- `clearDistillPromptBtn` — clears series/prompt selection
+- `distillPromptList` — chip row of prompts from selected series
+- `distillSelectedPromptArea` — shown when a prompt is selected
+- `distillSelectedPromptText` — preview of selected prompt text
 
-JS bindings:
+JS bindings (owned by `DistillSourceBlock`, `DistillTaskBlock`, `DistillFormatBlock`):
 
-- `saveDraftBtn click` calls `saveDraft()`
-- `.fmt-card click` handled by `initFormatCards()` in `src/popup-ui-patch.js`
-- `fmtChange` event clicks matching hidden `.fmt-btn`
-- `.fmt-btn click` in `src/popup.js` updates `selectedFmt`
+- `saveDraftBtn click` → `DistillRunBlock.saveDraft()`
+- `distillSchemaSel change` → `DistillFormatBlock` updates internal `schemaId`, calls `_updatePreview()`
+- `clearDistillSchemaBtn click` → `DistillFormatBlock` clears `schemaId`
+- `distillSeriesSel change` → `DistillTaskBlock` updates internal `seriesId`, clears `promptIdx`, re-renders
+- `clearDistillPromptBtn click` → `DistillTaskBlock` clears selection
+- `distillPromptList click [data-action="selectDistillPrompt"]` → `DistillTaskBlock._selectPrompt(idx)`
+- `initDistillSelectedPromptArea()` in `src/popup-ui-patch.js` shows/hides preview based on `data-empty`
 
 Storage keys:
 
 - `library`
 - `distillFolder`
-
-### Distill Prompt Picker
-
-DOM IDs:
-
-- `distillSeriesSel`
-- `clearDistillPromptBtn`
-- `distillPromptList`
-- `distillSelectedPromptArea`
-- `distillSelectedPromptText`
-
-JS bindings:
-
-- `distillSeriesSel change` updates `distillSeriesId`, clears `distillPromptIdx`, then renders prompt list
-- `clearDistillPromptBtn click` clears selected series/prompt
-- `distillPromptList click [data-action="selectDistillPrompt"]` calls `selectDistillPrompt(idx)`
-- `initDistillSelectedPromptArea()` in `src/popup-ui-patch.js` shows/hides preview based on `data-empty`
-
-Storage keys:
-
+- `schemaTemplates`
+- `distillSchemaId`
 - `promptSeries`
 - `distillSeriesId`
 - `distillPromptIdx`
@@ -320,15 +327,15 @@ DOM IDs:
 - `distillAiSelect`
 - `distillBtn`
 - `stopDistillBtn`
-- `distillAutoSave`
+- `cfAutoSaveDistill`
 - `distillLog`
 
-JS bindings:
+JS bindings (owned by `DistillAIBlock` and `DistillRunBlock`):
 
-- AI selector buttons update `distillAI`
-- `distillBtn click` calls `startDistill()`
+- AI selector buttons (`.ai-pill`) → `DistillAIBlock` updates internal `ai`, saves to storage
+- `distillBtn click` → `DistillRunBlock.startDistill()` (reads other blocks via public getters)
 - `stopDistillBtn click` sends `STOP`
-- `distillAutoSave change` stores setting immediately
+- `cfAutoSaveDistill change` stores to `cfAutoSave` immediately
 
 Messages sent to background:
 
@@ -345,9 +352,7 @@ Messages received from background:
 Storage keys:
 
 - `distillAI`
-- `distillAutoSave`
-- `wikiTpl`
-- `noteTpl`
+- `cfAutoSave`
 - `fullAuto`
 - `library`
 - `distillFolder`
@@ -369,7 +374,7 @@ JS bindings:
 
 Shown after:
 
-- `DISTILL_DONE`, when `distillAutoSave` is checked
+- `DISTILL_DONE`; result content is populated when the current autosave toggle is enabled
 
 ### Distill Library
 
@@ -382,52 +387,193 @@ DOM IDs:
 
 Render function:
 
-- `renderDistillLibrary()`
+- `DistillRunBlock.renderLibrary()`
 
 Storage key:
 
 - `library`, filtered to `fmt in ["note", "wiki", "draft"]`
 
-## Prompt Manager Tab
+## Prompts Tab
 
-Panel: `tab-prompts`
+Panel: `tab-prompts` (`panel-fill`, no internal scroll — layout managed by flex children)
+
+### Prompt Actions Bar
 
 DOM IDs:
 
-- `seriesList`
-- `newSeriesName`
-- `addSeriesBtn`
-- `seriesPromptsHeader`
-- `loadAllSeriesBtn`
-- `seriesPromptsList`
-- `seriesPromptsAdd`
+- `importPromptsBtn` — opens `promptImportInput` for JSON import
+- `exportPromptsBtn` — exports `promptSeries` as JSON
+- `promptImportInput` — hidden file input for Prompt import
+
+### Series Tab Bar
+
+DOM IDs:
+
+- `seriesTabbar` — rendered by `renderTabbar()`; contains the series dropdown and action buttons
+- `seriesSelect` — prompt series dropdown
+- `editSeriesBtn` — opens `editSeriesBar`
+- `tabAddSeriesBtn` (inside tabbar) — shows `newSeriesBar`
+
+JS bindings:
+
+- `seriesSelect change` updates `currentSeriesId`, closes open add/edit rows, re-renders cards
+- `editSeriesBtn click` opens `editSeriesBar` for the current series
+- `tabAddSeriesBtn click` shows `newSeriesBar`
+
+### Prompt Cards
+
+DOM IDs:
+
+- `seriesCards` — scroll area; rendered by `renderCards()`
+
+Card pattern:
+
+- Each prompt is a `.pcard` with a `.pcard-head` (click to expand) and `.pcard-body` (hidden unless expanded)
+- Header shows a small pencil hint next to the prompt name
+- Expanded body contains a `.prompt-name-input`, `.pcard-editor` textarea (auto-grows), char count footer, and copy button; header actions keep delete only
+- `expandedCardIdx` (JS state) tracks which card is open; only one at a time
+
+JS bindings (event delegation on `seriesCards`):
+
+- `.pcard-head click` toggles `expandedCardIdx`, re-renders
+- `.prompt-name-input input [data-action="renamePrompt"]` auto-saves `series[].prompts[idx].name`, updates the visible card title, and calls `_showSaveToast()`
+- `[data-action="copyOneCard"] click` copies the selected prompt text to the clipboard
+- `[data-action="delCard"] click` calls `delCard(idx)`
+- `.pcard-editor input` auto-saves `series[].prompts[idx].text`, updates char count, auto-grows textarea, calls `_showSaveToast()`
+
+Render functions:
+
+- `renderTabbar()`
+- `renderCards()`
+- `renderSeries()` — thin wrapper calling `renderTabbar()`
+- `renderSeriesPrompts()` — thin wrapper calling `renderCards()`
+
+Helpers:
+
+- `excerpt(text)` — 72-char preview with ellipsis
+- `showToast(msg)` — bottom toast, 2.2 s auto-dismiss
+- `_showSaveToast()` — debounced wrapper (800 ms) around `showToast`; shows "✓ 已儲存" after the user stops typing; called by Prompt and Schema input handlers after `chrome.storage.local.set`
+
+State variables:
+
+- `expandedCardIdx` — index within current series, or `null`
+
+### Add Prompt Row
+
+DOM IDs:
+
+- `addPromptRow` — visible when a series is selected; hidden otherwise
+- `addPromptTrigger` — click to reveal `addPromptForm`
+- `addPromptForm` — `.add-form`; open class added on trigger click
 - `newSeriesPromptName`
 - `newSeriesPromptText`
-- `addSeriesPromptBtn`
+- `cancelAddPrompt`
+- `confirmAddPrompt`
+
+JS bindings:
+
+- `addPromptTrigger click` opens form
+- `cancelAddPrompt click` calls `closeAddForm()`
+- `confirmAddPrompt click` calls `addSeriesPrompt()`
+- `newSeriesPromptText keydown Ctrl/Cmd+Enter` calls `addSeriesPrompt()`
+- `newSeriesPromptText keydown Escape` calls `closeAddForm()`
+
+### New Series Bar
+
+DOM IDs:
+
+- `newSeriesBar` — `.new-series-bar`; shown when `tabAddSeriesBtn` is clicked
+- `newSeriesName`
+- `addSeriesBtn`
+- `cancelNewSeries`
 
 JS bindings:
 
 - `addSeriesBtn click` calls `addSeries()`
+- `cancelNewSeries click` hides bar
 - `newSeriesName keydown Enter` calls `addSeries()`
-- `seriesList click [data-action="selectSeries"]` calls `selectSeries(sid)`
-- `seriesList click [data-action="delSeries"]` calls `delSeries(sid)`
-- `loadAllSeriesBtn click` calls `loadAllSeries()`
-- `seriesPromptsList click [data-action="loadOnePrompt"]` calls `loadOnePrompt(sid, idx)`
-- `seriesPromptsList click [data-action="delSeriesPrompt"]` calls `delSeriesPrompt(sid, idx)`
-- `seriesPromptsList focusout [data-action="editSeriesPromptName"]` calls `editSeriesPromptName(sid, idx, value)`
-- `seriesPromptsList focusout [data-action="editSeriesPromptText"]` calls `editSeriesPromptText(sid, idx, value)`
-- `addSeriesPromptBtn click` calls `addSeriesPrompt()`
 
-Render functions:
+### Edit Series Bar
 
-- `renderSeries()`
-- `renderSeriesPrompts()`
+DOM IDs:
+
+- `editSeriesBar` — inline rename row shown from `editSeriesBtn`
+- `editSeriesName`
+- `saveSeriesNameBtn`
+- `cancelEditSeries`
+
+JS bindings:
+
+- `saveSeriesNameBtn click` calls `saveCurrentSeriesName()`
+- `editSeriesName keydown Enter` calls `saveCurrentSeriesName()`
+- `editSeriesName keydown Escape` calls `closeEditSeriesForm()`
+- `cancelEditSeries click` calls `closeEditSeriesForm()`
 
 Storage keys:
 
 - `promptSeries`
 - `currentSeriesId`
 - `prompts`
+
+## Schema Tab
+
+Panel: `tab-schema` (`panel-fill`, same layout as Prompts tab)
+
+### Schema Cards
+
+DOM IDs:
+
+- `schemaCards` — scroll area; rendered by `renderSchemas()`
+
+Card pattern (same `.pcard` classes as Prompts tab):
+
+- Each schema is a `.pcard` with a `.pcard-head` and `.pcard-body`
+- Header shows a small pencil hint next to the schema name
+- Expanded body contains a `.schema-name-input` (inline name edit), `.pcard-editor` textarea, char count footer, and copy button; header actions keep delete only
+- `expandedSchemaIdx` (JS state) tracks which card is open
+
+JS bindings (event delegation on `schemaCards`):
+
+- `.pcard-head click [data-saction="toggleSchema"]` toggles `expandedSchemaIdx`, re-renders
+- `[data-saction="copySchema"] click` copies the selected schema text to the clipboard
+- `[data-saction="delSchema"] click` calls `delSchema(idx)` with confirm dialog
+- `.pcard-editor input [data-saction="editSchema"]` auto-saves `schemaTemplates[idx].text`, updates char count, auto-grows textarea, refreshes pickers, calls `_showSaveToast()`
+- `.schema-name-input input [data-saction="renameSchema"]` auto-saves `schemaTemplates[idx].name`, refreshes pickers, calls `_showSaveToast()`
+
+Render function:
+
+- `renderSchemas()` — called by `switchTab('schema')`
+
+State variable:
+
+- `expandedSchemaIdx` — index within `schemaTemplates`, or `null`
+
+### Add Schema Row
+
+DOM IDs:
+
+- `addSchemaRow`
+- `addSchemaTrigger` — click to reveal `addSchemaForm`
+- `addSchemaForm` — `.add-form`
+- `newSchemaName`
+- `newSchemaInitText`
+- `cancelAddSchema`
+- `confirmAddSchema`
+
+JS bindings:
+
+- `addSchemaTrigger click` opens form, hides trigger
+- `cancelAddSchema click` calls `closeAddSchemaForm()`
+- `confirmAddSchema click` calls `addSchema()`
+- `newSchemaName keydown Enter` calls `addSchema()`
+- `newSchemaInitText keydown Ctrl/Cmd+Enter` calls `addSchema()`
+- `newSchemaName / newSchemaInitText keydown Escape` calls `closeAddSchemaForm()`
+
+Storage keys:
+
+- `schemaTemplates`
+- `extractSchemaId` (refreshed after add/delete)
+- `distillSchemaId` (refreshed after add/delete)
 
 ## Settings Tab
 
@@ -460,51 +606,146 @@ Storage keys:
 
 - `extractFolder`
 - `distillFolder`
-### Prompt Templates
-
-DOM IDs:
-
-- `noteTpl`
-- `wikiTpl`
-- `structureTpl` lives in Extract Step 3
-
-Storage keys:
-
-- `noteTpl`
-- `wikiTpl`
-- `grokTpl`
 
 ### Layout And Accessibility
 
 DOM classes:
 
-- `.width-btn[data-w]`
-- `.height-btn[data-h]`
 - `.font-btn[data-font]`
 - `.contrast-btn[data-contrast]`
 
 JS helpers:
 
-- `applyPopupHeight(h)`
 - `applyPopupFontSize(size)`
 - `applyPopupTextContrast(mode)`
 
 Storage keys:
 
-- `popupWidth`
-- `popupHeight`
 - `popupFontSize`
 - `popupTextContrast`
 
 Notes:
 
-- Chrome action popup max size is 800x600 px. Height options should not exceed 600 unless the UI migrates to Side Panel.
-- Text contrast uses body classes:
-  - `contrast-bright`
-  - `contrast-max`
-- Font size uses body classes:
-  - `font-comfortable`
-  - `font-large`
+- Width and height controls removed (Side Panel width is user-dragged; height fills browser window).
+- Text contrast uses body classes: `contrast-bright`, `contrast-max`
+- Font size uses body classes: `font-comfortable`, `font-large`
+- **基礎 CSS 預設值（2026-05-05 更新）**：`body` font-size 14px；`.btn` 12px；`.label` / `.field-label` 11px；`.input` / `.ta` 15px；`--bg` `#13110F`（微暖深灰）；`--text2` `#B8B2A6`；`--text3` `#7A7468`。body class 覆蓋套疊於此基準之上。
+- **`.select-compact`（2026-05-05 更新）**：所有 `<select>` 元素（`extractSeriesSel`、`extractPromptList`、`cfPresetSel`、`seriesSelect`）統一使用此 class。Chrome `<select>` 預設走 OS native rendering，`font-family` 無效；`.select-compact` 以 `appearance: none` 繞過此限制，並內含自訂 SVG 箭頭與完整字型設定。
+
+## Custom Flow Tab
+
+Panel: `tab-flow`
+
+### Run-All Bar
+
+DOM IDs:
+- `cfRunAllBtn` — executes all visible blocks in order; disabled during execution
+- `cfStopAllBtn` — stops current run-all execution
+- `cfGlobalStatus` — global run status text
+- `cfPresetSel` — preset dropdown
+- `cfDeletePresetBtn` — delete selected preset
+- `cfSavePresetBtn` — save current Custom Flow configuration as a preset; rendered below the card stack
+
+### Block Cards (common pattern)
+
+Each block uses:
+- `[data-cf-card="<name>"]` — the card element; `.cf-collapsed` hides the body; `.cf-active` highlights during run-all
+- `[data-cf-toggle="<name>"]` — show/hide toggle button
+- `[data-cf-delay-for="<name>"]` — delay `<select>` (options: 0 / 2 / 5 / 10 / 20 / custom)
+- `[data-cf-custom-for="<name>"]` — custom delay `<input>`, shown only when "自訂" is selected
+
+### Block 1 — Source
+
+DOM IDs:
+- `cfGrabPageBtn`
+- `cfRawText`
+- `cfCharCount`
+
+JS owner: `CustomFlowController`
+
+### Block 2 — Task
+
+DOM IDs:
+- `cfSeriesSel`
+- `cfClearPromptBtn`
+- `cfPromptList`
+- `cfSelectedPromptText` — `<pre>` prompt preview; `data-empty="1"` shows placeholder
+
+JS owner: `CustomFlowController`
+
+### Block 3 — Format
+
+DOM IDs:
+- `cfSchemaSel`
+- `cfClearSchemaBtn`
+- `cfSchemaPreview`
+
+JS owner: `CustomFlowController`
+
+### Block 4 — AI
+
+DOM IDs:
+- `cfAiSelect` — container for `.ai-pill` buttons (`gpt` / `gemini` / `claude` / `grok`)
+
+JS owner: `CustomFlowController`
+
+### Block 5 — Run
+
+DOM IDs:
+- `cfAutoSave`
+- `cfRunBtn`
+- `cfStopBtn`
+- `cfSaveDraftBtn`
+- `cfCopyBtn`
+- `cfDlBtn`
+- `cfLog`
+- `cfResultSection`
+- `cfResultName`
+- `cfResultText`
+
+JS owner: `CustomFlowController`
+
+### CustomFlowController
+
+Defined in `src/sidepanel.js`. Key methods:
+
+- `init(d)` — binds all events, restores state from storage
+- `toggleCard(name)` — show/hide a block; persists to `cfCardVisible`
+- `runAll()` — executes visible blocks in order; builds `pipeline` state; applies per-block delay; calls `_runWithPipeline()`
+- `_runWithPipeline(pipeline)` — combines content + prompt + schema, sends `START_DISTILL` with `fullAuto: true`
+- `startFlow()` — manual run; reads current state; uses `fullAuto` from storage setting
+- `getContent()`, `getSelectedPrompt()`, `getSelectedSchema()`, `getAI()` — public getters
+
+Message routing:
+
+- `activeDistillContext` (module-level `let`) is set to `'flow'` before `START_DISTILL` and cleared after `DISTILL_DONE` / `ERROR`.
+- `listenBg()` routes `LOG_DISTILL` and `DISTILL_DONE` to `CustomFlowController` when `activeDistillContext === 'flow'`, otherwise to `DistillRunBlock`.
+
+> ⚠️ **Important**: `activeDistillContext` 是 `DISTILL_DONE` / `LOG_DISTILL` 訊息的唯一路由開關。若狀態未正確設定或清除，結果將被派送至錯誤的 UI handler。每次發送 `START_DISTILL` 前必須先設定此變數，收到 `DISTILL_DONE` 或 `ERROR` 後必須立即清除。
+
+Storage keys (Custom Flow):
+- `cfCardVisible` — `{ source, task, format, ai, run }` booleans
+- `cfBlockDelays` — `{ source, task, format, ai, run }` delay seconds
+- `cfSeriesId`
+- `cfPromptIdx`
+- `cfSchemaId`
+- `cfAI`
+- `cfAutoSave` — controls whether Custom Flow writes results to `library` and auto-downloads output
+- `customFlowPresets` — saved preset list
+- `cfDefaultPresetId` — currently used as the remembered selected preset id; auto-applied on Custom Flow init
+
+Autosave rule:
+
+- Distill and Custom Flow now both persist the same autosave preference in `cfAutoSave`.
+- Both workflows include `autoSave` in the `START_DISTILL` payload.
+- `START_DISTILL.wikiTpl` is a runtime message field containing the composed prompt/template text for that run. It is not the legacy `chrome.storage.local["wikiTpl"]` key.
+- `background.js` uses the incoming `autoSave` message field as the single source of truth and no longer reads `distillAutoSave`.
+
+Preset UX rule:
+
+- `cfPresetSel` is now select-to-apply; changing the dropdown immediately loads that preset.
+- The selected preset id is persisted in `cfDefaultPresetId`, so reopening the Side Panel restores the same preset automatically.
+- There is no separate `載入` or `設為預設` button in the current UI.
 
 ## Background Message Map
 
@@ -512,22 +753,27 @@ Handled by `src/background.js`:
 
 | Message type | Sent from | Purpose | Main response |
 |---|---|---|---|
-| `START_EXTRACT` | `startExtract()` | Send prompts to Grok and collect responses | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
-| `START_DISTILL` | `startDistill()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
-| `START_VERIFY_WIKI` | currently background-supported | Wiki verification workflow | depends on handler |
-| `RUN_AI_STRUCTURE` | `runStructure()` | Send Grok responses to AI for structured table | `AI_STRUCTURE_DONE` |
+| `START_EXTRACT` | `startExtract()` | Send combined prompt+schema text to Grok and collect responses | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
+| `START_DISTILL` | `startDistill()` / `_runWithPipeline()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
+| `START_VERIFY_WIKI` | legacy verify-wiki sender path | Send wiki verification prompt to the selected AI | `LOG_DISTILL`, `DISTILL_DONE` |
+| `RUN_AI_STRUCTURE` | legacy post-structure sender path | Send raw responses to a second AI-structuring pass | `LOG_DISTILL`, `DISTILL_DONE` |
 | `DOWNLOAD_MD` | multiple UI actions | Download a named markdown file | none |
+| `DOWNLOAD_TEXT` | export/download helpers | Download text content with an explicit MIME type | none |
 | `DOWNLOAD_MD_BY_NAME` | library download action | Download document stored in `library` | none |
 | `AI_RESPONSE` | content script | Return AI response text to background | consumed internally |
 | `STOP` | stop buttons | Stop current long-running workflow | none |
 
-Received by `src/popup.js` in `listenBg()`:
+Message field note:
+
+- `START_DISTILL.wikiTpl` is part of the message payload and remains an active runtime dependency.
+- That field name should not be confused with the legacy storage key `wikiTpl`, which is migration-only and read only by `loadSettings()` when seeding `schemaTemplates`.
+
+Received by `src/sidepanel.js` in `listenBg()`:
 
 - `PROGRESS`
 - `LOG_EXTRACT`
 - `LOG_DISTILL`
 - `EXTRACT_DONE`
-- `AI_STRUCTURE_DONE`
 - `DISTILL_DONE`
 - `ERROR`
 
@@ -536,11 +782,7 @@ Received by `src/popup.js` in `listenBg()`:
 Workflow:
 
 - `prompts`
-- `rawResponses`
-- `pendingStructured`
 - `library`
-- `lastRawMd`
-- `lastRawMdName`
 - `lastTab`
 
 AI selection:
@@ -556,17 +798,24 @@ Prompt management:
 - `distillSeriesId`
 - `distillPromptIdx`
 
-Templates:
+Schema templates:
 
-- `grokTpl`
-- `wikiTpl`
-- `noteTpl`
+- `schemaTemplates`
+- `extractSchemaId`
+- `distillSchemaId`
+
+Migration-only legacy storage:
+
+- `wikiTpl` — read only by `loadSettings()` when `schemaTemplates` is empty, to seed the initial `wiki.md` schema template
+- `noteTpl` — read only by `loadSettings()` when `schemaTemplates` is empty, to seed the initial `筆記.md` schema template
+- `wikiTpl` / `noteTpl` are migration and seed paths only, not the primary persisted schema data model; current editable templates live in `schemaTemplates`
+- `grokTpl` / `structureTpl` are deprecated docs residue only; they are not active runtime storage keys
 
 Automation:
 
 - `delaySeconds`
 - `fullAuto`
-- `distillAutoSave`
+- `cfAutoSave`
 
 Output:
 
@@ -577,31 +826,51 @@ Output:
 
 UI settings:
 
-- `popupWidth`
-- `popupHeight`
 - `popupFontSize`
 - `popupTextContrast`
 
+Custom Flow:
+
+- `cfCardVisible`
+- `cfBlockDelays`
+- `cfSeriesId`
+- `cfPromptIdx`
+- `cfSchemaId`
+- `cfAI`
+- `cfAutoSave`
+- `customFlowPresets`
+- `cfDefaultPresetId`
+
 ## CSP And Event Binding Rules
 
-- Do not add inline `<script>...</script>` to `popup.html`.
+- Do not add inline `<script>...</script>` to `sidepanel.html`.
 - Do not add `onclick`, `onchange`, `oninput`, or other inline event handlers.
 - Add UI-only glue to `src/popup-ui-patch.js`.
-- Add core workflow behavior to `src/popup.js`.
+- Add core workflow behavior to `src/sidepanel.js`.
+- Add new Block objects under `src/blocks/` and register the `<script>` tag in `sidepanel.html` before `sidepanel.js`.
 - After editing, run:
 
 ```powershell
-node --check src\popup.js
+node --check src\sidepanel.js
 node --check src\popup-ui-patch.js
-rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" popup.html
+node --check src\blocks\DistillSourceBlock.js
+node --check src\blocks\DistillTaskBlock.js
+node --check src\blocks\DistillFormatBlock.js
+node --check src\blocks\DistillAIBlock.js
+node --check src\blocks\DistillRunBlock.js
+node --check src\blocks\ETLCard1Block.js
+node --check src\blocks\ETLCard2Block.js
+node --check src\blocks\ETLCard3Block.js
+node --check src\blocks\ETLCard4Block.js
+node --check src\blocks\ETLCard5Block.js
+rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" sidepanel.html
 ```
 
-## Migration Notes For Side Panel
+## Side Panel Notes
 
-If migrating to Side Panel:
+Migration to Side Panel is complete as of 2026-05-03. The primary UI is `sidepanel.html`; `popup.html` is retained as a development reference only.
 
-- Keep the same panel IDs and storage keys where possible.
-- Move or reuse `popup.html` as `sidepanel.html`.
-- Keep `src/popup-ui-patch.js` external; Side Panel has the same CSP constraints.
-- Revisit height controls: Side Panel does not use the same 600 px action popup height limit.
-- Sidebar navigation can remain unchanged.
+- Panel IDs, storage keys, and `.nav-item[data-tab]` navigation selectors are unchanged from the Popup era.
+- `src/sidepanel.js` is the main UI script, loaded by both `sidepanel.html` and `popup.html`. Renamed from `src/popup.js` on 2026-05-04 (Decision 37).
+- CSP constraints are the same as Popup: all scripts must be external files.
+- `panel-fill` panels (`#tab-prompts`, `#tab-schema`) must NOT have `style="margin:-24px"`. That negative margin causes flex height overflow and pushes `add-row` elements off-screen (Decision 38).

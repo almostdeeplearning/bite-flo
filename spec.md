@@ -8,13 +8,16 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 ## Current Surface
 
-- Primary UI: Chrome action popup.
-- Future candidate: Chrome Side Panel when persistent workspace size becomes more important than popup simplicity.
+- Primary UI: Chrome Side Panel（`sidepanel.html`）。點擊 Extension 圖示開啟，固定在瀏覽器右側，頁面導航時保持開啟。
+- `popup.html` 保留作為開發參考，不再被 Extension 載入。
+- Main UI script: `src/sidepanel.js`.
 - Core UI tabs:
   - X ETL
-  - Distill
+  - Custom Flow（自訂流程）
   - Prompt Manager
+  - Schema
   - Settings
+  - Distill Tab is currently down-ranked and no longer exposed in navigation; Custom Flow is the primary long-form organization entry.
 
 ## User Goals
 
@@ -29,57 +32,82 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 ### X ETL
 
-- Allow the user to select prompts from a reusable prompt series.
-- Run selected prompts against an open Grok tab.
+- Present the workflow as 5 vertical timeline Cards:
+  - Card 01 Prompt
+  - Card 02 Schema
+  - Card 03 Target AI
+  - Card 04 Run Extract
+  - Card 05 Save Result
+- Render the ETL UI from `ETLCard1–5Block.js` via `initETLTab()` before other DOM-dependent initialization.
+- Allow the user to select a prompt from a reusable prompt series using a dropdown.
+- Show a preview area for the selected prompt (`extractPromptPreview`).
+- Allow the user to optionally select a schema template to combine with each prompt.
+- Concatenate `prompt.text + "\n\n" + schema.text` before injecting into Grok.
+- Persist the selected ETL target AI in `extractAI` through Card 03.
+- Current implementation note: `extractAI` is UI/storage state only; `startExtract()` still opens and injects into Grok (`x.com/i/grok`).
+- Run the selected prompt against Grok.
 - Show extraction progress and logs.
-- Store raw Grok responses locally.
-- Send extracted responses to a selected AI for structured post-processing.
-- Allow review in text or table view.
-- Allow saving structured output as markdown.
+- Display Grok responses as a markdown result.
+- Allow copying or saving the result as a local `.md` file.
 
-### Distill
+### Custom Flow
 
-- Accept manually pasted text.
-- Allow grabbing text from the active page.
-- Support note and wiki output modes.
-- Allow selecting a prompt from Prompt Manager.
-- Allow selecting target AI per workflow.
-- Allow the user to decide whether AI results should be auto-saved and returned to the popup.
-- Keep recent distill outputs accessible from the Distill tab.
+- Provide 5 independent Block Cards: Source, Task, Format, AI, Run.
+- Allow each Block to be individually shown or hidden across sessions.
+- Allow configuring a per-Block delay (seconds) applied after each Block executes in run-all mode.
+- Provide a "一鍵跑完全部" button that executes visible Blocks in order, applying delays between them.
+- Source block: grab text from the active page.
+- Task block: select a prompt from the Prompt Manager library; show a prompt preview.
+- Format block: select a schema template; show a schema preview.
+- AI block: select a target AI (GPT, Gemini, Claude, Grok).
+- Run block: combine content + prompt + schema, inject into the selected AI, and display the result.
+- When the target AI is Grok, use direct injection (same mechanism as X ETL).
+- Run-all always operates in full-auto mode regardless of the global automation setting.
+- Custom Flow is the primary long-form organization workflow while Distill Tab remains unexposed.
 
 ### Prompt Manager
 
 - Allow creating prompt series.
 - Allow adding, editing, deleting, and loading prompts from a series.
+- Allow JSON export and import of prompt series for backup and transfer.
 - Store prompt series locally.
-- Make prompt series available to X ETL and Distill flows.
+- Make prompt series available to X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
+
+### Schema
+
+- Allow creating, editing, renaming, and deleting format templates.
+- Each template has a name and a prompt text body.
+- Allow JSON export and import of schema templates for backup and transfer.
+- Templates are available as schema pickers in X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
+- Built-in defaults (wiki.md, YAML, Table, Markdown) are seeded on first use.
 
 ### Settings
 
 - Store automation settings.
 - Store output folder settings for extract and distill workflows.
-- Store prompt templates.
-- Store popup UI preferences:
-  - width
-  - height up to Chrome popup limit
-  - font size
-  - text contrast
+- Store UI preferences:
+  - font size（standard / comfortable / large；套疊於基礎 CSS 預設值 body 14px）
+  - text contrast（standard / bright / max；套疊於基礎色票 `--text2` `#B8B2A6`、`--text3` `#7A7468`、`--bg` `#13110F`）
 
 ## Non-Functional Requirements
 
 - Must comply with Chrome Extension MV3 CSP.
 - Must not use inline scripts or inline event handlers in extension HTML.
 - Must preserve user settings in `chrome.storage.local`.
-- Must keep UI responsive within Chrome action popup limits.
+- Must keep UI responsive within the Side Panel (no fixed width/height assumptions).
+- ETL Card DOM must be created synchronously at the start of DOMContentLoaded before `popup-ui-patch.js` checks step IDs.
 - Must keep workflows usable even when content scripts or AI selectors need future updates.
 - Must keep documentation current enough for future sessions to resume safely.
+- All `<select>` elements must use the `.select-compact` CSS class (not `.input`). Chrome renders `<select>` with OS native UI by default, ignoring CSS `font-family`; `appearance: none` in `.select-compact` is required for consistent font rendering.
 
 ## Constraints
 
-- Chrome action popup max size is approximately `800x600`.
-- Popup closes when focus leaves the popup; this is a platform behavior.
-- Chrome cannot download directly to arbitrary system paths, only permitted download locations.
+- Side Panel 固定在瀏覽器右側；寬度由使用者拖曳決定，高度等於瀏覽器視窗高度。
+- `chrome.storage.local` 只在同一 Chrome Profile 內保存，無法跨 Profile 同步。
+- Chrome 只允許下載至 Downloads 目錄或其子目錄，無法寫入任意系統路徑。
 - AI automation relies on current DOM selectors and authenticated browser sessions.
+- X ETL Card 03 currently does not change the actual extraction backend; ETL remains Grok-only until `startExtract()` is wired to `extractAI`.
+- Old `src/blocks/ETLStep1/2/3Block.js` files remain in the repository but are not loaded.
 
 ## Documentation Responsibilities
 
@@ -89,3 +117,8 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - `schema.md`: storage and message contracts.
 - `decisions.md`: long-term design decisions.
 - `status.md`: short current-state handoff.
+
+## Open Questions
+
+- Should X ETL become multi-AI by wiring Card 03 `extractAI` into `startExtract()`, or should Card 03 remain a placeholder until the AI-specific extraction flows are defined?
+- Should the unused `ETLStep1Block.js`, `ETLStep2Block.js`, and `ETLStep3Block.js` files be removed in the next cleanup pass?

@@ -1,32 +1,44 @@
 # Status Update
 
 ## Current Focus
-- 讓 Narrative Toolkit 穩定走 local-first 工作流，優先修順 X ETL 的 prompt 編輯、Grok 擷取、結果檢視與後續 markdown 輸出。
-- 準備將專案推上 GitHub，維持 repository 乾淨且不包含本機輸出或憑證。
+- UI 可讀性全面調整已完成（字體、顏色、dropdown 樣式統一）。
+- 所有專案文件（spec.md、README.md、NAV_MAP.md、schema.md、DESIGN.md、decisions.md）已同步更新。
+- 下一步：清理舊檔案，或將 ETL Card 03 `extractAI` 接線至 `startExtract()`。
 
 ## Progress
-- 已移除 Google Sheets / Google Drive 儲存設計，工具不再需要 OAuth Token 或 Sheet ID。
-- 已新增 `.gitignore`，排除本機輸出、打包產物、依賴與環境檔。
-- X ETL prompt 預覽區已改為可讀、可編輯的本次工作稿。
-- X ETL 開始前會同步畫面上的 prompt 編輯內容，避免送出 prompt 庫舊版本。
-- X ETL raw Grok 擷取結果已改為先顯示在工具內，不再完成後直接自動下載。
-- `decisions.md` 已追加今天的 local-first、X ETL 流程與 GitHub 準備決策。
+- **Side Panel 遷移完成（2026-05-03）**
+- **Distill Tab 下架（Phase 1，2026-05-05）：** Topnav 入口已移除；`Distill*Block` 保留供 Custom Flow 共用。
+- **Custom Flow Tab 完成並測試通過（2026-05-03）：** 含 Preset 儲存 / 載入 / 預設套用。
+- **ETL Tab 全面重設計（2026-05-04）：** 5 張垂直 Card，`ETLCard1–5Block.js` 模組化，`initETLTab()` 同步呼叫。
+- **Grok Distill 注入修正（2026-05-03）**
+- **Distill Block 抽檔完成（2026-05-03）**
+- **`popup.js` → `sidepanel.js` 重命名完成（2026-05-04）**
+- **Prompts / Schema Tab 佈局修正 + 自動儲存提示（2026-05-04）**
+- **Prompt / Schema JSON 匯入匯出完成（2026-05-05）**
+- **UI 可讀性全面調整完成（2026-05-05）：**
+  - 字體放大：body 14px、按鈕 12px、label 11px、輸入框 15px。
+  - 顏色對比提升：`--bg` → `#13110F`、`--text2` → `#B8B2A6`、`--text3` → `#7A7468`。
+  - 新增 `.select-compact` 共用 class：`appearance: none` + 自訂 SVG 箭頭，統一所有 `<select>` 渲染。
+  - 套用範圍：`extractSeriesSel`、`extractPromptList`（ETL）、`cfPresetSel`（Custom Flow）、`seriesSelect`（Prompts tab）。
+- **全專案文件更新完成（2026-05-05）：** spec.md、README.md、NAV_MAP.md、schema.md、DESIGN.md、decisions.md。
 
 ## Problems
-- 仍需實際重新載入 Chrome Extension 後驗證 X ETL 是否能穩定把 prompt 注入 Grok chat。
-- 若 Grok 頁面 DOM 改版，`injectToGrok()` 的輸入框偵測可能仍會失敗。
-- `popup.html` 與部分舊文件仍有歷史亂碼，會影響維護與檢查。
-- Chrome action popup 仍受尺寸與失焦關閉限制；長期大量操作可能仍需評估 Side Panel。
+- 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
+- Schema 首次遷移邏輯依賴 `schemaTemplates` 為空才觸發，若 storage 已有部分資料可能不會補入預設模板。
+- Custom Flow 「一鍵跑完全部」在未選 Prompt 等情境下，目前無錯誤提示。
+- ETL Card 03（目標 AI）的 `#extractAiSel` 尚未接線至 `startExtract()`；實際萃取仍固定使用 Grok。
+- 舊的 `ETLStep1/2/3Block.js` 仍存在於 `src/blocks/`，已不被載入，待手動刪除。
 
 ## Next Steps
-- 在 `chrome://extensions/` 重新載入 extension，完整測試 X ETL：選 prompt、編輯、注入 Grok、擷取、顯示結果、Step 3 整理、手動存 `.md`。
-- 若 Grok 注入仍失敗，集中檢查並更新 Grok chat 輸入框 selector。
-- 檢查 Git 狀態後建立初始 commit，接著連接 GitHub remote 並 push。
-- 逐步清理文件亂碼，優先處理會影響操作理解的 `README.md`、`NAV_MAP.md`、`status.md`。
+- 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
+- 選擇性：將 `startExtract()` 接線至 `extractAI`，根據選擇開啟對應 AI 頁籤（讓 ETL 支援多 AI）。
+- 選擇性：補強 Custom Flow 一鍵跑完全部的前置檢查（未選 Prompt 時給出提示）。
 
 ## Important Notes
-- 現在的儲存策略是本機優先：主要依賴 `chrome.storage.local` 與下載到本機的 markdown。
-- X ETL raw 擷取結果是中間狀態，最終 markdown 應由使用者確認後再輸出。
-- Prompt Manager 中的 prompt 是長期庫；X ETL 預覽區中的修改是本次執行工作稿。
-- 修改 extension 程式後，必須在 Chrome Extensions 頁面重新載入，否則可能仍執行舊版 service worker 或 popup script。
-- 不要把 `Downloads` 裡的輸出檔、`.env`、打包檔或私有資料提交到 GitHub。
+- Side Panel 固定在瀏覽器右側，寬度由使用者拖曳決定，高度等於瀏覽器視窗高度。
+- 修改程式後必須在 `chrome://extensions/` 重新載入，service worker 才會更新。
+- 儲存策略：本機優先，`chrome.storage.local` + 下載 markdown。無雲端同步。
+- `popup.html` 保留作為開發參考，不再被 Extension 載入。
+- 所有 `<select>` 元素必須使用 `.select-compact`（而非 `.input`），否則 Chrome 會走 OS 原生渲染，導致字型不一致。
+- `initETLTab()` 必須在 DOMContentLoaded 最前端（任何 `await` 之前）同步呼叫。
+- Custom Flow 的 Run block 強制使用 `fullAuto: true`；`activeDistillContext` 是 `DISTILL_DONE` / `LOG_DISTILL` 的唯一路由開關，送出前必須設定，收到後必須清除。

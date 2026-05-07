@@ -3,14 +3,14 @@ name: Narrative Toolkit
 version: 0.1.0
 description: A compact Chrome extension interface for AI-assisted extraction, distillation, prompt management, and document export workflows.
 colors:
-  bg: "#0A0A0A"
+  bg: "#13110F"
   bg2: "#111111"
   bg3: "#1A1A1A"
   line: "#222222"
   line2: "#2E2E2E"
   text: "#F0F0F0"
-  text2: "#888888"
-  text3: "#444444"
+  text2: "#B8B2A6"
+  text3: "#7A7468"
   accent: "#F0F0F0"
   accentBg: "rgba(240,240,240,0.06)"
   success: "#3ECF8E"
@@ -19,8 +19,8 @@ colors:
   info: "#60A5FA"
 contrastModes:
   standard:
-    text2: "#888888"
-    text3: "#444444"
+    text2: "#B8B2A6"
+    text3: "#7A7468"
   bright:
     text2: "#B8B8B8"
     text3: "#6F6F6F"
@@ -47,14 +47,14 @@ typography:
     textTransform: uppercase
   label:
     fontFamily: "{typography.fontFamily.mono}"
-    fontSize: "9px"
+    fontSize: "11px"
     fontWeight: 400
     lineHeight: 1.2
     letterSpacing: "1.5px"
     textTransform: uppercase
   body:
     fontFamily: "{typography.fontFamily.sans}"
-    fontSize: "13px"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.6
   bodySmall:
@@ -85,13 +85,9 @@ radii:
   pill: "99px"
   circle: "50%"
 layout:
-  popupWidthDefault: "780px"
-  popupWidthCompact: "500px"
-  popupWidthMedium: "640px"
-  popupHeightDefault: "600px"
-  popupHeightMax: "600px"
-  sidebarWidth: "72px"
-  topbarHeight: "52px"
+  sidePanelWidth: "user-dragged"
+  sidePanelHeight: "100vh"
+  topnavHeight: "44px"
   panelPadding: "24px"
   sectionPadding: "20px"
 components:
@@ -100,11 +96,11 @@ components:
     borderColor: "{colors.line2}"
     background: transparent
     color: "{colors.text2}"
-    padding: "9px 16px"
+    padding: "5px 10px"
     fontFamily: "{typography.fontFamily.mono}"
-    fontSize: "10px"
+    fontSize: "12px"
     fontWeight: 500
-    letterSpacing: "0.5px"
+    letterSpacing: "0.2px"
   buttonPrimary:
     background: "{colors.text}"
     color: "{colors.bg}"
@@ -115,7 +111,18 @@ components:
     borderRadius: "{radii.md}"
     color: "{colors.text}"
     padding: "10px 12px"
-    fontSize: "13px"
+    fontSize: "15px"
+  selectCompact:
+    background: "{colors.bg3}"
+    borderColor: "{colors.line}"
+    borderRadius: "{radii.md}"
+    color: "{colors.text}"
+    fontFamily: "{typography.fontFamily.sans}"
+    fontSize: "12px"
+    height: "28px"
+    padding: "0 26px 0 10px"
+    appearance: none
+    arrowColor: "{colors.text3}"
   section:
     background: "{colors.bg2}"
     borderColor: "{colors.line}"
@@ -146,17 +153,18 @@ This interface should feel like a reliable control surface rather than a marketi
 
 ## Source Analysis
 
-The current project does not contain React components or standalone CSS files. The UI is implemented as static extension markup in `popup.html`, with embedded CSS and behavior wired from `src/popup.js`.
+The current project does not contain React components or standalone CSS files. The UI is implemented as static extension markup in `sidepanel.html`, with embedded CSS and behavior wired from `src/sidepanel.js`. `popup.html` is retained as a development reference only and is not loaded by the extension.
 
 Primary UI surfaces found in the codebase:
 
-- Sidebar navigation for Extract, Distill, Prompts, and Config.
-- Topbar with current workflow title and optional AI target selector.
-- Extract workflow with step indicators, prompt selection, run controls, logs, Grok response previews, AI structure controls, and review table.
-- Distill workflow with source text capture, markdown format cards, prompt picker, AI selector, logs, and generated result preview.
-- Prompt Manager with a two-pane series-and-prompts layout.
-- Settings sections for automation, download folders, prompt templates, popup size, font size, and text contrast.
-- CSP-safe UI glue is kept in an external script so the extension can satisfy MV3 security rules.
+- Horizontally scrollable Topnav for Extract, Custom Flow, Prompts, Schema, and Settings. Distill Tab is deprecated (Phase 1) and no longer accessible from navigation.
+- Extract (X ETL) workflow with 5 vertical timeline Card blocks: Prompt selection, Schema selection, Target AI, Run Extract, Save Result.
+- Custom Flow workflow with 5 collapsible Block Cards (Source / Task / Format / AI / Run), per-block delay settings, preset save/load, and a run-all control.
+- Prompt Manager with a horizontal series tab bar and expandable prompt cards; supports JSON import/export.
+- Schema tab with expandable schema cards for format template management; supports JSON import/export.
+- Settings sections for automation, download folders, font size, and text contrast.
+- CSP-safe UI glue is kept in `src/popup-ui-patch.js` so the extension satisfies MV3 security rules.
+- Distill Block logic is split into 5 plain-script files under `src/blocks/`, loaded before `sidepanel.js`. These blocks are partially shared with Custom Flow.
 
 ## Visual Direction
 
@@ -175,14 +183,14 @@ Do not introduce marketing-style hero sections, gradient backgrounds, rounded ov
 
 The palette is intentionally narrow. Most UI meaning comes from contrast, border weight, and state colors.
 
-- **Background / App Shell:** `#0A0A0A` is the outer popup base.
-- **Secondary Surface:** `#111111` is used for sidebar, sections, and panels.
+- **Background / App Shell:** `#13110F` is the Side Panel base（微暖深灰，比純黑減少眼睛疲勞）.
+- **Secondary Surface:** `#111111` is used for Topnav, sections, and card headers.
 - **Raised Input Surface:** `#1A1A1A` is used for inputs, selected nav items, rows, tables, logs, and editable blocks.
 - **Border:** `#222222` is the default structural divider.
 - **Strong Border:** `#2E2E2E` is used for focus, hover, and active boundaries.
 - **Primary Text:** `#F0F0F0` is reserved for active labels, primary actions, and important content.
-- **Secondary Text:** `#888888` is used for readable supporting text.
-- **Muted Text:** `#444444` is used for metadata, placeholders, inactive labels, and quiet empty states.
+- **Secondary Text:** `#B8B2A6` is used for readable supporting text（微暖灰調，對比比約 8.7:1）.
+- **Muted Text:** `#7A7468` is used for metadata, placeholders, inactive labels, and quiet empty states（對比比約 4.2:1，接近 WCAG AA）.
 - **Success:** `#3ECF8E` marks completed work, saved states, and positive log lines.
 - **Danger:** `#F87171` marks stop, delete, reject, and error states.
 - **Warning:** `#F59E0B` marks waiting, caution, pending badges, and warning logs.
@@ -203,25 +211,26 @@ Typography should stay compact. Do not scale type with viewport width. Keep lett
 
 Recommended scale:
 
-- Topbar title: `11px`, DM Mono, uppercase, `2px` letter spacing.
+- Topbar title: `10px`, DM Mono, uppercase, `1.5px` letter spacing.
 - Section title: `10px`, DM Mono, uppercase, `1.5px` letter spacing.
-- Field label: `9px`, DM Mono, uppercase, `1.5px` letter spacing.
-- Body/input: `13px`, Noto Sans TC, `1.6` line height.
+- Field label / `.label`: `11px`, DM Mono, uppercase, `1.5–2px` letter spacing.
+- Button label: `12px`, DM Mono, medium weight.
+- Body base: `14px`, Noto Sans TC, `1.6` line height（設於 `body`，所有元素的繼承基準）.
+- Input / textarea: `15px`, Noto Sans TC, `1.6` line height.
+- Compact select (`.select-compact`): `12px`, Noto Sans TC.
 - Small body: `11px`, Noto Sans TC, `1.5` line height.
 - Log/metadata: `9px-10px`, DM Mono.
 
 ## Layout
 
-The popup is a fixed-height, split-shell application:
+The primary UI is a Chrome Side Panel (`sidepanel.html`), fixed at the right side of the browser. Width is user-controlled by dragging; height fills the browser window.
 
-- Body width defaults to `780px`; supported widths are `500px`, `640px`, and `780px`.
-- Body height defaults to `600px`; Chrome action popup height should not exceed `600px`.
-- The left sidebar is fixed at `72px`.
-- The topbar is fixed at `52px`.
-- Main panels scroll vertically inside `.panel-scroll`.
+- Navigation uses a horizontally scrollable Topnav (`44px` height), replacing the old vertical sidebar.
+- Main panels scroll vertically inside `.panel-scroll` or `.panel-fill`.
 - Content padding is `24px`.
-- Section padding is `20px`.
-- Prompt Manager intentionally breaks out to a full-height two-pane layout with `margin: -24px`.
+- Prompt Manager and Schema use `.panel-fill` with full-height flex layout.
+- Custom Flow uses `.panel-scroll` with a vertically stacked Block Card layout.
+- `popup.html` is retained as a development reference only and is not loaded by the extension.
 
 Maintain clear spatial grouping:
 
@@ -297,12 +306,13 @@ Section headers should align title left and compact controls right. Do not nest 
 Base buttons:
 
 - Inline-flex with centered content.
-- Gap `6px`.
+- Gap `4px`.
 - Border `line2`.
 - Text `text2`.
 - Background transparent.
 - Radius `6px`.
-- DM Mono `10px`, medium weight.
+- Padding `5px 10px`.
+- DM Mono `12px`, medium weight.
 - Hover moves text to `text` and border toward `text3`.
 
 Primary buttons:
@@ -319,8 +329,8 @@ Danger and success buttons:
 
 Small variants:
 
-- `.btn-sm`: `6px 11px`, `9px`.
-- `.btn-xs`: `4px 8px`, `9px`.
+- `.btn-sm`: padding `4px 9px`, `9px` font.
+- `.btn-xs`: padding `3px 8px`, `8px` font.
 
 Use icons for clear commands when available, but keep icon size around `10px` to match the compact system.
 
@@ -347,9 +357,22 @@ Inputs and textareas:
 - Text `text`.
 - Placeholder `text3`.
 - Focus border `line2`.
-- Body font `Noto Sans TC`, `13px`, line height `1.6`.
+- Body font `Noto Sans TC`, `15px`, line height `1.6`.
 
 Use DM Mono textareas for prompt templates, logs, code-like values, and generated markdown previews.
+
+### Compact Select (Dropdown)
+
+All `<select>` dropdowns in the extension use `.select-compact` (not `.input`) to ensure consistent cross-platform rendering:
+
+- `appearance: none; -webkit-appearance: none` — removes OS native rendering.
+- Background `bg3`, border `line`, radius `6px`.
+- Font `Noto Sans TC`, `12px`.
+- Height `28px`, padding `0 26px 0 10px`.
+- Custom SVG arrow (fill `text3`) positioned `right 9px center`.
+- Focus border `line2`.
+- Applied to: `extractSeriesSel`, `extractPromptList` (ETL), `cfPresetSel` (Custom Flow), `seriesSelect` (Prompts tab).
+- Modifier classes (`.extract-prompt-sel`, `.cf-preset-sel`, `.series-select`) retain only layout-specific overrides such as `min-width`, `max-width`, or `margin`.
 
 ### Step Indicator
 
@@ -444,18 +467,33 @@ Distill format cards are small selectable cards:
 
 These cards represent output modes, not marketing cards.
 
+### Custom Flow Block Cards
+
+Custom Flow uses a vertical stack of collapsible Block Cards (`.cf-card`):
+
+- Background `bg2`.
+- Border `line`.
+- Radius `6px`.
+- Collapsed state (`.cf-collapsed`): only the card header is visible; body is hidden.
+- Active state (`.cf-active`): border brightens to `text2` to indicate the block is currently executing.
+- Card header (`.cf-card-head`): contains a numeric badge, title, delay selector, and show/hide toggle button.
+- Card body (`.cf-card-body`): full content area; padding `14px`.
+- Delay selector (`.cf-delay-sel`): small dropdown for 無延遲 / 2s / 5s / 10s / 20s / 自訂.
+- Custom delay input (`.cf-delay-custom`): appears only when "自訂" is selected.
+- Run-all bar (`.cf-run-bar`): sits above Card 1; contains the primary "▶▶ 一鍵跑完全部" button and a hint label.
+
+Follow the same card visual language as the Prompts and Schema tabs. Do not make block cards visually heavier than section cards.
+
 ### Prompt Manager
 
-Prompt Manager is a dense two-pane editor:
+Prompt Manager uses a horizontal series tab bar + vertical card stack:
 
-- Left pane width `200px`.
-- Border-right `line`.
-- Left pane padding `20px 16px`.
-- Right pane padding `20px`.
-- Series items use `9px 10px`, radius `6px`, hover `bg3`, active border `line2`.
-- Prompt editor items use `bg3`, border `line`, radius `6px`, padding `12px`.
-
-The two-pane layout should stay functional at the supported popup widths. Truncate long names with ellipsis.
+- Series tab bar (`series-tabbar`): compact `.select-compact` dropdown for series selection; action buttons for add, rename, import, export.
+- Card area (`seriesCards`): vertically scrollable list of `.pcard` expandable cards.
+- Each `.pcard` header shows prompt name with a pencil hint; expanded body contains a name input, textarea editor, char count, and copy button.
+- Only one card expands at a time (`expandedCardIdx`).
+- Supports JSON import/export for the full prompt series collection.
+- Truncate long names with ellipsis in collapsed card headers.
 
 ### Library Items
 
@@ -501,19 +539,13 @@ Current source files contain mojibake in some comments and text nodes. Future UI
 
 ## Responsive Behavior
 
-The extension supports fixed popup widths rather than full responsive breakpoints:
+The extension runs exclusively as a Chrome Side Panel. Width is user-dragged; the UI must remain functional across a wide range of panel widths.
 
-- `500px`: compact mode; preserve sidebar and reduce horizontal content expectations.
-- `640px`: medium mode for routine workflows.
-- `780px`: default full mode for tables, prompt management, and review.
-- Height presets must stay within Chrome action popup limits. Use Side Panel for taller persistent workspaces.
-
-At narrower widths:
-
-- Prefer horizontal scrolling for tables.
-- Preserve control alignment.
-- Truncate filenames and series names.
-- Keep action buttons from wrapping awkwardly by using compact variants.
+- Prefer horizontal scrolling for tables rather than breaking layout.
+- Truncate filenames, series names, and prompt previews with ellipsis.
+- Keep action buttons compact (`.btn-xs`, `.btn-sm`) so they do not wrap awkwardly.
+- Topnav uses horizontal scroll when tabs overflow the panel width.
+- Do not use fixed pixel widths for content areas; rely on flex and `min-width: 0` to prevent overflow.
 
 ## Do
 
@@ -537,7 +569,7 @@ At narrower widths:
 
 ## Implementation Notes
 
-Current design tokens are defined as CSS custom properties in `popup.html` under `:root`. If the UI is later migrated to React, preserve the same token names and component behaviors:
+Current design tokens are defined as CSS custom properties in `sidepanel.html` under `:root`. If the UI is later migrated to React, preserve the same token names and component behaviors:
 
 - `--bg`, `--bg2`, `--bg3`
 - `--line`, `--line2`
@@ -547,6 +579,6 @@ Current design tokens are defined as CSS custom properties in `popup.html` under
 - `--popup-h`
 - `--r`, `--r2`
 
-Any React migration should model the existing interface as composable primitives: `Sidebar`, `Topbar`, `Section`, `Button`, `AiPills`, `PromptRow`, `LogStrip`, `ResultPreview`, `Toggle`, `FormatCard`, `LibraryItem`, and `PromptManagerPane`.
+Any React migration should model the existing interface as composable primitives: `Topnav`, `Section`, `Button`, `AiPills`, `CompactSelect`, `PromptRow`, `LogStrip`, `ResultPreview`, `Toggle`, `FormatCard`, `LibraryItem`, `PromptCard`, `SchemaCard`, and `CustomFlowCard`.
 
 Extension HTML must remain CSP-safe. Keep scripts external and attach behavior with event listeners rather than inline event attributes.

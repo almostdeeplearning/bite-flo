@@ -24,6 +24,12 @@ node_modules/
 .npm/
 .pnpm-store/
 
+# Python virtual environment
+.venv/
+
+# Graphify outputs
+graphify-out/
+
 # Build and packaged extension artifacts
 dist/
 build/
@@ -38,6 +44,10 @@ distill/
 drafts/
 exports/
 narrative-toolkit/
+
+# Claude local settings
+.claude/settings.local.json
+
 
 # Accidental shell-brace directory from old scaffolding attempts
 {icons,src}/
