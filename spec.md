@@ -5,6 +5,7 @@
 Narrative Toolkit helps the user capture, extract, organize, and export web-based narrative material through AI-assisted workflows inside a Chrome Extension.
 
 The product should remain a compact, work-focused tool rather than a landing page or general web app.
+It is not intended to be only a generic AI chat wrapper or pasted-text summarizer; the current direction emphasizes browser-native workflows that preserve live platform context, especially on x.com with Grok.
 
 ## Current Surface
 
@@ -23,6 +24,7 @@ The product should remain a compact, work-focused tool rather than a landing pag
 ## User Goals
 
 - Capture useful text from X, Threads, or the current page.
+- Preserve live narrative context from X, including thread structure, replies, and shifting viewpoints around domain-specific accounts.
 - Run repeatable Prompt workflows against Grok or other AI tools.
 - Convert raw material into markdown notes or wiki-style documents.
 - Review structured output before saving as local markdown.
@@ -43,12 +45,14 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - Allow the user to select a prompt from a reusable prompt series using a dropdown.
 - Allow the selected prompt to become the single editable task area for the current ETL run.
 - Allow the user to optionally select a schema template to combine with each prompt.
-- Concatenate `prompt.text + "\n\n" + schema.text` before injecting into Grok.
+- Concatenate `prompt.text + "\n\n" + schema.text` before injecting into the selected AI.
 - Persist the selected ETL target AI in `extractAI` through Card 03.
-- Current implementation note: `extractAI` is UI/storage state only; `startExtract()` still opens and injects into Grok (`x.com/i/grok`).
-- Run the selected prompt against Grok.
+- The current ETL main UI should expose only `GPT`, `Grok Inline`, and `Grok Page`.
+- When `extractAI === "grok"`, allow choosing between the full Grok page (`x.com/i/grok`) and the inline Grok panel on x.com.
+- Run the selected prompt against GPT, Gemini, Claude, or Grok based on Card 03.
+- Gemini and Claude routing may remain implemented underneath the ETL surface for compatibility, but they are not current first-class ETL UI targets.
 - Show send progress and logs in Card 04.
-- Do not auto-capture Grok replies in ETL; Card 05 should allow the user to manually capture the current reply, edit it, and save it as a local `.md` file.
+- Do not auto-capture replies in ETL; Card 05 should allow the user to manually capture the current reply from the active target tab, edit it, and save it as a local `.md` file.
 
 ### Custom Flow
 
@@ -56,14 +60,22 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - Allow each Block to be individually shown or hidden across sessions.
 - Allow configuring a per-Block delay (seconds) applied after each Block executes in run-all mode.
 - Provide a "一鍵跑完全部" button that executes visible Blocks in order, applying delays between them.
+- The underlying workflow data model remains 5 blocks, but the visible Run area may be split into `05 Execute` and `06 Review` so send/execute and manual result recovery are visually separated.
 - Source block: grab text from the active page.
+- When the active page is x.com, prefer retaining broader thread / narrative context first and rely on later AI cleanup instead of aggressively trimming at capture time.
 - Task block: select a prompt from the Prompt Manager library; show a prompt preview.
 - Format block: select a schema template; show a schema preview.
-- AI block: select a target AI (GPT, Gemini, Claude, Grok).
-- Run block: combine content + prompt + schema, inject into the selected AI, and display the result.
+- AI block: select a target AI (GPT, Gemini, Claude, Grok Inline, Grok Page).
+- Run block: combine content + prompt + schema and send it to the selected AI.
+- Card 05 should primarily behave as a send-to-AI-first, manual-capture-first surface: after sending, the user waits for the AI reply, manually captures the current reply, reviews it in an editable textarea, and then saves it as local markdown.
+- The visible Review surface should expose `Capture Reply`, editable result text, `Copy`, `Save .md`, and `Save .html`.
+- If no Prompt or Schema is selected, Custom Flow may still send raw captured content to the selected AI rather than forcing a draft-only fallback.
 - When the target AI is Grok, use direct injection (same mechanism as X ETL).
 - Run-all always operates in full-auto mode regardless of the global automation setting.
+- When `cfAutoSave` is disabled, `runAll()` should stop at send-to-AI and show a clear status that manual capture is the expected next step.
+- Existing autosave / auto-download behavior may remain implemented underneath Custom Flow, but should be treated as optional / experimental rather than the primary workflow.
 - Custom Flow is the primary long-form organization workflow while Distill Tab remains unexposed.
+- Saved presets should not be auto-applied merely because a preset exists in storage; selecting a preset in the UI is the action that applies it.
 
 ### Prompt Manager
 
@@ -108,7 +120,7 @@ The product should remain a compact, work-focused tool rather than a landing pag
 - `chrome.storage.local` 只在同一 Chrome Profile 內保存，無法跨 Profile 同步。
 - Chrome 只允許下載至 Downloads 目錄或其子目錄，無法寫入任意系統路徑。
 - AI automation relies on current DOM selectors and authenticated browser sessions.
-- X ETL Card 03 currently does not change the actual extraction backend; ETL remains Grok-only until `startExtract()` is wired to `extractAI`.
+- Best-effort browser automation is currently acceptable for Grok/X workflows as long as the product keeps the user in the native browser context and makes manual recovery paths available.
 - Old `src/blocks/ETLStep1/2/3Block.js` files remain in the repository but are not loaded.
 
 ## Documentation Responsibilities
@@ -122,5 +134,5 @@ The product should remain a compact, work-focused tool rather than a landing pag
 
 ## Open Questions
 
-- Should X ETL become multi-AI by wiring Card 03 `extractAI` into `startExtract()`, or should Card 03 remain a placeholder until the AI-specific extraction flows are defined?
+- Should the Grok inline-panel injection path receive its own richer readiness checks, or remain a lightweight best-effort mode?
 - Should the unused `ETLStep1Block.js`, `ETLStep2Block.js`, and `ETLStep3Block.js` files be removed in the next cleanup pass?

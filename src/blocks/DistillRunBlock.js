@@ -62,7 +62,7 @@ const DistillRunBlock = {
       <div class="cf-card" data-cf-card="run">
         <div class="cf-card-head">
           <span class="cf-card-num">05</span>
-          <span class="cf-card-title" data-i18n="cf_card_run">整理結果</span>
+          <span class="cf-card-title" data-i18n="cf_card_execute">執行送出</span>
           <div class="cf-delay-meta">
             <span class="cf-delay-label" data-i18n="cf_delay_label">下一步前等</span>
             <select class="cf-delay-sel" data-cf-delay-for="run">
@@ -89,16 +89,39 @@ const DistillRunBlock = {
           </div>
           <div style="height:1px;background:var(--line);margin:14px 0"></div>
           <div class="cf-run-status" id="cfGlobalStatus"><span class="label" data-i18n="status_label">狀態：</span><span data-i18n="status_ready">就緒</span></div>
-          <div class="cf-subsection" style="margin-top:0">
-            <label class="cf-option-row">
-              <input type="checkbox" id="cfAutoSave" checked style="accent-color:var(--text);width:13px;height:13px">
-              <span data-i18n="cf_autosave">執行完後自動存檔與下載（關閉時僅送至 AI Chat，不自動回收結果）</span>
-            </label>
+          <div class="cf-subsection">
+            <div class="cf-subsection-label" data-i18n="logs">Logs</div>
+            <div class="cf-status-box" id="cfLog">
+              <span class="log-placeholder" data-i18n="cf_log_placeholder">執行紀錄會顯示在這裡。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cf-card cf-run-review-card" data-cf-linked-card="run">
+        <div class="cf-card-head">
+          <span class="cf-card-num">06</span>
+          <span class="cf-card-title" data-i18n="cf_card_review">回收與儲存</span>
+        </div>
+        <div class="cf-card-body">
+          <div id="distillResponseSection">
+            <div class="cf-review-name-wrap">
+              <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && currentLanguage === 'en' ? 'Result name' : '結果名稱'}">
+            </div>
+            <div class="cf-review-tools">
+                <button class="btn btn-xs" id="cfCaptureReplyBtn" data-i18n="capture_current_reply">⊕ 截取當前回覆</button>
+                <button class="btn btn-xs" id="cfCopyBtn" data-i18n="copy">複製</button>
+                <button class="btn btn-xs" id="cfSaveResultBtn" data-i18n="save_md">⬇ 儲存 .md</button>
+                <button class="btn btn-xs" id="cfSaveHtmlBtn" data-i18n="save_html">⬇ 儲存 .html</button>
+            </div>
+            <div class="section cf-review-result-box">
+              <div id="cfResultEmpty" class="cf-review-empty" data-i18n="cf_result_placeholder">AI 回覆完成後，按「截取當前回覆」，可在這裡微調後再儲存。</div>
+              <textarea class="result-pre result-editor" id="cfResultText" rows="10" style="display:none" data-i18n-placeholder="cf_result_placeholder" placeholder="AI 回覆完成後，按「截取當前回覆」，可在這裡微調後再儲存。"></textarea>
+            </div>
           </div>
         </div>
       </div>
     `.trim();
-    container.appendChild(el.firstElementChild);
+    container.append(...Array.from(el.children));
   },
 
   handleLog(text, level) { dlog(text, level); },

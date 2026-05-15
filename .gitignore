@@ -50,7 +50,10 @@ narrative-toolkit/
 
 # Claude local settings
 .claude/settings.local.json
-
+# Claude local workflows / prompts
+.claude/commands/
+.claude/local/
+.claude/*.md
 
 # Accidental shell-brace directory from old scaffolding attempts
 {icons,src}/

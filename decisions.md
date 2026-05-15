@@ -351,3 +351,38 @@
 - **Reason:** 最小語言切換雖已可用，但在英文模式下，Workflow card title、Delay label、Topnav label 與小按鈕若持續使用過度壓縮的 mono 與全大寫，會讓分享版看起來更像開發介面而非可對外展示的產品 UI。
 - **Alternatives considered:** 維持既有字體策略只改翻譯文字（英文觀感仍生硬）；全面重做整套字體系統（超出這次分享版需求）；只針對單一句子調 wording、不動樣式（無法解決整體觀感問題）。
 - **Expected impact:** 英文模式下的 Topnav、Workflow、ETL 關鍵按鈕與 helper copy 更接近產品介面語氣；現有結構與 DOM 不需重組；後續若要擴大英文 surface，可在 `data-lang="en"` 基礎上繼續做更細的樣式分流。
+
+## Decision 47
+- **Decision:** 將 ETL Card 03 的 `extractAI` 正式接線為多 AI 送出路由，並在 Grok 目標下新增 `extractGrokMode`，區分完整 Grok 頁面與 x.com 頁內小視窗兩種注入目標。
+- **Date:** 2026-05-14
+- **Reason:** ETL 的目標 AI 選擇若只停留在 UI/state 層，會造成使用者對功能能力的誤判；同時 Grok 產品面已新增頁內小視窗對話模式，使用者需要在瀏覽 x.com 內容時直接把 ETL Prompt 注入同頁小視窗，而不是強制切去 `x.com/i/grok`。
+- **Alternatives considered:** 維持 `extractAI` 為 placeholder（降低誤導風險但無法滿足實際工作流）；只支援完整 Grok 頁面、不支援小視窗（無法對應最新使用情境）；將 ETL 改成沿用 `cs_ai.js` storage 佇列模式（對 send-only ETL 而言過重，且 Grok 不適用）。
+- **Expected impact:** ETL 送出會真正依 `extractAI` 切換至 GPT / Gemini / Claude / Grok；Grok 使用者可在完整頁面與頁內小視窗之間選擇；Card 05 的手動截取也改為依當前 ETL 目標 AI 走對應抓取 selector，而不再假設永遠是 Grok。
+
+## Decision 48
+- **Decision:** 將 Custom Flow 的 AI Block 與 Grok 路由同步升級為 `Grok Inline / Grok Page`，並讓 `START_DISTILL` 在 Grok 目標下帶上 `grokMode`。
+- **Date:** 2026-05-14
+- **Reason:** ETL 與 Custom Flow 都是對外可見的主要工作流，若只有 ETL 支援 Grok inline/page 分流，會造成能力不一致與心智模型混亂；使用者也會自然期待 Workflow 的 AI 選擇能與 ETL 保持相同顆粒度。
+- **Alternatives considered:** 只更新 ETL，不動 Custom Flow（功能表面不一致）；讓 Custom Flow 保留單一 Grok pill，再額外加 dropdown（交互複雜度較高，且已確認使用者偏好直接用 pills）；將 Grok inline/page 合併成背景自動判斷（隱含行為過多，不利於理解與除錯）。
+- **Expected impact:** Custom Flow 的 AI block 直接顯示 `Grok Inline / Grok Page`，使用者可明確指定目標；背景 Grok distill 路徑依 `grokMode` 決定使用 x.com inline 小視窗或 `x.com/i/grok` 完整頁面；未來 ETL 與 Flow 共用同一套 Grok 選擇語意。
+
+## Decision 49
+- **Decision:** 將 Custom Flow `Format` block 的空選項語意改為「不套用 Schema」，並在 `Prompt / Schema` 都未選時改為直接把原文送到 AI，而不是自動存草稿。
+- **Date:** 2026-05-14
+- **Reason:** 原本的預設文案「不用 Schema，直接存草稿」會讓使用者誤以為 `Format` block 本身控制存稿邏輯，並與 Run block 的 autosave 勾選產生語意衝突；實際需求是讓未選模板時也能直接把原文送給 AI 討論，而是否自動存檔只由 Run block 決定。
+- **Alternatives considered:** 保留自動存草稿 fallback（容易與 autosave 衝突）；把空狀態視為錯誤並阻止執行（會降低自由討論原文的彈性）；新增額外 toggle 控制「無模板時送 AI / 存草稿」（增加複雜度，不符合低風險修改方向）。
+- **Expected impact:** `Format` block 的空選項更貼近真實行為；當使用者未選 Prompt 與 Schema 時，Custom Flow 會以原文直接送到 AI，適合自由討論；草稿下載只在使用者明確按下「存草稿」或開啟 autosave 且回收結果時發生。
+
+## Decision 50
+- **Decision:** 將目前的 X / Grok 工作流正式定位為 browser-native 的敘事分析流程：ETL 多 AI 已接線、Grok 支援 `inline / page` 分流、Custom Flow 同步支援 Grok 分流，且 x.com 來源擷取優先保留較廣的 thread / narrative 脈絡，再交由後續 AI 步驟去噪。
+- **Date:** 2026-05-15
+- **Reason:** 目前已確認的產品方向不是通用聊天包裝器，而是利用 Grok 與 x.com 生態的貼身整合，在原生瀏覽情境中保留即時敘事上下文、回覆互動與觀點演化；在這個前提下，規格層也接受 best-effort browser automation 作為現階段可承受的實作成本。
+- **Alternatives considered:** 將產品定義為泛用多 AI launcher（較容易擴張但會稀釋 X 脈絡價值）；在擷取階段就強力裁切來源內容（較省 token，但容易過早丟失 thread / sentiment shift 訊號）；只接受高穩定 API-first 路徑（會避開目前最有區辨性的瀏覽器原生工作流）。
+- **Expected impact:** 後續 ETL、Custom Flow、來源擷取與 UI 決策會優先支持貼近 x.com 現場的工作流；同時文件與規格會把 browser-native、自動化 selector 依賴與手動回收路徑視為當前架構的一部分，而非暫時例外。
+
+## Decision 51
+- **Decision:** 將 ETL 主表面收斂為 `Grok-first, GPT-fallback`：保留 `Grok Inline`、`Grok Page` 與 `GPT` 作為可見主選項，暫時隱藏 `Gemini` / `Claude` 的 ETL UI 入口，但保留底層路由以降低回退成本。
+- **Date:** 2026-05-15
+- **Reason:** ETL 的核心價值已明確轉向 Grok + X narrative context，而每新增一個主表面 AI 目標都會帶來額外的 selector 維護與 browser automation 成本；在 Gemini / Claude 不是當前核心工作流的前提下，先縮小可見 surface 是較低風險的產品收斂方式。
+- **Alternatives considered:** 維持 ETL 多 AI 全量可見（彈性高但維護面過廣）；直接刪除 Gemini / Claude 底層路由（回退成本高，對未來恢復或進階流程不友善）；只保留 Grok、不保留 GPT fallback（會降低一般性備援能力）。
+- **Expected impact:** ETL 的主使用路徑更聚焦於 Grok；維護與測試優先序可集中在 `Grok Inline`、`Grok Page` 與 `GPT`；Gemini / Claude 仍可在未來需要時恢復或轉為進階工作流，而不必立即重建底層注入與截取路徑。

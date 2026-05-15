@@ -40,6 +40,7 @@ This document summarizes the current data contracts used by the extension. It is
 | `cfPromptIdx` | `number \| null` | Selected prompt index in Custom Flow |
 | `cfSchemaId` | `string \| null` | Selected schema in Custom Flow |
 | `cfAI` | `AiTarget` | Selected target AI in Custom Flow |
+| `cfGrokMode` | `"page" \| "inline"` | When `cfAI === "grok"`, chooses full Grok page or the inline Grok panel on x.com |
 | `cfAutoSave` | `boolean` | Whether Custom Flow results auto-save to library and auto-download output |
 | `customFlowPresets` | `CustomFlowPreset[]` | Saved Custom Flow presets |
 | `cfDefaultPresetId` | `string \| null` | Default preset applied when Custom Flow initializes |
@@ -49,7 +50,8 @@ This document summarizes the current data contracts used by the extension. It is
 | Key | Type | Purpose |
 |---|---|---|
 | `distillAI` | `AiTarget` | AI target for Distill |
-| `extractAI` | `AiTarget` | Selected target AI in X ETL Card 03; currently persisted UI state only |
+| `extractAI` | `AiTarget` | Selected target AI in X ETL Card 03 |
+| `extractGrokMode` | `"page" \| "inline"` | When `extractAI === "grok"`, chooses full Grok page or the inline Grok panel on x.com |
 | `delaySeconds` | `number` | Legacy ETL wait setting retained in storage; current ETL send-only flow no longer uses it for auto-capture |
 | `fullAuto` | `boolean` | Whether workflows should auto-continue when possible |
 | `cfAutoSave` | `boolean` | Shared autosave flag used by both Distill and Custom Flow when sending `START_DISTILL.autoSave` |
@@ -133,6 +135,7 @@ type CustomFlowPreset = {
     promptIdx: number | null;
     schemaId: string | null;
     ai: AiTarget;
+    grokMode?: 'page' | 'inline';
     autoSave: boolean;
     blockDelays: { source: number; task: number; format: number; ai: number; run: number };
   };
@@ -145,7 +148,7 @@ type CustomFlowPreset = {
 
 | Type | Purpose |
 |---|---|
-| `START_EXTRACT` | Send combined ETL prompt+schema text to Grok; current ETL path is send-only and remains Grok-only regardless of `extractAI` |
+| `START_EXTRACT` | Send combined ETL prompt+schema text to the selected ETL AI; the flow remains send-only and the user manually captures the reply in Card 05 |
 | `START_DISTILL` | Start AI distill flow; sent by both Distill Tab and Custom Flow |
 | `START_VERIFY_WIKI` | Start legacy wiki verification flow in `background.js`; not part of the current primary Side Panel product surface |
 | `RUN_AI_STRUCTURE` | Start legacy AI post-structuring flow in `background.js`; retained as a runtime handler but not used by the current ETL UI |
@@ -156,8 +159,10 @@ type CustomFlowPreset = {
 
 Notes:
 
+- `START_EXTRACT` now includes `targetAI`; when that target is Grok it also includes `grokMode` (`page` or `inline`).
 - `START_DISTILL` from Custom Flow always includes `fullAuto: true`.
 - `START_DISTILL` now includes `autoSave`, and `background.js` treats that message field as the source of truth for autosave behavior.
+- `START_DISTILL` uses `targetAI` for AI routing and may include `grokMode` when the target is Grok.
 - `START_DISTILL.wikiTpl` is the composed prompt/template text sent for the current run. It is a message payload field, not the legacy `chrome.storage.local["wikiTpl"]` key.
 - The module-level `activeDistillContext` variable in `src/sidepanel.js` routes `LOG_DISTILL` / `DISTILL_DONE` / `ERROR` responses to the correct handler (`DistillRunBlock` or `CustomFlowController`).
 - Legacy `distillAutoSave` has been migrated out of storage. Distill and Custom Flow now both use `cfAutoSave` as the persisted checkbox state.
@@ -185,13 +190,11 @@ The X ETL pipeline no longer routes raw responses through a separate AI structur
 
 1. Card 01: User selects a prompt series and prompt from `extractPromptList` (`<select>`); the selected text becomes the single editable task area for the current ETL run.
 2. Card 02: User selects an optional schema template.
-3. Card 03: User selects a target AI pill; this saves `extractAI`.
-4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into Grok; the current ETL path is send-only and no longer auto-polls Grok replies.
-5. Card 05: User manually captures the current Grok reply, reviews/edits the text in `extractResultText`, then saves it as a `.md` file.
+3. Card 03: User selects a target AI pill; this saves `extractAI`. When the target is Grok, the user may also choose `extractGrokMode` (`page` or `inline`).
+4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into the selected AI tab; the current ETL path is send-only and does not auto-poll replies.
+5. Card 05: User manually captures the current AI reply from the active target tab, reviews/edits the text in `extractResultText`, then saves it as a `.md` file.
 
 The schema template system replaces the old post-structuring concept. `grokTpl` / `structureTpl` may still appear in older notes, but they are deprecated docs residue rather than active runtime storage keys or supported runtime contracts. There is no intermediate structured table review stage.
-
-Current limitation: `extractAI` is persisted and reflected in Card 03, but it is not yet wired into `startExtract()`. Actual extraction still opens `x.com/i/grok` and uses Grok injection.
 
 ## Compatibility Notes
 
@@ -208,4 +211,4 @@ Current limitation: `extractAI` is persisted and reflected in Card 03, but it is
 ## Open Questions
 
 - Should the selected ETL prompt index become a persisted storage key, or remain transient UI state?
-- Should `extractAI` become an active routing key for `START_EXTRACT`, or remain UI-only until non-Grok extraction flows are defined?
+- Should ETL persist the actual target tab id for Card 05 capture, or continue relying on the user's current active tab?

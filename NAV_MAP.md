@@ -75,6 +75,8 @@ Topbar actions (shown/hidden per tab):
 - `topbarPromptsActions` — currently an empty compatibility container; Prompt actions now live inside the Prompts tab content area
 - `topbarSchemaActions` — currently an empty compatibility container; Schema actions now live inside the Schema tab content area
 - `langToggle` — Topnav `中文 / English` switch; persists `uiLanguage`
+- `langToggleBtn` — current language trigger button
+- `langToggleMenu` — compact language menu containing `langZhBtn` / `langEnBtn`
 
 Storage key:
 
@@ -177,17 +179,28 @@ DOM IDs:
 
 - `extractAiSel` — container for `.ai-pill` buttons
 
+Visible ETL pills:
+
+- `gpt`
+- `grok-inline`
+- `grok-page`
+
 JS bindings:
 
 - `.ai-pill click` updates module-level `extractAI`, toggles active pill state, and saves `extractAI` to `chrome.storage.local`
+- `Grok Inline` / `Grok Page` pills also update `extractGrokMode`
 
 Storage key:
 
 - `extractAI`
+- `extractGrokMode`
 
-Important current limitation:
+Routing note:
 
-- `extractAI` is persisted UI state only. `startExtract()` does not yet use it; extraction still opens `x.com/i/grok` and sends `START_EXTRACT` to the Grok path.
+- `startExtract()` now sends `targetAI: extractAI` to `START_EXTRACT`.
+- Grok is presented as two pills in the UI: `Grok Inline` and `Grok Page`; both still map to `extractAI === "grok"` internally, with `extractGrokMode` deciding `inline` vs `page`.
+- Gemini / Claude routing is still implemented underneath ETL, but those options are hidden from the main ETL UI for now.
+- If older storage restores `extractAI = "gemini"` or `"claude"`, ETL falls back to the visible `gpt` option at runtime without changing the storage schema.
 
 ### Card 04: Run Extract
 
@@ -206,6 +219,7 @@ DOM IDs:
 JS bindings:
 
 - `startBtn click` calls `startExtract()` — concatenates selected prompt text and selected schema text as `prompt.text + "\n\n" + schema.text`
+- `startExtract()` now routes to GPT / Gemini / Claude / Grok based on `extractAI`
 - `stopBtn click` sends `STOP`
 
 Messages sent to background:
@@ -226,7 +240,7 @@ Storage keys:
 
 Notes:
 
-- Card 04 is now send-only. It no longer auto-polls Grok or auto-fills Card 05.
+- Card 04 is now send-only. It no longer auto-polls replies or auto-fills Card 05.
 - `delayInput` / `delaySeconds` remain only as hidden compatibility state.
 
 ### Card 05: Save Result
@@ -240,8 +254,12 @@ DOM IDs:
 
 JS bindings:
 
-- `captureCurrentReplyBtn click` injects a small grabber into the active tab, captures the current Grok assistant reply, and fills `extractResultText`
+- `captureCurrentReplyBtn click` injects a small grabber into the active target tab, captures the current AI reply, and fills `extractResultText`
 - `saveExtractBtn click` calls `saveExtractResult()` — saves the current textarea content as `.md`
+
+Operational note:
+
+- Card 05 currently captures from the user's active tab, not from a separately persisted ETL target-tab id.
 
 State variable:
 
@@ -609,6 +627,10 @@ DOM IDs:
 
 JS owner: `CustomFlowController`
 
+Extraction note:
+
+- On x.com, Source capture now prefers broader primary narrative / thread text and filters obvious UI noise before handing content to later AI steps.
+
 ### Block 2 — Task
 
 DOM IDs:
@@ -628,6 +650,10 @@ DOM IDs:
 
 JS owner: `CustomFlowController`
 
+Fallback note:
+
+- If both Prompt and Schema are absent at run time, Custom Flow no longer forces a draft fallback; it may send raw captured content directly to the selected AI.
+
 ### Block 4 — AI
 
 DOM IDs:
@@ -635,16 +661,31 @@ DOM IDs:
 
 JS owner: `CustomFlowController`
 
+Routing note:
+
+- Custom Flow now exposes `Grok Inline` and `Grok Page` as separate pills.
+- Both still map to `cfAI === "grok"` internally, with `cfGrokMode` deciding `inline` vs `page`.
+
 ### Block 5 — Run
 
 DOM IDs:
-- `cfAutoSave`
 - `cfRunAllBtn`
 - `cfStopAllBtn`
 - `cfGlobalStatus`
 - `cfLog`
-- `cfResultSection`
+
+Visual split:
+
+- `05 Execute` — send / status / logs
+- `06 Review` — manual capture / review / save
+
+Review DOM IDs:
 - `cfResultName`
+- `cfResultEmpty`
+- `cfCaptureReplyBtn`
+- `cfCopyBtn`
+- `cfSaveResultBtn`
+- `cfSaveHtmlBtn`
 - `cfResultText`
 
 JS owner: `CustomFlowController`
@@ -652,7 +693,10 @@ JS owner: `CustomFlowController`
 Notes:
 
 - The old single-run `cfRunBtn` / `cfStopBtn` controls are no longer part of the visible UI.
-- Card 05 is now the only visible global execution area for Custom Flow.
+- The Run data model is still a single `run` block, but the visible UI is now split into `05 Execute` and `06 Review`.
+- `05 Execute` is now send-to-AI-first: when `cfAutoSave` is off, `runAll()` sends the prompt, shows `已送出至 AI，請等待回覆後手動截取`, and expects the user to finish from `06 Review`.
+- `06 Review` is the main manual recovery surface: `截取當前回覆` → editable textarea → `複製` / `儲存 .md` / `儲存 .html`.
+- `cfAutoSave` remains wired to the older auto-recovery path in JS / background, but is no longer a visible main-path control in the Workflow UI.
 
 ### CustomFlowController
 
@@ -661,9 +705,12 @@ Defined in `src/sidepanel.js`. Key methods:
 - `init(d)` — binds all events, restores state from storage
 - `toggleCard(name)` — show/hide a block; persists to `cfCardVisible`
 - `runAll()` — executes visible blocks in order; builds `pipeline` state; applies per-block delay; calls `_runWithPipeline()`
-- `_runWithPipeline(pipeline)` — combines content + prompt + schema, sends `START_DISTILL` with `fullAuto: true`
+- `_runWithPipeline(pipeline)` — combines content + prompt + schema, sends `START_DISTILL` with `fullAuto: true`; when `cfAutoSave === false`, this is a send-only handoff that waits for manual capture in `06 Review`
 - `startFlow()` — manual run; reads current state; uses `fullAuto` from storage setting
 - `getContent()`, `getSelectedPrompt()`, `getSelectedSchema()`, `getAI()` — public getters
+- `captureCurrentReply()` — grabs the current reply from the most recent target AI tab when available, otherwise falls back to the active tab, then fills the editable Workflow result textarea
+- `saveCapturedResult()` — saves the current Workflow result textarea into `library` and downloads it as `.md`
+- `saveCapturedHtml()` — downloads the current Workflow result textarea as a simple `.html` export
 
 Message routing:
 
@@ -679,9 +726,10 @@ Storage keys (Custom Flow):
 - `cfPromptIdx`
 - `cfSchemaId`
 - `cfAI`
-- `cfAutoSave` — controls whether Custom Flow writes results to `library` and auto-downloads output
+- `cfGrokMode`
+- `cfAutoSave` — controls whether Custom Flow attempts the older auto-recovery path that writes results to `library` and auto-downloads output; manual capture is now the recommended main path
 - `customFlowPresets` — saved preset list
-- `cfDefaultPresetId` — currently used as the remembered selected preset id; auto-applied on Custom Flow init
+- `cfDefaultPresetId` — legacy remembered preset id; current UI no longer auto-applies it on Custom Flow init
 
 Autosave rule:
 
@@ -693,7 +741,7 @@ Autosave rule:
 Preset UX rule:
 
 - `cfPresetSel` is now select-to-apply; changing the dropdown immediately loads that preset.
-- The selected preset id is persisted in `cfDefaultPresetId`, so reopening the Side Panel restores the same preset automatically.
+- Reopening the Side Panel no longer auto-applies the first saved preset; the default empty option remains valid until the user explicitly selects a preset.
 - There is no separate `載入` or `設為預設` button in the current UI.
 
 ## Background Message Map
@@ -702,8 +750,8 @@ Handled by `src/background.js`:
 
 | Message type | Sent from | Purpose | Main response |
 |---|---|---|---|
-| `START_EXTRACT` | `startExtract()` | Send combined prompt+schema text to Grok; current ETL path no longer auto-polls replies | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
-| `START_DISTILL` | `startDistill()` / `_runWithPipeline()` | Send raw text to selected AI and save result | `LOG_DISTILL`, `DISTILL_DONE` |
+| `START_EXTRACT` | `startExtract()` | Send combined prompt+schema text to the selected ETL AI; current ETL path remains send-only | `PROGRESS`, `LOG_EXTRACT`, `EXTRACT_DONE` |
+| `START_DISTILL` | `startDistill()` / `_runWithPipeline()` | Send raw text to selected AI; in Custom Flow manual mode this is send-only and expects Card 05 manual capture, while the older autosave path may still return saved results | `LOG_DISTILL`, `DISTILL_DONE` |
 | `START_VERIFY_WIKI` | legacy verify-wiki sender path | Send wiki verification prompt to the selected AI | `LOG_DISTILL`, `DISTILL_DONE` |
 | `RUN_AI_STRUCTURE` | legacy post-structure sender path | Send raw responses to a second AI-structuring pass | `LOG_DISTILL`, `DISTILL_DONE` |
 | `DOWNLOAD_MD` | multiple UI actions | Download a named markdown file | none |
@@ -726,6 +774,10 @@ Received by `src/sidepanel.js` in `listenBg()`:
 - `DISTILL_DONE`
 - `ERROR`
 
+`DISTILL_DONE` note:
+
+- For Custom Flow manual mode, `DISTILL_DONE` may carry `sentOnly: true` instead of an auto-saved result payload.
+
 ## Storage Key Index
 
 Workflow:
@@ -738,6 +790,7 @@ Workflow:
 AI selection:
 
 - `extractAI`
+- `extractGrokMode`
 - `distillAI`
 
 Prompt management:
@@ -787,6 +840,7 @@ Custom Flow:
 - `cfPromptIdx`
 - `cfSchemaId`
 - `cfAI`
+- `cfGrokMode`
 - `cfAutoSave`
 - `customFlowPresets`
 - `cfDefaultPresetId`

@@ -14,9 +14,8 @@ const ETLCard3Block = {
         <div class="cf-card-body etl-card-body">
           <div class="ai-pills" id="extractAiSel">
             <button class="ai-pill active" data-ai="gpt">GPT</button>
-            <button class="ai-pill" data-ai="gemini">Gemini</button>
-            <button class="ai-pill" data-ai="claude">Claude</button>
-            <button class="ai-pill" data-ai="grok">Grok</button>
+            <button class="ai-pill" data-ai="grok-inline" data-i18n="etl_grok_mode_inline">X 頁內小視窗</button>
+            <button class="ai-pill" data-ai="grok-page" data-i18n="etl_grok_mode_page">完整 Grok 頁面</button>
           </div>
         </div>
       </div>

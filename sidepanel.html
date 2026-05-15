@@ -507,6 +507,23 @@ body {
   border-color: transparent;
   box-shadow: none;
 }
+:root[data-theme="studio-light"] .cf-delay-label,
+:root[data-theme="studio-light"] .cf-delay-unit {
+  color: #5c6673;
+}
+:root[data-theme="studio-light"] .cf-delay-sel {
+  color: #344253;
+  border-color: #9da9b7;
+  background: #f3f6fa;
+}
+:root[data-theme="studio-light"] [data-cf-toggle],
+:root[data-theme="studio-light"] [data-etl-toggle] {
+  color: #5c6673;
+}
+:root[data-theme="studio-light"] [data-cf-toggle]:hover,
+:root[data-theme="studio-light"] [data-etl-toggle]:hover {
+  color: #344253;
+}
 
 /* ── Form elements ── */
 .field { margin-bottom: 14px; }
@@ -1273,7 +1290,8 @@ body.font-large .label,
 body.font-large .field-label,
 body.font-large .log-strip,
 body.font-large .result-pre { font-size: 15px; }
-body.font-large .nav-label { font-size: 8px; }
+body.font-comfortable .topnav-tabs .nav-label { font-size: 11px; }
+body.font-large .topnav-tabs .nav-label { font-size: 12px; }
 body.font-large .nav-icon, body.font-large .nav-icon-mono { font-size: 11px; }
 body.font-large .cf-card-title { font-size: 19px; }
 body.font-large .cf-card-num,
@@ -1517,13 +1535,18 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   flex-shrink: 0; border-top: 1px solid var(--line); background: var(--bg2);
 }
 .add-row-trigger {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; cursor: pointer;
-  font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text3);
-  transition: color .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: calc(100% - 24px);
+  margin: 12px;
+  padding: 12px 14px; cursor: pointer;
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--text2);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  background: var(--bg3);
+  transition: color .15s, border-color .15s, background .15s, transform .15s;
 }
-.add-row-trigger:hover { color: var(--text2); }
-.add-row-trigger svg { opacity: .4; }
+.add-row-trigger:hover { color: var(--text); border-color: var(--text3); background: var(--accent-bg); }
+.add-row-trigger svg { opacity: .6; flex-shrink: 0; }
 .add-form {
   display: none; flex-direction: column; gap: 6px;
   padding: 10px 12px; border-top: 1px solid var(--line);
@@ -1538,8 +1561,10 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 .add-form input { font-size: 11px; }
 .add-form input:focus, .add-form textarea:focus { border-color: var(--line2); }
 .add-form input::placeholder, .add-form textarea::placeholder { color: var(--text3); }
-.add-form textarea { resize: none; line-height: 1.6; min-height: 56px; max-height: 110px; }
+.add-form textarea { resize: vertical; line-height: 1.6; min-height: 96px; max-height: 280px; }
 .add-form-row { display: flex; gap: 6px; align-items: center; }
+#newSeriesPromptText { min-height: 160px; }
+#newSchemaInitText { min-height: 132px; }
 
 /* New series bar */
 .new-series-bar {
@@ -1764,6 +1789,53 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   font-size: 11px;
   line-height: 1.6;
 }
+.cf-review-name-wrap {
+  margin-bottom: 8px;
+}
+.cf-review-name-input {
+  width: 100%;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  padding: 5px 8px;
+  border-radius: 10px;
+}
+.cf-review-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cf-review-tools .btn {
+  width: auto;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 10px;
+}
+#cfCaptureReplyBtn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 9px;
+}
+#cfCopyBtn {
+  flex: 0 0 auto;
+  padding-inline: 6px;
+}
+#cfSaveResultBtn,
+#cfSaveHtmlBtn {
+  flex: 0 0 auto;
+  padding-inline: 8px;
+}
+.cf-review-result-box {
+  margin-top: 0;
+}
+.cf-review-empty {
+  font-size: 11px;
+  color: var(--text3);
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
 .cf-result-section {
   border-top: 1px solid var(--line);
   padding-top: 12px;
@@ -1793,7 +1865,8 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 body { flex-direction: column; }
 
 .topnav {
-  height: 44px;
+  min-height: 44px;
+  height: auto;
   flex-shrink: 0;
   background: var(--bg2);
   border-bottom: 1px solid var(--line);
@@ -1806,6 +1879,7 @@ body { flex-direction: column; }
   flex: 1;
   display: flex;
   align-items: stretch;
+  flex-wrap: nowrap;
   overflow: hidden;
   min-width: 0;
   padding: 6px 8px;
@@ -1821,29 +1895,64 @@ body { flex-direction: column; }
   border-left: 1px solid var(--line);
 }
 .lang-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px;
+}
+.lang-toggle-trigger {
+  min-width: 42px;
+  height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg2);
+  color: var(--text2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.lang-toggle-trigger:hover {
+  color: var(--text);
+  border-color: var(--line2);
+}
+.lang-toggle-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  min-width: 54px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg2);
+  box-shadow: var(--shadow-soft);
+  z-index: 40;
+}
+.lang-toggle.open .lang-toggle-menu {
+  display: flex;
 }
 .lang-toggle-btn {
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--text3);
   font-family: var(--font-ui);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
-  padding: 6px 10px;
+  min-height: 28px;
+  padding: 6px 8px;
   border-radius: 999px;
   cursor: pointer;
 }
 .lang-toggle-btn.active {
   background: var(--bg3);
   color: var(--text);
+  border-color: var(--line2);
 }
 
 /* Override vertical nav-item → horizontal */
@@ -1891,6 +2000,13 @@ body { flex-direction: column; }
   text-transform: none;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-lang="zh"] .topnav-tabs .nav-label {
+  letter-spacing: 0;
+}
+.nav-zh-break {
+  display: none;
 }
 .nav-cfg {
   width: 30px;
@@ -1915,6 +2031,58 @@ body { flex-direction: column; }
 }
 .nav-cfg.active .nav-gear,
 .nav-cfg:hover .nav-gear { color: var(--text); }
+
+@media (max-width: 760px) {
+  .topnav {
+    align-items: stretch;
+  }
+  .topnav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+  }
+  .topnav-tabs .nav-item {
+    flex: 1 1 0;
+    min-width: 78px;
+    height: auto;
+    min-height: 46px;
+    padding: 6px 8px;
+    align-items: center;
+  }
+  .topnav-tabs .nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    text-align: center;
+    line-height: 1.15;
+    font-size: 11px;
+    font-weight: 600;
+    display: block;
+  }
+  html[data-lang="zh"] .topnav-tabs .nav-label {
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    line-break: strict;
+  }
+  html[data-lang="zh"] .topnav-tabs .nav-label .nav-zh-break {
+    display: block;
+  }
+  body.font-comfortable .topnav-tabs .nav-label {
+    font-size: 12px;
+  }
+  body.font-large .topnav-tabs .nav-label {
+    font-size: 13px;
+  }
+  .topnav-actions {
+    width: auto;
+    justify-content: flex-end;
+    padding: 0 8px;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+}
 
 /* ══════════════════════════════════════
    ETL FLOW — Vertical Timeline
@@ -2080,8 +2248,11 @@ body { flex-direction: column; }
     <div id="topbarPromptsActions" style="display:none"></div>
     <div id="topbarSchemaActions" style="display:none"></div>
     <div class="lang-toggle" id="langToggle" aria-label="Language toggle">
-      <button class="lang-toggle-btn active" id="langZhBtn" type="button" data-lang="zh">中文</button>
-      <button class="lang-toggle-btn" id="langEnBtn" type="button" data-lang="en">English</button>
+      <button class="lang-toggle-trigger" id="langToggleBtn" type="button" aria-label="Language toggle" aria-expanded="false">EN</button>
+      <div class="lang-toggle-menu" id="langToggleMenu" role="menu" aria-label="Language options">
+        <button class="lang-toggle-btn active" id="langZhBtn" type="button" data-lang="zh" aria-label="Chinese" role="menuitem">ZH</button>
+        <button class="lang-toggle-btn" id="langEnBtn" type="button" data-lang="en" aria-label="English" role="menuitem">EN</button>
+      </div>
     </div>
     <div class="ai-pills" id="topAiSelect" style="display:none">
       <button class="ai-pill active" data-ai="gpt">GPT</button>

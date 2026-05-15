@@ -68,7 +68,8 @@ const DistillAIBlock = {
             <button class="ai-pill active" data-ai="gpt">GPT</button>
             <button class="ai-pill" data-ai="gemini">Gemini</button>
             <button class="ai-pill" data-ai="claude">Claude</button>
-            <button class="ai-pill" data-ai="grok">Grok</button>
+            <button class="ai-pill" data-ai="grok-inline">Grok Inline</button>
+            <button class="ai-pill" data-ai="grok-page">Grok Page</button>
           </div>
         </div>
       </div>

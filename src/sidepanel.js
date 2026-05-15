@@ -4,6 +4,7 @@
 // ── Module State (Extract / Schema / Prompts) ─────────────────────────────────
 let prompts = [];
 let extractAI = 'gpt';
+let extractGrokMode = 'page';
 let series = [];
 let currentSeriesId = null;
 let expandedCardIdx = null;
@@ -22,10 +23,10 @@ let currentLanguage = 'zh';
 
 const I18N = {
   zh: {
-    nav_extract: '快速生成',
-    nav_flow: '自訂流程',
-    nav_prompts: 'Prompt 庫',
-    nav_schema: 'Schema 庫',
+    nav_extract: '快速<br class="nav-zh-break">生成',
+    nav_flow: '自訂<br class="nav-zh-break">流程',
+    nav_prompts: 'Prompt<br class="nav-zh-break">庫',
+    nav_schema: 'Schema<br class="nav-zh-break">庫',
     nav_settings: 'Settings',
     hidden: '隱藏',
     shown: '顯示',
@@ -44,38 +45,47 @@ const I18N = {
     status_running: '執行中...',
     status_all_done: '✅ 全部完成',
     status_sent_to_ai: '✅ 已送出，請至 AI Chat 查看',
+    status_sent_manual_capture: '已送出至 AI，請等待回覆後手動截取',
     status_trial_running: '試跑中，等待 {ai} 回覆...',
     status_delay_waiting: '{label}，{seconds} 秒延遲等待中...',
     status_send_distill_waiting: '05 - 送出整理，等待 {ai} 回覆中...',
     run_all: '▶▶ Run all',
     start_generation: '開始生成',
-    capture_current_reply: '截取當前回覆',
+    capture_current_reply: '⊕ 截取當前回覆',
     save_md: '⬇ 儲存 .md',
+    save_html: '⬇ 儲存 .html',
     recent_extract: '最近萃取',
     etl_card_prompt: '選擇分析任務',
     etl_card_schema: '選擇輸出格式',
     etl_card_ai: '選擇 AI 引擎',
     etl_card_run: '開始生成',
     etl_card_save: '結果確認與儲存',
+    etl_grok_mode_label: 'Grok 注入模式',
+    etl_grok_mode_page: '完整 Grok 頁面',
+    etl_grok_mode_inline: 'X 頁內小視窗',
     etl_prompt_label: '分析任務（可手動修改）',
     etl_prompt_helper: '選取上方 Prompt 後，可在這裡直接微調本次送出的內容',
     etl_schema_none: '-不選擇schema格式-',
     etl_progress_idle: '尚未開始',
     etl_progress_idle_sub: '尚未開始執行',
     etl_log_placeholder: '詳細執行記錄會顯示在這裡。',
-    etl_result_placeholder: '等待 Grok 回覆完成後，按「截取當前回覆」，可在這裡直接微調再儲存。',
+    etl_result_placeholder: '等待目標 AI 回覆完成後，按「截取當前回覆」，可在這裡直接微調再儲存。',
     cf_card_source: '擷取內容',
     cf_card_task: '選擇分析',
     cf_card_format: '選擇格式',
     cf_card_ai: '選擇 AI',
-    cf_card_run: '整理結果',
+    cf_card_run: '送出與回收結果',
+    cf_card_execute: '執行送出',
+    cf_card_review: '回收與儲存',
     cf_delay_label: '下一步前等',
     cf_custom_delay: '自訂',
     seconds: '秒',
     cf_source_placeholder: '貼入長文，或點「抓取當前頁面」自動填入...',
     grab_current_page: '⊕ 抓取當前頁面',
     save_flow_draft: '存草稿',
-    cf_autosave: '執行完後自動存檔與下載（關閉時僅送至 AI Chat，不自動回收結果）',
+    logs: '執行紀錄',
+    cf_log_placeholder: '執行紀錄會顯示在這裡。',
+    cf_result_placeholder: 'AI 回覆完成後，按「截取當前回覆」，可在這裡微調後再儲存。',
     no_prompt: '尚無 Prompt',
     pick_series: '— 選擇系列 —',
     pick_prompt: '— 選擇 Prompt —',
@@ -110,38 +120,47 @@ const I18N = {
     status_running: 'Running...',
     status_all_done: '✅ Done',
     status_sent_to_ai: '✅ Sent. Check the AI chat.',
+    status_sent_manual_capture: 'Sent to AI. Wait for the reply, then capture it manually.',
     status_trial_running: 'Waiting for {ai}...',
     status_delay_waiting: '{label} - waiting {seconds}s...',
     status_send_distill_waiting: 'Waiting for {ai} response...',
     run_all: 'Run Workflow',
     start_generation: 'Execute',
-    capture_current_reply: 'Capture Reply',
+    capture_current_reply: '⊕ Capture Reply',
     save_md: '⬇ Save .md',
+    save_html: '⬇ Save .html',
     recent_extract: 'Recent Runs',
     etl_card_prompt: 'Select Task',
     etl_card_schema: 'Output Format',
     etl_card_ai: 'AI Model',
     etl_card_run: 'Execute',
     etl_card_save: 'Review',
+    etl_grok_mode_label: 'Grok Target',
+    etl_grok_mode_page: 'Full Grok Page',
+    etl_grok_mode_inline: 'Inline X Panel',
     etl_prompt_label: 'Task Prompt',
     etl_prompt_helper: 'After you select a prompt above, you can edit it here before running.',
     etl_schema_none: 'No format',
     etl_progress_idle: 'Not started',
     etl_progress_idle_sub: 'Ready to run',
     etl_log_placeholder: 'Execution logs will appear here.',
-    etl_result_placeholder: 'After Grok finishes, click "Grab Reply" to review and save the response here.',
+    etl_result_placeholder: 'After the target AI finishes, click "Grab Reply" to review and save the response here.',
     cf_card_source: 'Source',
     cf_card_task: 'Task',
     cf_card_format: 'Format',
     cf_card_ai: 'Model',
-    cf_card_run: 'Run',
+    cf_card_run: 'Send & Capture',
+    cf_card_execute: 'Execute',
+    cf_card_review: 'Review',
     cf_delay_label: 'Delay',
     cf_custom_delay: 'Custom',
     seconds: 's',
     cf_source_placeholder: 'Paste text here, or click "Capture Page" to fill it automatically.',
     grab_current_page: 'Capture Page',
     save_flow_draft: 'Save Draft',
-    cf_autosave: 'Auto-save results after each run. If disabled, results stay in the AI chat.',
+    logs: 'Logs',
+    cf_log_placeholder: 'Execution logs will appear here.',
+    cf_result_placeholder: 'After the AI reply finishes, click "Capture Reply" to review, edit, and save it here.',
     no_prompt: 'No prompts yet',
     pick_series: '— Select series —',
     pick_prompt: '— Select prompt —',
@@ -181,6 +200,9 @@ function setLanguage(lang, { persist = true } = {}) {
   document.documentElement.setAttribute('data-lang', currentLanguage);
   $('langZhBtn')?.classList.toggle('active', currentLanguage === 'zh');
   $('langEnBtn')?.classList.toggle('active', currentLanguage === 'en');
+  if ($('langToggleBtn')) $('langToggleBtn').textContent = currentLanguage === 'en' ? 'EN' : 'ZH';
+  $('langToggle')?.classList.remove('open');
+  $('langToggleBtn')?.setAttribute('aria-expanded', 'false');
   applyI18n(document);
   refreshI18nUI();
   if (persist) chrome.storage.local.set({ uiLanguage: currentLanguage });
@@ -213,9 +235,36 @@ function refreshI18nUI() {
   });
   if ($('cfCharCount') && $('cfRawText')) $('cfCharCount').textContent = getPromptCountLabel($('cfRawText').value.length);
   if ($('progTxt')) setExtractRunState(extractRunState, { current: extractProgressCurrent, total: extractProgressTotal });
+  updateExtractAIModeUI();
 }
 
 window.t = t;
+
+function getExtractAITargetLabel() {
+  if (extractAI !== 'grok') return extractAI.toUpperCase();
+  return extractGrokMode === 'inline'
+    ? (currentLanguage === 'en' ? 'Grok inline panel' : 'Grok 頁內小視窗')
+    : 'Grok';
+}
+
+function getExtractAIPillKey() {
+  if (extractAI !== 'grok') return extractAI;
+  return extractGrokMode === 'inline' ? 'grok-inline' : 'grok-page';
+}
+
+function normalizeVisibleExtractAI(ai, grokMode) {
+  if (ai === 'grok') return { ai: 'grok', grokMode: grokMode === 'inline' ? 'inline' : 'page' };
+  if (ai === 'gpt') return { ai: 'gpt', grokMode: 'page' };
+  // Keep legacy storage values readable, but fall ETL UI back to a still-visible option.
+  return { ai: 'gpt', grokMode: 'page' };
+}
+
+function updateExtractAIModeUI() {
+  const activeKey = getExtractAIPillKey();
+  document.querySelectorAll('#extractAiSel .ai-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ai === activeKey);
+  });
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Distill Blocks loaded via <script> tags in sidepanel.html (src/blocks/*.js)
@@ -238,8 +287,15 @@ const CustomFlowController = {
   promptIdx: null,
   schemaId:  null,
   ai:        'gpt',
+  grokMode:  'page',
   lastResult: null,
+  lastTargetTabId: null,
 
+  _isAutoSaveEnabled() {
+    const el = $('cfAutoSave');
+    return !!(el && el.checked);
+  },
+  
   init(d) {
     if (this.isInitialized) return;
     this.isInitialized = true;
@@ -257,13 +313,12 @@ const CustomFlowController = {
     );
     this.presets = Array.isArray(d.customFlowPresets) ? d.customFlowPresets : [];
     this.defaultPresetId = d.cfDefaultPresetId || null;
-    this.selectedPresetId = this.defaultPresetId && this.presets.some(p => p.id === this.defaultPresetId)
-      ? this.defaultPresetId
-      : (this.presets[0]?.id || null);
+    this.selectedPresetId = null;
     this.seriesId  = d.cfSeriesId  || null;
     this.promptIdx = d.cfPromptIdx ?? null;
     this.schemaId  = d.cfSchemaId  || null;
     this.ai        = d.cfAI        || 'gpt';
+    this.grokMode  = d.cfGrokMode === 'inline' ? 'inline' : 'page';
 
     // Card toggles
     document.querySelectorAll('[data-cf-toggle]').forEach(btn =>
@@ -314,31 +369,59 @@ const CustomFlowController = {
     // AI
     $('cfAiSelect').querySelectorAll('.ai-pill').forEach(b => {
       b.addEventListener('click', () => {
-        this.ai = b.dataset.ai;
-        $('cfAiSelect').querySelectorAll('.ai-pill').forEach(x =>
-          x.classList.toggle('active', x.dataset.ai === this.ai));
-        chrome.storage.local.set({ cfAI: this.ai });
+        const key = b.dataset.ai;
+        if (key === 'grok-inline') {
+          this.ai = 'grok';
+          this.grokMode = 'inline';
+        } else if (key === 'grok-page') {
+          this.ai = 'grok';
+          this.grokMode = 'page';
+        } else {
+          this.ai = key;
+        }
+        this._syncAIPills();
+        chrome.storage.local.set({ cfAI: this.ai, cfGrokMode: this.grokMode });
       });
     });
-    $('cfAiSelect').querySelectorAll('.ai-pill').forEach(b =>
-      b.classList.toggle('active', b.dataset.ai === this.ai));
+    this._syncAIPills();
 
     // Run
-    $('cfAutoSave').checked = d.cfAutoSave !== false;
-    $('cfAutoSave').addEventListener('change', e =>
-      chrome.storage.local.set({ cfAutoSave: e.target.checked }));
+    if ($('cfAutoSave')) {
+      $('cfAutoSave').checked = d.cfAutoSave !== false;
+      $('cfAutoSave').addEventListener('change', e =>
+        chrome.storage.local.set({ cfAutoSave: e.target.checked }));
+    }
     $('cfSaveDraftBtn').addEventListener('click', () => this._saveDraft());
+    if ($('cfCaptureReplyBtn')) {
+      $('cfCaptureReplyBtn').addEventListener('click', () => this.captureCurrentReply());
+    }
     if ($('cfCopyBtn')) {
       $('cfCopyBtn').addEventListener('click', () => {
-        if (!this.lastResult) return;
-        navigator.clipboard.writeText(this.lastResult.content);
+        const content = this._getResultContent().trim();
+        if (!content) {
+          this._log(currentLanguage === 'en' ? 'No result to copy yet.' : '尚無結果可複製', 'warn');
+          return;
+        }
+        navigator.clipboard.writeText(content);
         this._log('已複製', 'success');
       });
     }
-    if ($('cfDlBtn')) {
-      $('cfDlBtn').addEventListener('click', () => {
+    if ($('cfSaveResultBtn')) {
+      $('cfSaveResultBtn').addEventListener('click', () => this.saveCapturedResult());
+    }
+    if ($('cfSaveHtmlBtn')) {
+      $('cfSaveHtmlBtn').addEventListener('click', () => this.saveCapturedHtml());
+    }
+    if ($('cfResultText')) {
+      $('cfResultText').addEventListener('input', () => {
         if (!this.lastResult) return;
-        chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name: this.lastResult.name, content: this.lastResult.content });
+        this.lastResult.content = $('cfResultText').value;
+      });
+    }
+    if ($('cfResultName')) {
+      $('cfResultName').addEventListener('input', () => {
+        if (!this.lastResult) return;
+        this.lastResult.name = $('cfResultName').value;
       });
     }
 
@@ -348,7 +431,6 @@ const CustomFlowController = {
     $('cfSavePresetBtn').addEventListener('click', () => this.savePreset());
     $('cfPresetSel').addEventListener('change', async () => {
       this.selectedPresetId = $('cfPresetSel').value || null;
-      await chrome.storage.local.set({ cfDefaultPresetId: this.selectedPresetId });
       if (this.selectedPresetId) await this.loadSelectedPreset();
       else this._renderPresetControls();
     });
@@ -366,7 +448,7 @@ const CustomFlowController = {
       this._syncAIPills();
       this._applyDelayControls();
       this._applyAllCards();
-      $('cfAutoSave').checked = d.cfAutoSave !== false;
+      if ($('cfAutoSave')) $('cfAutoSave').checked = d.cfAutoSave !== false;
     }
     this._renderPresetControls();
   },
@@ -376,6 +458,8 @@ const CustomFlowController = {
     chrome.storage.local.set({ cfCardVisible: this.cardVisible });
     const card = document.querySelector(`[data-cf-card="${name}"]`);
     if (card) card.classList.toggle('cf-collapsed', !this.cardVisible[name]);
+    document.querySelectorAll(`[data-cf-linked-card="${name}"]`).forEach(card =>
+      card.classList.toggle('cf-collapsed', !this.cardVisible[name]));
     const btn = document.querySelector(`[data-cf-toggle="${name}"]`);
     if (btn) btn.textContent = this.cardVisible[name] ? t('hidden') : t('shown');
   },
@@ -384,6 +468,8 @@ const CustomFlowController = {
     Object.entries(this.cardVisible).forEach(([name, visible]) => {
       const card = document.querySelector(`[data-cf-card="${name}"]`);
       if (card) card.classList.toggle('cf-collapsed', !visible);
+      document.querySelectorAll(`[data-cf-linked-card="${name}"]`).forEach(card =>
+        card.classList.toggle('cf-collapsed', !visible));
       const btn = document.querySelector(`[data-cf-toggle="${name}"]`);
       if (btn) btn.textContent = visible ? t('hidden') : t('shown');
     });
@@ -405,6 +491,7 @@ const CustomFlowController = {
   },
 
   getAI() { return this.ai; },
+  getGrokMode() { return this.grokMode; },
 
   _getPresetById(id) {
     return id ? this.presets.find(p => p.id === id) || null : null;
@@ -413,8 +500,11 @@ const CustomFlowController = {
   _syncAIPills() {
     const root = $('cfAiSelect');
     if (!root) return;
+    const activeKey = this.ai === 'grok'
+      ? (this.grokMode === 'inline' ? 'grok-inline' : 'grok-page')
+      : this.ai;
     root.querySelectorAll('.ai-pill').forEach(b =>
-      b.classList.toggle('active', b.dataset.ai === this.ai));
+      b.classList.toggle('active', b.dataset.ai === activeKey));
   },
 
   _applyDelayControls() {
@@ -447,6 +537,7 @@ const CustomFlowController = {
       config?.blockDelays || {}
     );
     const ai = ['gpt', 'gemini', 'claude', 'grok'].includes(config?.ai) ? config.ai : 'gpt';
+    const grokMode = config?.grokMode === 'inline' ? 'inline' : 'page';
     const seriesId = typeof config?.seriesId === 'string' && series.some(x => x.id === config.seriesId)
       ? config.seriesId
       : null;
@@ -467,6 +558,7 @@ const CustomFlowController = {
       promptIdx,
       schemaId,
       ai,
+      grokMode,
       autoSave: config?.autoSave !== false,
       blockDelays: Object.fromEntries(
         Object.entries(blockDelays).map(([k, v]) => [k, Math.max(0, Math.min(300, Number(v) || 0))])
@@ -481,7 +573,8 @@ const CustomFlowController = {
       promptIdx: this.promptIdx,
       schemaId: this.schemaId,
       ai: this.ai,
-      autoSave: $('cfAutoSave')?.checked !== false,
+      grokMode: this.grokMode,
+      autoSave: this._isAutoSaveEnabled(),
       blockDelays: { ...this.blockDelays },
     };
   },
@@ -493,6 +586,7 @@ const CustomFlowController = {
     this.promptIdx = next.promptIdx;
     this.schemaId = next.schemaId;
     this.ai = next.ai;
+    this.grokMode = next.grokMode;
     this.blockDelays = next.blockDelays;
     if ($('cfAutoSave')) $('cfAutoSave').checked = next.autoSave;
     this._renderTaskPicker();
@@ -507,6 +601,7 @@ const CustomFlowController = {
         cfPromptIdx: this.promptIdx,
         cfSchemaId: this.schemaId,
         cfAI: this.ai,
+        cfGrokMode: this.grokMode,
         cfAutoSave: next.autoSave,
         cfBlockDelays: this.blockDelays,
       });
@@ -523,16 +618,17 @@ const CustomFlowController = {
       if ($('cfDeletePresetBtn')) $('cfDeletePresetBtn').disabled = true;
       return;
     }
-    if (!this.selectedPresetId || !this.presets.some(p => p.id === this.selectedPresetId)) {
-      this.selectedPresetId = this.defaultPresetId && this.presets.some(p => p.id === this.defaultPresetId)
-        ? this.defaultPresetId
-        : this.presets[0].id;
+    if (this.selectedPresetId && !this.presets.some(p => p.id === this.selectedPresetId)) {
+      this.selectedPresetId = null;
     }
     sel.disabled = false;
-    sel.innerHTML = this.presets.map(p => {
-      return `<option value="${p.id}"${p.id === this.selectedPresetId ? ' selected' : ''}>${esc(p.name)}</option>`;
-    }).join('');
-    if ($('cfDeletePresetBtn')) $('cfDeletePresetBtn').disabled = false;
+    sel.innerHTML =
+      `<option value="">${t('no_preset')}</option>` +
+      this.presets.map(p =>
+        `<option value="${p.id}"${p.id === this.selectedPresetId ? ' selected' : ''}>${esc(p.name)}</option>`
+      ).join('');
+    sel.value = this.selectedPresetId || '';
+    if ($('cfDeletePresetBtn')) $('cfDeletePresetBtn').disabled = !this.selectedPresetId;
   },
 
   async savePreset() {
@@ -550,7 +646,6 @@ const CustomFlowController = {
     };
     this.presets.unshift(preset);
     this.selectedPresetId = preset.id;
-    this.defaultPresetId = preset.id;
     await chrome.storage.local.set({
       customFlowPresets: this.presets,
       cfDefaultPresetId: this.defaultPresetId,
@@ -571,8 +666,7 @@ const CustomFlowController = {
     if (!window.confirm(`刪除 Preset「${preset.name}」？`)) return;
     this.presets = this.presets.filter(p => p.id !== preset.id);
     if (this.defaultPresetId === preset.id) this.defaultPresetId = null;
-    this.selectedPresetId = this.presets[0]?.id || null;
-    if (!this.defaultPresetId && this.selectedPresetId) this.defaultPresetId = this.selectedPresetId;
+    this.selectedPresetId = null;
     await chrome.storage.local.set({
       customFlowPresets: this.presets,
       cfDefaultPresetId: this.defaultPresetId,
@@ -631,7 +725,7 @@ const CustomFlowController = {
   _renderFormatPicker() {
     const sel = $('cfSchemaSel');
     if (!sel) return;
-    sel.innerHTML = `<option value="">${currentLanguage === 'en' ? '— No format (draft only) —' : '— 不用 Schema，直接存草稿 —'}</option>` +
+    sel.innerHTML = `<option value="">${currentLanguage === 'en' ? '— No Schema —' : '— 不套用 Schema —'}</option>` +
       schemaTemplates.map(s =>
         `<option value="${s.id}"${s.id === this.schemaId ? ' selected' : ''}>${esc(s.name)}</option>`
       ).join('');
@@ -648,30 +742,103 @@ const CustomFlowController = {
   },
 
   _showResultEmpty(message = currentLanguage === 'en' ? 'No result yet' : '尚未產生結果') {
-    if ($('cfResultName')) $('cfResultName').textContent = currentLanguage === 'en' ? 'Result' : '結果';
+    if ($('cfResultName')) $('cfResultName').value = this._makeFlowResultName();
     if ($('cfResultEmpty')) {
       $('cfResultEmpty').textContent = message;
       $('cfResultEmpty').style.display = '';
     }
     if ($('cfResultText')) {
-      $('cfResultText').textContent = '';
+      $('cfResultText').value = '';
       $('cfResultText').style.display = 'none';
     }
-    if ($('cfCopyBtn')) $('cfCopyBtn').disabled = true;
-    if ($('cfDlBtn')) $('cfDlBtn').disabled = true;
   },
 
   _showResultContent(result) {
     if (!result) return;
     this.lastResult = result;
-    if ($('cfResultName')) $('cfResultName').textContent = result.name;
+    if ($('cfResultName')) $('cfResultName').value = result.name;
     if ($('cfResultEmpty')) $('cfResultEmpty').style.display = 'none';
     if ($('cfResultText')) {
-      $('cfResultText').textContent = result.content;
+      $('cfResultText').value = result.content;
       $('cfResultText').style.display = '';
     }
-    if ($('cfCopyBtn')) $('cfCopyBtn').disabled = false;
-    if ($('cfDlBtn')) $('cfDlBtn').disabled = false;
+  },
+
+  _getResultContent() {
+    return $('cfResultText')?.value || '';
+  },
+
+  _getResultName() {
+    return $('cfResultName')?.value?.trim() || this.lastResult?.name || this._makeFlowResultName();
+  },
+
+  _makeFlowResultName() {
+    const label = sanitizeFilenameSegment(
+      this.getSelectedPrompt()?.name
+      || this.getSelectedSchema()?.name
+      || 'flow',
+      'flow'
+      );
+      return `flow_${label}_${makeShortTimestamp()}.md`;
+  },
+
+  _makeFlowHtmlName() {
+    return (this.lastResult?.name || this._makeFlowResultName()).replace(/\.md$/i, '.html');
+  },
+
+  _wrapFlowResultHtml(title, content) {
+    const escapeHtml = s => String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const safeTitle = escapeHtml(title);
+    const safeContent = escapeHtml(content);
+    return `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${safeTitle}</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      background: #f7f7f5;
+      color: #242321;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+      border: 1px solid #d7d7d2;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 14px 40px rgba(40, 37, 31, 0.08);
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 28px;
+      line-height: 1.15;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font: 15px/1.72 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${safeTitle}</h1>
+    <pre>${safeContent}</pre>
+  </main>
+</body>
+</html>`;
   },
 
   _setRunUI(on) {
@@ -696,6 +863,8 @@ const CustomFlowController = {
   _log(text, level = 'info') {
     const el = $('cfLog');
     if (!el) return;
+    const placeholder = el.querySelector('.log-placeholder');
+    if (placeholder) placeholder.remove();
     const d = document.createElement('div');
     d.className = `ll ${level}`;
     d.textContent = `[${ts()}] ${text}`;
@@ -709,16 +878,104 @@ const CustomFlowController = {
     this._setRunUI(false);
     this._setGlobalRunUI(false);
     this.stopRequested = false;
-    if ($('cfAutoSave')?.checked && msg.results?.length) {
-      const r = msg.results[0];
-      this._showResultContent(r);
-      this._log('✅ 整理完成並已存檔！', 'success');
-      this._setGlobalStatus(t('status_all_done'), 'success');
-    } else {
-      this._showResultEmpty(currentLanguage === 'en' ? 'Result was not collected automatically. Please check the AI chat.' : '此次未自動回收結果。請至 AI 對話框查看。');
-      this._log('✅ 已送出，請至 AI 對話框查看', 'success');
-      this._setGlobalStatus(t('status_sent_to_ai'), 'success');
+      if (msg.sentOnly) {
+        this.lastTargetTabId = Number.isInteger(msg.targetTabId) ? msg.targetTabId : null;
+        this._showResultEmpty(t('cf_result_placeholder'));
+        this._log(t('status_sent_manual_capture'), 'success');
+        this._setGlobalStatus(t('status_sent_manual_capture'), 'success');
+      } else if (this._isAutoSaveEnabled() && msg.results?.length) {
+        this.lastTargetTabId = null;
+        const r = msg.results[0];
+        this._showResultContent(r);
+        this._log('✅ 整理完成並已存檔！', 'success');
+        this._setGlobalStatus(t('status_all_done'), 'success');
+      } else {
+      this._showResultEmpty(t('cf_result_placeholder'));
+      this._log(t('status_sent_manual_capture'), 'success');
+      this._setGlobalStatus(t('status_sent_manual_capture'), 'success');
     }
+  },
+
+  async captureCurrentReply() {
+    try {
+      let tabId = this.lastTargetTabId;
+      if (!tabId) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        tabId = tab?.id || null;
+      }
+      if (!tabId) {
+        this._log(currentLanguage === 'en' ? 'No active page to capture from.' : '找不到目前頁面，無法截取回覆', 'error');
+        return;
+      }
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: grabCurrentAssistantReply,
+        args: [this.getAI(), this.getGrokMode()],
+      });
+      const text = String(result?.result || '').trim();
+      if (!text) {
+        this._log(currentLanguage === 'en'
+          ? 'No usable reply found yet. Please wait for the AI response to finish.'
+          : '目前尚未抓到可用回覆，請確認 AI 對話已完成生成', 'warn');
+        return;
+      }
+        const next = { name: this._getResultName(), content: text, fmt: 'wiki' };
+      this._showResultContent(next);
+      $('cfResultText')?.focus();
+      if ($('cfResultText') && typeof $('cfResultText').setSelectionRange === 'function') {
+        const pos = $('cfResultText').value.length;
+        $('cfResultText').setSelectionRange(pos, pos);
+      }
+      this._log(currentLanguage === 'en'
+        ? 'Captured the current reply. You can edit and save it below.'
+        : '已截取當前回覆，可在下方微調後儲存', 'success');
+      this._setGlobalStatus(currentLanguage === 'en'
+        ? 'Reply captured. Review and save when ready.'
+        : '已截取當前回覆，可微調後儲存', 'success');
+    } catch (err) {
+      this._log(`${currentLanguage === 'en' ? 'Capture failed' : '截取當前回覆失敗'}：${err?.message || err}`, 'error');
+    }
+  },
+
+  async saveCapturedResult() {
+    const content = this._getResultContent().trim();
+    if (!content) {
+      this._log(currentLanguage === 'en' ? 'No result to save yet.' : '尚無結果可儲存', 'error');
+      return;
+    }
+    let name = this._getResultName();
+    if (!/\.md$/i.test(name)) name = `${name.replace(/\.(html?)$/i, '')}.md`;
+    const stored = await chrome.storage.local.get(['library', 'distillFolder', 'draftFolder']);
+    const lib = stored.library || [];
+    lib.unshift({ name, fmt: 'wiki', content, chars: content.length, date: new Date().toLocaleDateString('zh-TW') });
+    await chrome.storage.local.set({ library: lib });
+    chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || stored.draftFolder || '' });
+    this.lastResult = { name, content, fmt: 'wiki' };
+    this._showResultContent(this.lastResult);
+    this._log(`✅ ${currentLanguage === 'en' ? 'Saved' : '已儲存'}：${name}`, 'success');
+    this._setGlobalStatus(currentLanguage === 'en' ? 'Saved .md successfully.' : '已儲存 .md', 'success');
+  },
+
+  async saveCapturedHtml() {
+    const content = this._getResultContent().trim();
+    if (!content) {
+      this._log(currentLanguage === 'en' ? 'No result to save yet.' : '尚無結果可儲存', 'error');
+      return;
+    }
+    let name = this._getResultName();
+    name = /\.html?$/i.test(name) ? name : `${name.replace(/\.md$/i, '')}.html`;
+    const title = name.replace(/\.html$/i, '');
+    const html = this._wrapFlowResultHtml(title, content);
+    const stored = await chrome.storage.local.get(['distillFolder', 'draftFolder']);
+    chrome.runtime.sendMessage({
+      type: 'DOWNLOAD_TEXT',
+      name,
+      content: html,
+      mime: 'text/html;charset=utf-8',
+      folder: stored.distillFolder || stored.draftFolder || '',
+    });
+    this._log(`✅ ${currentLanguage === 'en' ? 'Saved' : '已儲存'}：${name}`, 'success');
+    this._setGlobalStatus(currentLanguage === 'en' ? 'Saved .html successfully.' : '已儲存 .html', 'success');
   },
 
   async _grabPage() {
@@ -768,6 +1025,82 @@ const CustomFlowController = {
           return merged;
         };
 
+        const isLikelyUiNoise = text => {
+          const t = clean(String(text || ''));
+          if (!t) return true;
+          if (t.length <= 1) return true;
+          if (/^(follow|following|show more|translate post|show original|search|reposted|reply|replies|view post engagements)$/i.test(t)) return true;
+          if (/^(追蹤|正在跟隨|顯示更多|翻譯貼文|查看原文|搜尋|轉貼|回覆|查看貼文互動)$/i.test(t)) return true;
+          if (/^(relevant people|live on x|what’s happening|what's happening)$/i.test(t)) return true;
+          if (/^\d+\s*(repl(?:y|ies)|like|likes|repost|reposts|bookmark|bookmarks|views?)$/i.test(t)) return true;
+          if (/^\d+\s*(則回覆|個喜歡|次轉發|次查看|人追蹤)$/i.test(t)) return true;
+          return false;
+        };
+
+        const collectBlocksFromRoot = (root, selectors, minLen = 20) => {
+          if (!root) return [];
+          const out = [];
+          const seen = new Set();
+          for (const selector of selectors) {
+            for (const node of root.querySelectorAll(selector)) {
+              const verdict = isExcludedNode(node);
+              if (verdict.excluded) continue;
+              const text = clean(node.innerText || '');
+              if (text.length < minLen || isLikelyUiNoise(text)) continue;
+              if (seen.has(text)) continue;
+              seen.add(text);
+              out.push(text);
+            }
+          }
+          return out;
+        };
+
+        const extractXPrimaryNarrative = primary => {
+          if (!primary) return null;
+
+          const titleBlocks = collectBlocksFromRoot(primary, ['h1', 'h2'], 8);
+          const longformBlocks = collectBlocksFromRoot(
+            primary,
+            [
+              '[data-testid="tweetText"]',
+              'article[role="article"] [lang]',
+              'article[role="article"] p',
+              '[data-testid="primaryColumn"] [lang]',
+              '[data-testid="primaryColumn"] p',
+              '[data-testid="primaryColumn"] div[dir="auto"]',
+            ],
+            24
+          );
+
+          const merged = clean(unique([...titleBlocks, ...longformBlocks]).join('\n\n'));
+          dbg(`primary narrative merged length=${merged.length} titleBlocks=${titleBlocks.length} contentBlocks=${longformBlocks.length}`);
+          return merged.length > 120 ? merged : null;
+        };
+
+        const extractXThread = primary => {
+          if (!primary) return null;
+          const articles = [...primary.querySelectorAll('article[role="article"]')]
+            .filter(article => {
+              const verdict = isExcludedNode(article);
+              if (verdict.excluded) return false;
+              return clean(article.innerText || '').length > 40;
+            });
+          if (!articles.length) return null;
+
+          const chunks = [];
+          const seen = new Set();
+          for (const article of articles) {
+            const blocks = collectBlocksFromRoot(article, ['[data-testid="tweetText"]', '[lang]', 'p', 'div[dir="auto"]'], 18);
+            const merged = clean(unique(blocks).join('\n\n'));
+            if (merged.length < 30 || seen.has(merged)) continue;
+            seen.add(merged);
+            chunks.push(merged);
+          }
+          const joined = clean(chunks.join('\n\n---\n\n'));
+          dbg(`thread extraction articles=${articles.length} chunks=${chunks.length} length=${joined.length}`);
+          return joined.length > 120 ? joined : null;
+        };
+
         if (isX) {
           const primary = document.querySelector('main [data-testid="primaryColumn"]')
             || document.querySelector('[data-testid="primaryColumn"]')
@@ -800,6 +1133,12 @@ const CustomFlowController = {
           ) || pickBestArticle([...document.querySelectorAll('article[role="article"]')]);
 
           dbg(`selected main article=${!!mainTweet}`);
+          const primaryNarrative = extractXPrimaryNarrative(primary);
+          if (primaryNarrative) return primaryNarrative;
+
+          const threadText = extractXThread(primary);
+          if (threadText) return threadText;
+
           if (mainTweet) {
             const primarySelector = '[data-testid="tweetText"]';
             const primaryText = collectTextFromNodes(
@@ -867,6 +1206,7 @@ const CustomFlowController = {
     if (!content) { this._log('請先輸入或抓取內容', 'error'); return; }
 
     const cfg = await chrome.storage.local.get(['fullAuto']);
+    const autoSaveChecked = this._isAutoSaveEnabled();
     let wikiTpl  = null;
     let fmtLabel = 'draft';
 
@@ -884,23 +1224,37 @@ const CustomFlowController = {
     }
 
     if (!wikiTpl) {
-      await this._saveDraft();
-      return;
+      wikiTpl = '{{content}}';
+      fmtLabel = currentLanguage === 'en' ? 'raw discussion' : '原文直接討論';
+      this._log(currentLanguage === 'en' ? 'No Prompt / Schema selected. Sending raw content to AI…' : '未選 Prompt / Schema，直接送原文到 AI…', 'info');
     }
 
     activeDistillContext = 'flow';
     this._setRunUI(true);
-    this._showResultEmpty(currentLanguage === 'en' ? 'Running, waiting for result…' : '執行中，等待結果…');
-    this._log(`送出整理（${fmtLabel}，${this.getAI()}）…`, 'info');
-    this._setGlobalStatus(t('status_trial_running', { ai: this.getAI().toUpperCase() }));
+    this._showResultEmpty(t('cf_result_placeholder'));
+    const aiLabel = this.getAI() === 'grok'
+      ? (this.getGrokMode() === 'inline' ? 'GROK INLINE' : 'GROK PAGE')
+      : this.getAI().toUpperCase();
+    this._log(`送出整理（${fmtLabel}，${aiLabel}）…`, 'info');
+    this._setGlobalStatus(autoSaveChecked ? t('status_trial_running', { ai: aiLabel }) : t('status_sent_manual_capture'));
+    console.log('[CF startFlow] sending START_DISTILL', {
+      source: 'flow',
+      ai: this.getAI(),
+      grokMode: this.getGrokMode(),
+      autoSave: autoSaveChecked,
+      fullAuto: cfg.fullAuto !== false,
+      contentLen: content.length,
+      hasTemplate: !!wikiTpl,
+    });
     chrome.runtime.sendMessage({
       type:     'START_DISTILL',
       source:   'flow',
       content,
       fmt:      'wiki',
       targetAI: this.getAI(),
+      grokMode: this.getGrokMode(),
       wikiTpl,
-      autoSave: $('cfAutoSave')?.checked !== false,
+      autoSave: autoSaveChecked,
       fullAuto: cfg.fullAuto !== false,
     });
   },
@@ -972,6 +1326,8 @@ const CustomFlowController = {
   _highlightCard(name, on) {
     const card = document.querySelector(`[data-cf-card="${name}"]`);
     if (card) card.classList.toggle('cf-active', on);
+    document.querySelectorAll(`[data-cf-linked-card="${name}"]`).forEach(card =>
+      card.classList.toggle('cf-active', on));
   },
 
   _statusLabelForCard(name) {
@@ -1018,6 +1374,7 @@ const CustomFlowController = {
       prompt:  this.cardVisible.task !== false ? this.getSelectedPrompt() : null,
       schema:  this.cardVisible.format !== false ? this.getSelectedSchema() : null,
       ai:      this.getAI(),
+      grokMode: this.getGrokMode(),
     };
 
     console.log('[CF runAll] start. visible:', visible.join(' → '));
@@ -1047,8 +1404,9 @@ const CustomFlowController = {
 
       } else if (name === 'ai') {
         pipeline.ai = this.getAI();
+        pipeline.grokMode = this.getGrokMode();
         console.log('[CF runAll] ai: target =', pipeline.ai);
-        this._log(`✓ 目標 AI：${pipeline.ai}`, 'info');
+        this._log(`✓ 目標 AI：${pipeline.ai}${pipeline.ai === 'grok' ? ` (${pipeline.grokMode})` : ''}`, 'info');
 
       } else if (name === 'run') {
         console.log('[CF runAll] run: pipeline =', {
@@ -1080,6 +1438,8 @@ const CustomFlowController = {
 
   async _runWithPipeline(pipeline) {
     const { content, prompt, schema, ai } = pipeline;
+    const grokMode = pipeline.grokMode === 'inline' ? 'inline' : 'page';
+    const autoSaveChecked = this._isAutoSaveEnabled();
 
     if (!content) {
       this._log('❌ 無來源內容，請先執行 Source block', 'error');
@@ -1106,21 +1466,31 @@ const CustomFlowController = {
       prompt: prompt?.name ?? null,
       schema: schema?.name ?? null,
       ai,
+      grokMode,
     });
     console.log('[CF runAll] Combined prompt to send:', wikiTpl ? wikiTpl.slice(0, 200) + '…' : null);
 
     if (!wikiTpl) {
-      this._log('⚠️ 無 Prompt / Schema，改存草稿', 'warn');
-      await this._saveDraft();
-      return;
+      wikiTpl = '{{content}}';
+      fmtLabel = currentLanguage === 'en' ? 'raw discussion' : '原文直接討論';
+      this._log(currentLanguage === 'en' ? '⚠️ No Prompt / Schema selected. Sending raw content to AI.' : '⚠️ 未選 Prompt / Schema，直接送原文到 AI。', 'warn');
     }
 
     activeDistillContext = 'flow';
     this._setRunUI(true);
-    this._showResultEmpty(currentLanguage === 'en' ? 'Running, waiting for result…' : '執行中，等待結果…');
-    this._log(`送出（${fmtLabel} → ${ai}）…`, 'info');
-    this._setGlobalStatus(t('status_send_distill_waiting', { ai: ai.toUpperCase() }));
-    console.log('[CF runAll] Sending START_DISTILL with ai:', ai, '| fullAuto: true | prompt length:', wikiTpl.length);
+    this._showResultEmpty(t('cf_result_placeholder'));
+    const aiLabel = ai === 'grok' ? (grokMode === 'inline' ? 'GROK INLINE' : 'GROK PAGE') : ai.toUpperCase();
+    this._log(`送出（${fmtLabel} → ${aiLabel}）…`, 'info');
+    this._setGlobalStatus(autoSaveChecked ? t('status_send_distill_waiting', { ai: aiLabel }) : t('status_sent_manual_capture'));
+    console.log('[CF runAll] Sending START_DISTILL with ai:', ai, '| grokMode:', grokMode, '| fullAuto: true | prompt length:', wikiTpl.length);
+    console.log('[CF runAll] run card state', {
+      source: 'flow',
+      mode: 'runAll',
+      autoSave: autoSaveChecked,
+      contentLen: content.length,
+      hasPrompt: !!prompt,
+      hasSchema: !!schema,
+    });
 
     chrome.runtime.sendMessage({
       type:     'START_DISTILL',
@@ -1128,8 +1498,9 @@ const CustomFlowController = {
       content,
       fmt:      'wiki',
       targetAI: ai,
+      grokMode,
       wikiTpl,
-      autoSave: $('cfAutoSave')?.checked !== false,
+      autoSave: autoSaveChecked,
       fullAuto: true,  // Custom Flow always runs in full-auto mode
     });
   },
@@ -1177,9 +1548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderExtractPromptPicker();
   renderExtractSchemaPicker();
   bindAll();
-  // Apply stored extractAI to Card 03 pill buttons
-  document.querySelectorAll('#extractAiSel .ai-pill').forEach(b =>
-    b.classList.toggle('active', b.dataset.ai === extractAI));
+  updateExtractAIModeUI();
   listenBg();
   renderExtractLibrary();
 });
@@ -1201,18 +1570,20 @@ async function migrateLegacyDistillAutoSave() {
 
 async function loadSettings() {
   const d = await chrome.storage.local.get([
-    'prompts', 'extractAI', 'distillAI', 'delaySeconds',
+    'prompts', 'extractAI', 'extractGrokMode', 'distillAI', 'delaySeconds',
     'fullAuto', 'autoDownload', 'draftFolder',
     'wikiTpl', 'noteTpl', 'extractFolder', 'distillFolder',
     'promptSeries', 'popupFontSize', 'popupTextContrast', 'uiTheme', 'uiLanguage', 'lastTab',
     'currentSeriesId', 'extractSeriesId', 'distillSeriesId', 'distillPromptIdx',
     'schemaTemplates', 'extractSchemaId', 'distillSchemaId',
-    'cfCardVisible', 'cfSeriesId', 'cfPromptIdx', 'cfSchemaId', 'cfAI', 'cfAutoSave', 'cfBlockDelays',
+    'cfCardVisible', 'cfSeriesId', 'cfPromptIdx', 'cfSchemaId', 'cfAI', 'cfGrokMode', 'cfAutoSave', 'cfBlockDelays',
     'customFlowPresets', 'cfDefaultPresetId',
   ]);
 
   prompts         = d.prompts || [];
-  extractAI       = d.extractAI || 'gpt';
+  const normalizedExtract = normalizeVisibleExtractAI(d.extractAI || 'gpt', d.extractGrokMode);
+  extractAI       = normalizedExtract.ai;
+  extractGrokMode = normalizedExtract.grokMode;
   series          = d.promptSeries || [];
   currentSeriesId = d.currentSeriesId || null;
   extractSeriesId = d.extractSeriesId || null;
@@ -1297,7 +1668,23 @@ function bindAll() {
   document.querySelectorAll('.tab').forEach(t =>
     t.addEventListener('click', () => switchTab(t.dataset.tab)));
   document.querySelectorAll('#langToggle [data-lang]').forEach(btn =>
-    btn.addEventListener('click', () => setLanguage(btn.dataset.lang)));
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      setLanguage(btn.dataset.lang);
+    }));
+  $('langToggleBtn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const root = $('langToggle');
+    const nextOpen = !root?.classList.contains('open');
+    root?.classList.toggle('open', nextOpen);
+    $('langToggleBtn')?.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  });
+  document.addEventListener('click', e => {
+    const root = $('langToggle');
+    if (!root || root.contains(e.target)) return;
+    root.classList.remove('open');
+    $('langToggleBtn')?.setAttribute('aria-expanded', 'false');
+  });
 
   // Extract run
   $('startBtn').addEventListener('click', startExtract);
@@ -1399,10 +1786,18 @@ function bindAll() {
   // Extract AI picker (Card 03)
   document.querySelectorAll('#extractAiSel .ai-pill').forEach(b =>
     b.addEventListener('click', () => {
-      extractAI = b.dataset.ai;
-      document.querySelectorAll('#extractAiSel .ai-pill').forEach(x =>
-        x.classList.toggle('active', x.dataset.ai === extractAI));
-      chrome.storage.local.set({ extractAI });
+      const key = b.dataset.ai;
+      if (key === 'grok-inline') {
+        extractAI = 'grok';
+        extractGrokMode = 'inline';
+      } else if (key === 'grok-page') {
+        extractAI = 'grok';
+        extractGrokMode = 'page';
+      } else {
+        extractAI = key;
+      }
+      chrome.storage.local.set({ extractAI, extractGrokMode });
+      updateExtractAIModeUI();
     }));
 
   // Prompt series
@@ -1643,11 +2038,6 @@ async function startExtract() {
   await syncPromptEditsFromDom();
   const promptTexts = prompts.map(p => p.text.trim()).filter(Boolean);
   if (!promptTexts.length) { elog('請先選擇 Prompt', 'error'); return; }
-  const tabs = await chrome.tabs.query({ url: 'https://x.com/i/grok*' });
-  if (!tabs.length) {
-    elog('請先開啟 x.com/i/grok', 'warn');
-    chrome.tabs.create({ url: 'https://x.com/i/grok' }); return;
-  }
 
   const schema = schemaTemplates.find(s => s.id === extractSchemaId);
   const combined = promptTexts.map(pt => schema ? pt + '\n\n' + schema.text : pt);
@@ -1659,8 +2049,16 @@ async function startExtract() {
   lastExtractResult = null;
   setExtractRunState('waiting', { current: 0, total: combined.length });
   setRunUI(true);
-  chrome.runtime.sendMessage({ type: 'START_EXTRACT', tabId: tabs[0].id, prompts: combined });
-  elog(`開始送出 ${combined.length} 個 Prompt${schema ? '（含 Schema: ' + schema.name + '）' : ''}…`, 'info');
+  chrome.runtime.sendMessage({
+    type: 'START_EXTRACT',
+    prompts: combined,
+    targetAI: extractAI,
+    grokMode: extractGrokMode,
+  });
+  elog(
+    `開始送出 ${combined.length} 個 Prompt 到 ${getExtractAITargetLabel()}${schema ? '（含 Schema: ' + schema.name + '）' : ''}…`,
+    'info'
+  );
 }
 
 async function syncPromptEditsFromDom() {
@@ -1724,7 +2122,9 @@ function showExtractResult(responses) {
   setExtractResultContent(text);
 }
 
-function grabCurrentAssistantReply() {
+function grabCurrentAssistantReply(targetAI, grokMode) {
+  const ai = targetAI || 'gpt';
+  const mode = grokMode === 'inline' ? 'inline' : 'page';
   const stored = (() => { try { return sessionStorage.getItem('_ntk_sent') || ''; } catch(_) { return ''; } })();
   const sent = stored;
   const norm = s => String(s || '').replace(/[\s​ ]+/g, ' ').trim();
@@ -1734,28 +2134,106 @@ function grabCurrentAssistantReply() {
     return tN.slice(0, 100) === sN.slice(0, 100);
   };
 
+  const isVisible = el => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+  const getInlineGrokRoot = () => {
+    const roots = [
+      ...document.querySelectorAll('[role="dialog"], [aria-modal="true"], aside, section, div')
+    ].filter(el => isVisible(el) && el.getBoundingClientRect().width >= 280 && el.getBoundingClientRect().height >= 220);
+    const scored = roots.map(root => {
+      const text = `${root.getAttribute('aria-label') || ''} ${root.textContent || ''}`.slice(0, 4000);
+      const hasGrokWord = /grok/i.test(text);
+      const hasAskAnything = /ask anything/i.test(text);
+      const hasHelpHeading = /how can i help you today\?/i.test(text);
+      const hasCreateImages = /create images/i.test(text);
+      const hasLatestNews = /latest news/i.test(text);
+      const hasFastMode = /\bfast\b/i.test(text);
+      const hasPostMarkers = !!root.querySelector('[data-testid="tweetTextarea_0"], [data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
+      let score = 0;
+      if (hasGrokWord) score += 10;
+      if (hasHelpHeading) score += 16;
+      if (hasAskAnything) score += 14;
+      if (hasCreateImages) score += 10;
+      if (hasLatestNews) score += 8;
+      if (hasFastMode) score += 6;
+      if (hasPostMarkers) score -= 12;
+      return { root, score };
+    }).filter(x => x.score > 0);
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0]?.root || null;
+  };
+  const collectTexts = selectors => {
+    for (const s of selectors) {
+      const all = [...document.querySelectorAll(s)].filter(e => {
+        const t = (e.innerText || '').trim();
+        return isVisible(e) && t.length > 10 && !looksLikeSent(t);
+      });
+      if (all.length) return all[all.length - 1].innerText || '';
+    }
+    return '';
+  };
+
+  if (ai === 'gpt') {
+    return collectTexts([
+      'div[data-message-author-role="assistant"] .markdown',
+      'div[data-message-author-role="assistant"]',
+      '[class*="agent-turn"]',
+    ]);
+  }
+
+  if (ai === 'gemini') {
+    return collectTexts([
+      'model-response .response-content',
+      'model-response',
+      '.model-response-text',
+    ]);
+  }
+
+  if (ai === 'claude') {
+    return collectTexts([
+      '.font-claude-message',
+      '[data-is-streaming="false"]',
+      '.prose',
+    ]);
+  }
+
   const primarySels = [
     '[data-testid="messageText"]',
     'div[class*="GrokMessage"]',
     '[data-testid="tweetText"]',
   ];
+  const inlineRoot = mode === 'inline' ? getInlineGrokRoot() : null;
+  if (mode === 'inline' && !inlineRoot) return '';
+  const grokCandidates = [];
   for (const s of primarySels) {
-    const all = [...document.querySelectorAll(s)].filter(e => {
+    const scope = inlineRoot || document;
+    for (const e of scope.querySelectorAll(s)) {
       const t = (e.innerText || '').trim();
-      return t.length > 10 && !looksLikeSent(t);
-    });
-    if (all.length) return all[all.length - 1].innerText || '';
+      if (!isVisible(e) || t.length <= 10 || looksLikeSent(t)) continue;
+      const inDialog = !!e.closest('[role="dialog"], [aria-modal="true"], aside');
+      grokCandidates.push({ text: t, inlineScore: (inlineRoot && inlineRoot.contains(e) ? 10 : 0) + (inDialog ? 2 : 0), el: e });
+    }
+  }
+  if (grokCandidates.length) {
+    if (mode === 'inline') {
+      grokCandidates.sort((a, b) => b.inlineScore - a.inlineScore);
+      return grokCandidates[0]?.text || '';
+    }
+    return grokCandidates[grokCandidates.length - 1]?.text || '';
   }
 
   for (const s of ['[role="article"] [lang]', 'article [lang]']) {
-    const all = [...document.querySelectorAll(s)];
+    const scope = inlineRoot || document;
+    const all = [...scope.querySelectorAll(s)];
     for (let i = all.length - 1; i >= 0; i--) {
       const t = (all[i].innerText || '').trim();
       if (t.length > 10 && !looksLikeSent(t)) return t;
     }
   }
 
-  const root = document.querySelector('main') || document.body;
+  const root = inlineRoot || document.querySelector('main') || document.body;
   const blocks = [...root.querySelectorAll('p, div')].filter(e => {
     if (e.querySelector('input, textarea, button, [role="button"]')) return false;
     const t = (e.innerText || '').trim();
@@ -1778,6 +2256,7 @@ async function captureCurrentExtractReply() {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
       func: grabCurrentAssistantReply,
+      args: [extractAI, extractGrokMode],
     });
     const text = String(result?.result || '').trim();
     if (!text) {

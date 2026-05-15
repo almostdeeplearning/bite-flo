@@ -18,6 +18,7 @@ Implementation note:
 - **UI 可讀性全面調整（2026-05-05）**：基礎字體放大（body 14px、按鈕 12px、label 11px、輸入框 15px）；顏色對比提升（`--text2` → `#B8B2A6`、`--text3` → `#7A7468`）；背景改為微暖深灰（`--bg` → `#13110F`）；新增 `.select-compact` 共用 class，以 `appearance: none` 繞過 Chrome OS native `<select>` 渲染，統一所有 dropdown 字型。
 - **Custom Flow Tab 完成並測試通過（2026-05-03）**：5 個可組合的 Block Card，支援延遲設定與一鍵跑完全部。
 - **Theme system + ETL / Custom Flow 工作流收斂（2026-05-07, created: 05-07 17）**：新增 `nt-dark` / `editorial-light` / `studio-light`；ETL 改為半手動結果回收；Custom Flow 的全域執行區移入 Card 05。
+- **Workflow 手動回收 UI 收尾完成（2026-05-15, created: 05-15 21）**：Custom Flow 視覺上拆成 `05 Execute` 與 `06 Review`；Preset 不再自動套用第一個已存流程；Review 支援 `Capture Reply`、編修、`Copy`、`Save .md`、`Save .html`。
 - **Grok Distill 注入修正（2026-05-03）**：Grok 作為 Distill 目標時改用 `executeScript` 直接注入，與 ETL 機制一致。
 - **ETL Tab 全面重設計（2026-05-04）**：改為 5 張垂直時間軸 Card，並拆成 `ETLCard1–5Block.js`。
 - MV3 CSP 合規：所有頁面不使用 inline script，UI patch 邏輯放在 `src/popup-ui-patch.js`。
@@ -81,21 +82,22 @@ narrative-toolkit/
 - 以 5 張垂直時間軸 Card 組成：Prompt、Schema、目標 AI、執行萃取、儲存結果。
 - 從 Prompt 系列選取單一 Prompt；選取後會直接進入可手動修改的分析任務區。
 - 可選配 Schema 格式模板。
-- Card 03 可選擇目標 AI 並保存 `extractAI` 狀態，但目前 `startExtract()` 尚未接線到此設定，實際萃取仍固定使用 Grok。
-- Prompt 文字與 Schema 合併後注入 `x.com/i/grok`。
+- Card 03 可選擇目標 AI；目前主畫面顯示 `GPT`、`Grok Inline`、`Grok Page`，其中 Grok 另以 `extractGrokMode` 區分完整頁面與 x.com 頁內小視窗。
+- Prompt 文字與 Schema 合併後直接注入目前選擇的 AI。
 - Card 04 目前只負責送出 Prompt 與顯示送出進度 / log，不再自動輪詢或自動回填結果。
-- Card 05 由使用者在 Grok 回覆完成後手動截取當前回覆，於可編輯 textarea 中微調，再儲存 `.md`。
+- Card 05 由使用者在 AI 回覆完成後手動截取當前回覆，於可編輯 textarea 中微調，再儲存 `.md`。
 
 ### 自訂流程（Custom Flow）
 
 - 5 個可獨立顯示／隱藏的 Block Card：Source（來源內容）、Task（Prompt 任務）、Format（輸出格式）、AI（目標 AI）、Run（執行整理）。
 - 每個 Block 可設定執行後的延遲時間（無延遲 / 2s / 5s / 10s / 20s / 自訂秒數）。
-- 「一鍵跑完全部」按序執行已顯示的 Block，每步執行後依延遲設定等待再繼續；全域執行控制目前集中於 Card 05。
-- 支援 Preset：可儲存、載入、刪除目前 Custom Flow 設定，並可指定預設 Preset。
+- 「一鍵跑完全部」按序執行已顯示的 Block，每步執行後依延遲設定等待再繼續；送出區與回收區目前視覺上拆成 `05 Execute` / `06 Review`。
+- 支援 Preset：可儲存、套用、刪除目前 Custom Flow 設定；已存 Preset 不會在進入 Workflow 時自動套用，必須由使用者主動選擇。
 - 目前作為主要整理入口，承接原本 Distill 的整理工作流。
-- 目標 AI 支援 GPT / Gemini / Claude / Grok；Grok 使用與 X ETL 相同的直接注入機制。
+- 目標 AI 支援 GPT / Gemini / Claude / Grok；Grok 使用與 X ETL 相同的直接注入機制，並支援 `Grok Inline / Grok Page` 分流。
 - 與原 Distill block 共用部分底層邏輯，並共用 Prompt 庫與 Schema 庫。
-- Distill 與 Custom Flow 現在共用 `cfAutoSave`；兩者送出 `START_DISTILL` 時都會附帶 `autoSave`，背景端以 message 參數為唯一準則，不再讀取 `distillAutoSave`。
+- `06 Review` 以手動回收為主：`Capture Reply` → 編修 → `Copy / Save .md / Save .html`。
+- Distill 與 Custom Flow 現在共用 `cfAutoSave`；兩者送出 `START_DISTILL` 時都會附帶 `autoSave`，背景端以 message 參數為唯一準則，不再讀取 `distillAutoSave`；但目前 Custom Flow 主路徑已不再依賴自動回收。
 
 ### Prompts
 
@@ -125,10 +127,11 @@ narrative-toolkit/
 - `chrome.storage.local` 只在同一 Chrome Profile 內保存，無法跨 Profile 同步。
 - Chrome 只允許下載至 Downloads 目錄或其子目錄，無法寫入任意系統路徑。
 - Extension 依賴使用者已登入目標 AI 平台。
-- X ETL 的 Card 03 目標 AI 選擇目前只保存 UI 狀態，尚未控制實際萃取目標；萃取仍固定開啟 `x.com/i/grok`。
+- ETL 的主 UI 目前只顯示 `GPT`、`Grok Inline`、`Grok Page`；Gemini / Claude 雖仍保留底層路由，但不作為主工作流入口。
 - Grok 頁面 DOM 改版時，ETL 與 Distill 共用的 `injectToGrok` selector 可能需要更新。
 - Schema 首次遷移只在 `schemaTemplates` 為空時觸發；若 storage 已有部分資料，可能不會自動補入預設模板。
 - Custom Flow 的一鍵跑完全部目前只讀取已選狀態，未選 Prompt 等情境沒有完整錯誤提示。
+- Custom Flow 的 `Capture Reply` 目前優先抓最近送出的 target tab；若之後切換到不相關頁面再手動回收，仍需確認目前顯示的頁面就是目標 AI 頁。
 - 修改程式後必須在 `chrome://extensions/` 重新載入，service worker 才會更新。
 
 ## 開發規則
@@ -164,5 +167,4 @@ rg -n --pcre2 "<script(?!\s+src=)|\s(on[a-zA-Z]+)\s*=|javascript:" sidepanel.htm
 
 ## Open Questions
 
-- X ETL Card 03 的目標 AI 是否要正式接線到 `startExtract()`，讓 ETL 可依 `extractAI` 開啟 GPT / Gemini / Claude / Grok？
 - `src/blocks/ETLStep1Block.js`、`ETLStep2Block.js`、`ETLStep3Block.js` 是否可在下一次清理任務中刪除？
