@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Narrative Toolkit",
+  "name": "BiteFlo",
   "version": "1.0.0",
   "description": "Grok萃取 + 長文整理 → skill.md / wiki.md",
   "permissions": ["storage", "scripting", "tabs", "downloads", "activeTab", "sidePanel"],
@@ -39,7 +39,7 @@
     }
   ],
   "action": {
-    "default_title": "Narrative Toolkit"
+    "default_title": "BiteFlo"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

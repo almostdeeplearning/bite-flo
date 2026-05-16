@@ -403,7 +403,7 @@ const CustomFlowController = {
           return;
         }
         navigator.clipboard.writeText(content);
-        this._log('已複製', 'success');
+        this._log(currentLanguage === 'en' ? 'Copied' : '已複製', 'success');
       });
     }
     if ($('cfSaveResultBtn')) {
@@ -887,7 +887,7 @@ const CustomFlowController = {
         this.lastTargetTabId = null;
         const r = msg.results[0];
         this._showResultContent(r);
-        this._log('✅ 整理完成並已存檔！', 'success');
+        this._log(currentLanguage === 'en' ? '✅ Done — saved!' : '✅ 整理完成並已存檔！', 'success');
         this._setGlobalStatus(t('status_all_done'), 'success');
       } else {
       this._showResultEmpty(t('cf_result_placeholder'));
@@ -1185,12 +1185,12 @@ const CustomFlowController = {
     });
     const text = result?.result || '';
     if ($('cfRawText')) { $('cfRawText').value = text; $('cfCharCount').textContent = getPromptCountLabel(text.length); }
-    this._log(`已抓取頁面 ${text.length} 字`, 'success');
+    this._log(currentLanguage === 'en' ? `Page captured (${text.length} chars)` : `已抓取頁面 ${text.length} 字`, 'success');
   },
 
   async _saveDraft() {
     const content = this.getContent();
-    if (!content) { this._log('請先輸入或抓取內容', 'error'); return; }
+    if (!content) { this._log(currentLanguage === 'en' ? 'Enter or capture content first.' : '請先輸入或抓取內容', 'error'); return; }
     const tStr   = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const name   = `draft_${tStr}.md`;
     const stored = await chrome.storage.local.get(['library', 'distillFolder']);
@@ -1198,12 +1198,12 @@ const CustomFlowController = {
     lib.unshift({ name, fmt: 'draft', content, chars: content.length, date: new Date().toLocaleDateString('zh-TW') });
     await chrome.storage.local.set({ library: lib });
     chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || '' });
-    this._log(`已儲存草稿：${name}`, 'success');
+    this._log(currentLanguage === 'en' ? `Draft saved: ${name}` : `已儲存草稿：${name}`, 'success');
   },
 
   async startFlow() {
     const content = this.getContent();
-    if (!content) { this._log('請先輸入或抓取內容', 'error'); return; }
+    if (!content) { this._log(currentLanguage === 'en' ? 'Enter or capture content first.' : '請先輸入或抓取內容', 'error'); return; }
 
     const cfg = await chrome.storage.local.get(['fullAuto']);
     const autoSaveChecked = this._isAutoSaveEnabled();
@@ -1235,7 +1235,7 @@ const CustomFlowController = {
     const aiLabel = this.getAI() === 'grok'
       ? (this.getGrokMode() === 'inline' ? 'GROK INLINE' : 'GROK PAGE')
       : this.getAI().toUpperCase();
-    this._log(`送出整理（${fmtLabel}，${aiLabel}）…`, 'info');
+    this._log(currentLanguage === 'en' ? `Sending to ${aiLabel} (${fmtLabel})…` : `送出整理（${fmtLabel}，${aiLabel}）…`, 'info');
     this._setGlobalStatus(autoSaveChecked ? t('status_trial_running', { ai: aiLabel }) : t('status_sent_manual_capture'));
     console.log('[CF startFlow] sending START_DISTILL', {
       source: 'flow',
@@ -1355,7 +1355,7 @@ const CustomFlowController = {
     this._setRunUI(false);
     this._setGlobalRunUI(false);
     this._setGlobalStatus(t('status_stopped'), 'warn');
-    this._log('已停止', 'warn');
+    this._log(t('status_stopped'), 'warn');
   },
 
   async runAll() {
@@ -1386,27 +1386,27 @@ const CustomFlowController = {
       console.log('[CF runAll] block:', name);
 
       if (name === 'source') {
-        this._log('⟳ 抓取來源內容…', 'info');
+        this._log(currentLanguage === 'en' ? '⟳ Capturing source…' : '⟳ 抓取來源內容…', 'info');
         await this._grabPage();
         pipeline.content = this.getContent();
         console.log('[CF runAll] source: content length =', pipeline.content.length);
-        this._log(`✓ 來源：${pipeline.content.length} 字`, 'success');
+        this._log(currentLanguage === 'en' ? `✓ Source: ${pipeline.content.length} chars` : `✓ 來源：${pipeline.content.length} 字`, 'success');
 
       } else if (name === 'task') {
         pipeline.prompt = this.getSelectedPrompt();
         console.log('[CF runAll] task: prompt =', pipeline.prompt?.name ?? '(none)');
-        this._log(pipeline.prompt ? `✓ Prompt：${pipeline.prompt.name}` : '— 未選 Prompt，略過', 'info');
+        this._log(pipeline.prompt ? `✓ Prompt: ${pipeline.prompt.name}` : (currentLanguage === 'en' ? '— No prompt, skipping' : '— 未選 Prompt，略過'), 'info');
 
       } else if (name === 'format') {
         pipeline.schema = this.getSelectedSchema();
         console.log('[CF runAll] format: schema =', pipeline.schema?.name ?? '(none)');
-        this._log(pipeline.schema ? `✓ Schema：${pipeline.schema.name}` : '— 未選 Schema，略過', 'info');
+        this._log(pipeline.schema ? `✓ Schema: ${pipeline.schema.name}` : (currentLanguage === 'en' ? '— No schema, skipping' : '— 未選 Schema，略過'), 'info');
 
       } else if (name === 'ai') {
         pipeline.ai = this.getAI();
         pipeline.grokMode = this.getGrokMode();
         console.log('[CF runAll] ai: target =', pipeline.ai);
-        this._log(`✓ 目標 AI：${pipeline.ai}${pipeline.ai === 'grok' ? ` (${pipeline.grokMode})` : ''}`, 'info');
+        this._log(currentLanguage === 'en' ? `✓ AI: ${pipeline.ai}${pipeline.ai === 'grok' ? ` (${pipeline.grokMode})` : ''}` : `✓ 目標 AI：${pipeline.ai}${pipeline.ai === 'grok' ? ` (${pipeline.grokMode})` : ''}`, 'info');
 
       } else if (name === 'run') {
         console.log('[CF runAll] run: pipeline =', {
@@ -1420,7 +1420,7 @@ const CustomFlowController = {
 
       const delay = this._getDelay(name);
       if (delay > 0 && name !== 'run') {
-        this._log(`⏱ 等待 ${delay}s…`, 'info');
+        this._log(currentLanguage === 'en' ? `⏱ Waiting ${delay}s…` : `⏱ 等待 ${delay}s…`, 'info');
         console.log('[CF runAll] delay', delay, 's after block:', name);
         const finished = await this._waitWithStatus(name, delay);
         if (!finished) break;
@@ -1442,7 +1442,7 @@ const CustomFlowController = {
     const autoSaveChecked = this._isAutoSaveEnabled();
 
     if (!content) {
-      this._log('❌ 無來源內容，請先執行 Source block', 'error');
+      this._log(currentLanguage === 'en' ? '❌ No source content. Run the Source block first.' : '❌ 無來源內容，請先執行 Source block', 'error');
       console.warn('[CF runAll] _runWithPipeline: no content, aborting');
       return;
     }
