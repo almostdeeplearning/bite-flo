@@ -23,11 +23,32 @@ let currentLanguage = 'zh';
 
 const I18N = {
   zh: {
-    nav_extract: '脈絡<br class="nav-zh-break">掃描',
-    nav_flow: 'AI<br class="nav-zh-break">Flows',
-    nav_prompts: 'Prompt<br class="nav-zh-break">管理',
-    nav_schema: '格式<br class="nav-zh-break">管理',
+    nav_extract: '脈絡<br class="nav-break">掃描',
+    nav_flow: 'AI<br class="nav-break">Flows',
+    nav_prompts: 'Prompt<br class="nav-break">管理',
+    nav_schema: '格式<br class="nav-break">管理',
     nav_settings: 'Settings',
+    settings_automation: '自動化',
+    settings_full_auto: '全自動模式',
+    settings_full_auto_sub: 'Extension 自動開啟目標 AI、注入內容、抓取回應',
+    settings_auto_download: '自動下載到本機',
+    settings_download_paths: '下載路徑',
+    settings_extract_folder: 'X ETL 資料夾（相對於 Downloads）',
+    settings_distill_folder: '長文整理 資料夾（相對於 Downloads）',
+    settings_theme_label: 'Theme',
+    settings_visual_theme: '視覺主題',
+    settings_font_size: '字體大小',
+    settings_font_small: '小',
+    settings_font_medium: '中',
+    settings_font_large: '大',
+    settings_text_contrast: '文字對比',
+    settings_contrast_standard: '標準',
+    settings_contrast_bright: '明亮',
+    settings_contrast_max: '高對比',
+    settings_saved: '✓ 已儲存',
+    settings_save: '儲存設定',
+    settings_copy: '複製',
+    settings_delete: '刪除',
     hidden: '隱藏',
     shown: '顯示',
     expand: '展開',
@@ -69,6 +90,37 @@ const I18N = {
     delete: '刪除',
     stop: '停止',
     save_flow: '儲存為預設流程',
+    preset_name_prompt: 'Preset 名稱',
+    preset_saved: '已儲存 Preset：{name}',
+    preset_deleted: '已刪除 Preset：{name}',
+    preset_delete_confirm: '刪除 Preset「{name}」？',
+    import_prompt_failed: 'Prompt 匯入失敗：{message}',
+    import_schema_failed: 'Schema 匯入失敗：{message}',
+    copy_failed_permission: '複製失敗，請確認瀏覽器權限。',
+    copied: '已複製',
+    copied_named: '已複製「{name}」',
+    added_named: '已新增「{name}」',
+    delete_schema_confirm: '刪除 Schema「{name}」？',
+    export_prompt_series_done: '已匯出 {count} 個系列',
+    export_prompt_series_md_ready: '準備匯出 Markdown：{count} 個系列',
+    export_schema_done: '已匯出 {count} 個 Schema',
+    export_schema_md_ready: '準備匯出 Markdown：{count} 個 Schema',
+    import_prompt_merge_confirm: '合併匯入會把新 Prompt 併入目前 Prompt 管理，是否繼續？',
+    import_prompt_replace_confirm: '取代匯入會覆蓋目前 Prompt 管理，是否繼續？',
+    import_prompt_merge_done: '合併匯入完成：新增 {seriesCount} 個系列、{promptCount} 個 Prompt{renamePart}{skipPart}',
+    import_prompt_done: '已匯入 {count} 個系列',
+    import_schema_merge_confirm: '合併匯入會把新 Schema 併入目前格式管理，是否繼續？',
+    import_schema_replace_confirm: '取代匯入會覆蓋目前格式管理，是否繼續？',
+    import_schema_merge_done: '合併匯入完成：新增 {schemaCount} 個 Schema{renamePart}{skipPart}',
+    import_schema_done: '已匯入 {count} 個 Schema',
+    import_rename_part: '，改名保留 {count} 個',
+    import_skip_part: '，略過重複 {count} 個',
+    extract_capture_no_page: '找不到目前頁面，無法截取回覆',
+    extract_capture_no_result: '目前頁面尚未抓到可用回覆，請確認 AI 對話已完成生成',
+    extract_capture_success: '已截取當前回覆，可在下方直接微調後儲存',
+    extract_capture_failed: '截取當前回覆失敗：{message}',
+    extract_save_empty: '尚無結果可儲存',
+    extract_saved_downloaded: '✅ 已儲存並下載：{name}',
     preset_label: 'Preset：',
     no_preset: '尚無 Preset',
     status_label: '狀態：',
@@ -109,6 +161,27 @@ const I18N = {
     cf_card_run: '送出與回收結果',
     cf_card_execute: '執行送出',
     cf_card_review: '回收與儲存',
+    cf_prompt_library_none: '— 不使用 Prompt 庫 —',
+    cf_prompt_series_first: '— 先選擇 Prompt 系列 —',
+    cf_schema_none: '— 不套用 Schema —',
+    cf_prompt_preview_empty: '尚未選擇 Prompt',
+    cf_schema_preview_empty: '尚未選擇 Schema',
+    cf_result_empty: '尚未產生結果',
+    cf_result_name_label: '結果名稱',
+    enter_or_capture_first: '請先輸入或抓取內容',
+    draft_saved: '已儲存草稿：{name}',
+    cf_no_result_copy: '尚無結果可複製',
+    cf_done_saved: '✅ 整理完成並已存檔！',
+    cf_sent_to_ai_discuss: '✅ 已送出，請至 AI 對話框查看與討論',
+    cf_captured_reply_ready: '已截取當前回覆，可在下方微調後儲存',
+    cf_captured_reply_status: '已截取當前回覆，可微調後儲存',
+    cf_capture_failed: '截取當前回覆失敗：{message}',
+    cf_saved_named: '✅ 已儲存：{name}',
+    cf_saved_md_status: '已儲存 .md',
+    cf_saved_html_status: '已儲存 .html',
+    cf_page_captured_chars: '已抓取頁面 {count} 字',
+    cf_send_distill: '送出整理（{format}，目標：{ai}）…',
+    cf_no_records: '尚無整理記錄',
     cf_delay_label: '下一步前等',
     cf_custom_delay: '自訂',
     seconds: '秒',
@@ -130,11 +203,32 @@ const I18N = {
     empty_add_prompt: '尚無 Prompt<br>點下方「新增 Prompt」開始',
   },
   en: {
-    nav_extract: 'Narrative Scan',
-    nav_flow: 'AI Flows',
-    nav_prompts: 'Prompt Manager',
-    nav_schema: 'Format Manager',
+    nav_extract: 'Narrative<br class="nav-break">Scan',
+    nav_flow: 'AI<br class="nav-break">Flows',
+    nav_prompts: 'Prompt<br class="nav-break">Manager',
+    nav_schema: 'Format<br class="nav-break">Manager',
     nav_settings: 'Settings',
+    settings_automation: 'Automation',
+    settings_full_auto: 'Full Auto Mode',
+    settings_full_auto_sub: 'The extension opens the target AI, injects content, and captures replies automatically.',
+    settings_auto_download: 'Auto-download to device',
+    settings_download_paths: 'Download Paths',
+    settings_extract_folder: 'X ETL folder (relative to Downloads)',
+    settings_distill_folder: 'Long-form analysis folder (relative to Downloads)',
+    settings_theme_label: 'Theme',
+    settings_visual_theme: 'Visual theme',
+    settings_font_size: 'Font Size',
+    settings_font_small: 'Small',
+    settings_font_medium: 'Medium',
+    settings_font_large: 'Large',
+    settings_text_contrast: 'Text Contrast',
+    settings_contrast_standard: 'Standard',
+    settings_contrast_bright: 'Bright',
+    settings_contrast_max: 'High Contrast',
+    settings_saved: '✓ Saved',
+    settings_save: 'Save Settings',
+    settings_copy: 'Copy',
+    settings_delete: 'Delete',
     hidden: 'Hide',
     shown: 'Show',
     expand: 'Expand',
@@ -176,6 +270,37 @@ const I18N = {
     delete: 'Delete',
     stop: 'Stop',
     save_flow: 'Save Workflow',
+    preset_name_prompt: 'Preset name',
+    preset_saved: 'Preset saved: {name}',
+    preset_deleted: 'Preset deleted: {name}',
+    preset_delete_confirm: 'Delete preset "{name}"?',
+    import_prompt_failed: 'Prompt import failed: {message}',
+    import_schema_failed: 'Schema import failed: {message}',
+    copy_failed_permission: 'Copy failed. Please check browser permissions.',
+    copied: 'Copied',
+    copied_named: 'Copied "{name}"',
+    added_named: 'Added "{name}"',
+    delete_schema_confirm: 'Delete schema "{name}"?',
+    export_prompt_series_done: 'Exported {count} series',
+    export_prompt_series_md_ready: 'Preparing Markdown export: {count} series',
+    export_schema_done: 'Exported {count} schemas',
+    export_schema_md_ready: 'Preparing Markdown export: {count} schemas',
+    import_prompt_merge_confirm: 'Merge import will add new prompts into the current Prompt Manager. Continue?',
+    import_prompt_replace_confirm: 'Replace import will overwrite the current Prompt Manager. Continue?',
+    import_prompt_merge_done: 'Merge import complete: added {seriesCount} series and {promptCount} prompts{renamePart}{skipPart}',
+    import_prompt_done: 'Imported {count} series',
+    import_schema_merge_confirm: 'Merge import will add new schemas into the current Format Manager. Continue?',
+    import_schema_replace_confirm: 'Replace import will overwrite the current Format Manager. Continue?',
+    import_schema_merge_done: 'Merge import complete: added {schemaCount} schemas{renamePart}{skipPart}',
+    import_schema_done: 'Imported {count} schemas',
+    import_rename_part: ', kept {count} with renamed titles',
+    import_skip_part: ', skipped {count} duplicates',
+    extract_capture_no_page: 'No active page to capture from.',
+    extract_capture_no_result: 'No reply was captured from the current page yet. Please confirm the AI response has finished.',
+    extract_capture_success: 'Captured the current reply. You can refine it below before saving.',
+    extract_capture_failed: 'Failed to capture the current reply: {message}',
+    extract_save_empty: 'No result to save yet.',
+    extract_saved_downloaded: '✅ Saved and downloaded: {name}',
     preset_label: 'Workflow',
     no_preset: 'No saved workflows',
     status_label: 'Status: ',
@@ -216,6 +341,27 @@ const I18N = {
     cf_card_run: 'Send & Capture',
     cf_card_execute: 'Execute',
     cf_card_review: 'Review',
+    cf_prompt_library_none: '— No prompt library —',
+    cf_prompt_series_first: '— Select a prompt series first —',
+    cf_schema_none: '— No Schema —',
+    cf_prompt_preview_empty: 'No prompt selected yet',
+    cf_schema_preview_empty: 'No schema selected yet',
+    cf_result_empty: 'No result yet',
+    cf_result_name_label: 'Result name',
+    enter_or_capture_first: 'Enter or capture content first.',
+    draft_saved: 'Draft saved: {name}',
+    cf_no_result_copy: 'No result to copy yet.',
+    cf_done_saved: '✅ Done — saved!',
+    cf_sent_to_ai_discuss: '✅ Sent. Open the AI chat to review and continue.',
+    cf_captured_reply_ready: 'Captured the current reply. You can edit and save it below.',
+    cf_captured_reply_status: 'Reply captured. Review and save when ready.',
+    cf_capture_failed: 'Capture failed: {message}',
+    cf_saved_named: '✅ Saved: {name}',
+    cf_saved_md_status: 'Saved .md successfully.',
+    cf_saved_html_status: 'Saved .html successfully.',
+    cf_page_captured_chars: 'Captured page ({count} chars)',
+    cf_send_distill: 'Sending distill task ({format}, target: {ai})…',
+    cf_no_records: 'No distill records yet',
     cf_delay_label: 'Delay',
     cf_custom_delay: 'Custom',
     seconds: 's',
@@ -370,6 +516,7 @@ const CustomFlowController = {
     DistillFormatBlock.renderCF(cardsEl);
     DistillAIBlock.renderCF(cardsEl);
     DistillRunBlock.renderCF(cardsEl);
+    applyI18n(cardsEl);
 
     this.cardVisible = Object.assign(
       { source: true, task: true, format: true, ai: true, run: true },
@@ -463,11 +610,11 @@ const CustomFlowController = {
       $('cfCopyBtn').addEventListener('click', () => {
         const content = this._getResultContent().trim();
         if (!content) {
-          this._log(currentLanguage === 'en' ? 'No result to copy yet.' : '尚無結果可複製', 'warn');
+          this._log(t('cf_no_result_copy'), 'warn');
           return;
         }
         navigator.clipboard.writeText(content);
-        this._log(currentLanguage === 'en' ? 'Copied' : '已複製', 'success');
+        this._log(t('copied'), 'success');
       });
     }
     if ($('cfSaveResultBtn')) {
@@ -696,7 +843,7 @@ const CustomFlowController = {
   },
 
   async savePreset() {
-    const raw = window.prompt('Preset 名稱', '');
+    const raw = window.prompt(t('preset_name_prompt'), '');
     const name = raw?.trim();
     if (!name) return;
     const now = new Date().toISOString();
@@ -715,7 +862,7 @@ const CustomFlowController = {
       cfDefaultPresetId: this.defaultPresetId,
     });
     this._renderPresetControls();
-    showToast(currentLanguage === 'en' ? `Preset saved: ${name}` : `已儲存 Preset：${name}`);
+    showToast(t('preset_saved', { name }));
   },
 
   async loadSelectedPreset() {
@@ -727,7 +874,7 @@ const CustomFlowController = {
   async deleteSelectedPreset() {
     const preset = this._getPresetById(this.selectedPresetId);
     if (!preset) return;
-    if (!window.confirm(`刪除 Preset「${preset.name}」？`)) return;
+    if (!window.confirm(t('preset_delete_confirm', { name: preset.name }))) return;
     this.presets = this.presets.filter(p => p.id !== preset.id);
     if (this.defaultPresetId === preset.id) this.defaultPresetId = null;
     this.selectedPresetId = null;
@@ -736,13 +883,13 @@ const CustomFlowController = {
       cfDefaultPresetId: this.defaultPresetId,
     });
     this._renderPresetControls();
-    showToast(currentLanguage === 'en' ? `Preset deleted: ${preset.name}` : `已刪除 Preset：${preset.name}`);
+    showToast(t('preset_deleted', { name: preset.name }));
   },
 
   _renderTaskPicker() {
     const sel = $('cfSeriesSel');
     if (!sel) return;
-      sel.innerHTML = `<option value="">${currentLanguage === 'en' ? '— No prompt library —' : '— 不使用 Prompt 庫 —'}</option>` +
+      sel.innerHTML = `<option value="">${t('cf_prompt_library_none')}</option>` +
       series.map(s =>
         `<option value="${s.id}"${s.id === this.seriesId ? ' selected' : ''}>${esc(s.name)}</option>`
       ).join('');
@@ -753,7 +900,7 @@ const CustomFlowController = {
     const sel = $('cfPromptSel');
     if (!sel) return;
     if (!this.seriesId) {
-      sel.innerHTML = `<option value="">${currentLanguage === 'en' ? '— Select a prompt series first —' : '— 先選擇 Prompt 系列 —'}</option>`;
+      sel.innerHTML = `<option value="">${t('cf_prompt_series_first')}</option>`;
       sel.disabled = true;
       this.promptIdx = null;
       this._updateSelectedArea();
@@ -782,14 +929,22 @@ const CustomFlowController = {
     const el = $('cfSelectedPromptText');
     if (!el) return;
     const prompt = this.getSelectedPrompt();
-    if (!prompt) { el.textContent = ''; el.setAttribute('data-empty', '1'); }
-    else { el.textContent = prompt.text; el.removeAttribute('data-empty'); }
+    if (!prompt) {
+      el.textContent = '';
+      el.setAttribute('data-empty', '1');
+      el.setAttribute('data-empty-label', t('cf_prompt_preview_empty'));
+    }
+    else {
+      el.textContent = prompt.text;
+      el.removeAttribute('data-empty');
+      el.removeAttribute('data-empty-label');
+    }
   },
 
   _renderFormatPicker() {
     const sel = $('cfSchemaSel');
     if (!sel) return;
-    sel.innerHTML = `<option value="">${currentLanguage === 'en' ? '— No Schema —' : '— 不套用 Schema —'}</option>` +
+    sel.innerHTML = `<option value="">${t('cf_schema_none')}</option>` +
       schemaTemplates.map(s =>
         `<option value="${s.id}"${s.id === this.schemaId ? ' selected' : ''}>${esc(s.name)}</option>`
       ).join('');
@@ -800,12 +955,18 @@ const CustomFlowController = {
     const el = $('cfSchemaPreview');
     if (!el) return;
     const schema = this.getSelectedSchema();
-    if (!schema) { el.textContent = ''; el.setAttribute('data-empty', '1'); return; }
+    if (!schema) {
+      el.textContent = '';
+      el.setAttribute('data-empty', '1');
+      el.setAttribute('data-empty-label', t('cf_schema_preview_empty'));
+      return;
+    }
     el.textContent = schema.text;
     el.removeAttribute('data-empty');
+    el.removeAttribute('data-empty-label');
   },
 
-  _showResultEmpty(message = currentLanguage === 'en' ? 'No result yet' : '尚未產生結果') {
+  _showResultEmpty(message = t('cf_result_empty')) {
     if ($('cfResultName')) $('cfResultName').value = this._makeFlowResultName();
     if ($('cfResultEmpty')) {
       $('cfResultEmpty').textContent = message;
@@ -951,7 +1112,7 @@ const CustomFlowController = {
         this.lastTargetTabId = null;
         const r = msg.results[0];
         this._showResultContent(r);
-        this._log(currentLanguage === 'en' ? '✅ Done — saved!' : '✅ 整理完成並已存檔！', 'success');
+        this._log(t('cf_done_saved'), 'success');
         this._setGlobalStatus(t('status_all_done'), 'success');
       } else {
       this._showResultEmpty(t('cf_result_placeholder'));
@@ -990,14 +1151,10 @@ const CustomFlowController = {
         const pos = $('cfResultText').value.length;
         $('cfResultText').setSelectionRange(pos, pos);
       }
-      this._log(currentLanguage === 'en'
-        ? 'Captured the current reply. You can edit and save it below.'
-        : '已截取當前回覆，可在下方微調後儲存', 'success');
-      this._setGlobalStatus(currentLanguage === 'en'
-        ? 'Reply captured. Review and save when ready.'
-        : '已截取當前回覆，可微調後儲存', 'success');
+      this._log(t('cf_captured_reply_ready'), 'success');
+      this._setGlobalStatus(t('cf_captured_reply_status'), 'success');
     } catch (err) {
-      this._log(`${currentLanguage === 'en' ? 'Capture failed' : '截取當前回覆失敗'}：${err?.message || err}`, 'error');
+      this._log(t('cf_capture_failed', { message: err?.message || err }), 'error');
     }
   },
 
@@ -1016,8 +1173,8 @@ const CustomFlowController = {
     chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || stored.draftFolder || '' });
     this.lastResult = { name, content, fmt: 'wiki' };
     this._showResultContent(this.lastResult);
-    this._log(`✅ ${currentLanguage === 'en' ? 'Saved' : '已儲存'}：${name}`, 'success');
-    this._setGlobalStatus(currentLanguage === 'en' ? 'Saved .md successfully.' : '已儲存 .md', 'success');
+    this._log(t('cf_saved_named', { name }), 'success');
+    this._setGlobalStatus(t('cf_saved_md_status'), 'success');
   },
 
   async saveCapturedHtml() {
@@ -1038,8 +1195,8 @@ const CustomFlowController = {
       mime: 'text/html;charset=utf-8',
       folder: stored.distillFolder || stored.draftFolder || '',
     });
-    this._log(`✅ ${currentLanguage === 'en' ? 'Saved' : '已儲存'}：${name}`, 'success');
-    this._setGlobalStatus(currentLanguage === 'en' ? 'Saved .html successfully.' : '已儲存 .html', 'success');
+    this._log(t('cf_saved_named', { name }), 'success');
+    this._setGlobalStatus(t('cf_saved_html_status'), 'success');
   },
 
   async _grabPage() {
@@ -1254,7 +1411,7 @@ const CustomFlowController = {
 
   async _saveDraft() {
     const content = this.getContent();
-    if (!content) { this._log(currentLanguage === 'en' ? 'Enter or capture content first.' : '請先輸入或抓取內容', 'error'); return; }
+    if (!content) { this._log(t('enter_or_capture_first'), 'error'); return; }
     const tStr   = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const name   = `draft_${tStr}.md`;
     const stored = await chrome.storage.local.get(['library', 'distillFolder']);
@@ -1262,12 +1419,12 @@ const CustomFlowController = {
     lib.unshift({ name, fmt: 'draft', content, chars: content.length, date: new Date().toLocaleDateString('zh-TW') });
     await chrome.storage.local.set({ library: lib });
     chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || '' });
-    this._log(currentLanguage === 'en' ? `Draft saved: ${name}` : `已儲存草稿：${name}`, 'success');
+    this._log(t('draft_saved', { name }), 'success');
   },
 
   async startFlow() {
     const content = this.getContent();
-    if (!content) { this._log(currentLanguage === 'en' ? 'Enter or capture content first.' : '請先輸入或抓取內容', 'error'); return; }
+    if (!content) { this._log(t('enter_or_capture_first'), 'error'); return; }
 
     const cfg = await chrome.storage.local.get(['fullAuto']);
     const autoSaveChecked = this._isAutoSaveEnabled();
@@ -1544,7 +1701,7 @@ const CustomFlowController = {
     this._setRunUI(true);
     this._showResultEmpty(t('cf_result_placeholder'));
     const aiLabel = ai === 'grok' ? (grokMode === 'inline' ? 'GROK INLINE' : 'GROK PAGE') : ai.toUpperCase();
-    this._log(`送出（${fmtLabel} → ${aiLabel}）…`, 'info');
+    this._log(t('cf_send_distill', { format: fmtLabel, ai: aiLabel }), 'info');
     this._setGlobalStatus(autoSaveChecked ? t('status_send_distill_waiting', { ai: aiLabel }) : t('status_sent_manual_capture'));
     console.log('[CF runAll] Sending START_DISTILL with ai:', ai, '| grokMode:', grokMode, '| fullAuto: true | prompt length:', wikiTpl.length);
     console.log('[CF runAll] run card state', {
@@ -1912,7 +2069,7 @@ function bindAll() {
     try {
       await importPromptSeries(input.files?.[0], mode);
     } catch (err) {
-      alert(`Prompt 匯入失敗：${err.message}`);
+      alert(t('import_prompt_failed', { message: err.message }));
     } finally {
       delete input.dataset.importMode;
       input.value = '';
@@ -1970,7 +2127,7 @@ function bindAll() {
     try {
       await importSchemaTemplates(input.files?.[0], mode);
     } catch (err) {
-      alert(`Schema 匯入失敗：${err.message}`);
+      alert(t('import_schema_failed', { message: err.message }));
     } finally {
       delete input.dataset.importMode;
       input.value = '';
@@ -2369,7 +2526,7 @@ async function captureCurrentExtractReply() {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tabId = tabs[0]?.id;
     if (!tabId) {
-      elog('找不到目前頁面，無法截取回覆', 'error');
+      elog(t('extract_capture_no_page'), 'error');
       return;
     }
     const [result] = await chrome.scripting.executeScript({
@@ -2379,20 +2536,20 @@ async function captureCurrentExtractReply() {
     });
     const text = String(result?.result || '').trim();
     if (!text) {
-      elog('目前頁面尚未抓到可用回覆，請確認 Grok 對話已完成生成', 'warn');
+      elog(t('extract_capture_no_result'), 'warn');
       return;
     }
     setExtractResultContent(text);
     focusExtractResultEditor(true);
-    elog('已截取當前回覆，可在下方直接微調後儲存', 'success');
+    elog(t('extract_capture_success'), 'success');
   } catch (err) {
-    elog(`截取當前回覆失敗：${err?.message || err}`, 'error');
+    elog(t('extract_capture_failed', { message: err?.message || err }), 'error');
   }
 }
 
 async function saveExtractResult() {
   const content = getExtractResultContent().trim();
-  if (!content) { elog('尚無結果可儲存', 'error'); return; }
+  if (!content) { elog(t('extract_save_empty'), 'error'); return; }
   lastExtractResult = content;
   const promptName = sanitizeFilenameSegment(prompts[0]?.name || 'prompt');
   const tStr = makeShortTimestamp();
@@ -2403,7 +2560,7 @@ async function saveExtractResult() {
   await chrome.storage.local.set({ library: lib });
   chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.extractFolder || '' });
   renderExtractLibrary();
-  elog(`✅ 已儲存並下載：${name}`, 'success');
+  elog(t('extract_saved_downloaded', { name }), 'success');
 }
 
 // ── Shared Library helpers ────────────────────────────────────────────────────
@@ -2416,8 +2573,8 @@ function libItemHtml(doc) {
     <span class="lib-name" title="${safeName}">${safeName}</span>
     <span class="lib-date">${doc.date}</span>
     <div class="lib-acts">
-      <button class="lib-act-btn" title="複製" aria-label="複製" data-action="copyDocByName" data-name="${safeName}">⧉</button>
-      <button class="lib-act-btn lib-act-del" title="刪除" aria-label="刪除" data-action="delDocByName" data-name="${safeName}">✕</button>
+      <button class="lib-act-btn" title="${esc(t('settings_copy'))}" aria-label="${esc(t('settings_copy'))}" data-action="copyDocByName" data-name="${safeName}">⧉</button>
+      <button class="lib-act-btn lib-act-del" title="${esc(t('settings_delete'))}" aria-label="${esc(t('settings_delete'))}" data-action="delDocByName" data-name="${safeName}">✕</button>
     </div>
   </div>`;
 }
@@ -2435,7 +2592,7 @@ async function renderExtractLibrary() {
 async function copyDocByName(name) {
   const { library } = await chrome.storage.local.get('library');
   const doc = (library || []).find(x => x.name === name);
-  if (doc) { await navigator.clipboard.writeText(doc.content); dlog('已複製', 'success'); }
+  if (doc) { await navigator.clipboard.writeText(doc.content); dlog(t('copied_named', { name: doc.name }), 'success'); }
 }
 function dlDocByName(name) {
   chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD_BY_NAME', name });
@@ -2509,7 +2666,10 @@ function listenBg() {
   });
 }
 
-window.copyText = async txt => { await navigator.clipboard.writeText(txt); dlog('已複製', 'success'); };
+window.copyText = async txt => {
+  await navigator.clipboard.writeText(txt);
+  dlog(t('copied'), 'success');
+};
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 function elog(t, l = 'info') { appendLog('extractLog', t, l); }
@@ -2614,9 +2774,9 @@ function renderSchemas() {
       if (!schema) return;
       try {
         await navigator.clipboard.writeText(schema.text);
-        showToast(`已複製「${schema.name}」`);
+        showToast(t('copied_named', { name: schema.name }));
       } catch (_) {
-        alert('複製失敗，請確認瀏覽器權限。');
+        alert(t('copy_failed_permission'));
       }
     });
   });
@@ -2644,13 +2804,13 @@ function addSchema() {
   renderExtractSchemaPicker();
   DistillFormatBlock._renderPicker();
   CustomFlowController._renderFormatPicker();
-  showToast(`已新增「${name}」`);
+  showToast(t('added_named', { name }));
 }
 
 function delSchema(idx) {
   const s = schemaTemplates[idx];
   if (!s) return;
-  if (!confirm(`刪除 Schema「${s.name}」？`)) return;
+  if (!confirm(t('delete_schema_confirm', { name: s.name }))) return;
   const deletedId = s.id;
   schemaTemplates.splice(idx, 1);
   if (expandedSchemaIdx === idx) expandedSchemaIdx = null;
@@ -2714,7 +2874,7 @@ function ensureUniqueId(rawId, seen) {
 
 function normalizePromptImport(parsed) {
   const rawSeries = Array.isArray(parsed) ? parsed : parsed?.promptSeries;
-  if (!Array.isArray(rawSeries)) throw new Error('Prompt 匯入檔格式不正確');
+  if (!Array.isArray(rawSeries)) throw new Error(currentLanguage === 'en' ? 'Invalid prompt import file format' : 'Prompt 匯入檔格式不正確');
 
   const seriesIds = new Set();
   return rawSeries.map((item, sIdx) => {
@@ -2838,7 +2998,7 @@ function mergePromptSeries(existingSeries, importedSeries) {
 
 function normalizeSchemaImport(parsed) {
   const rawSchemas = Array.isArray(parsed) ? parsed : parsed?.schemaTemplates;
-  if (!Array.isArray(rawSchemas)) throw new Error('Schema 匯入檔格式不正確');
+  if (!Array.isArray(rawSchemas)) throw new Error(currentLanguage === 'en' ? 'Invalid schema import file format' : 'Schema 匯入檔格式不正確');
 
   const schemaIds = new Set();
   return rawSchemas.map((item, idx) => ({
@@ -3009,7 +3169,7 @@ function exportPromptSeries() {
     JSON.stringify(payload, null, 2),
     'application/json;charset=utf-8'
   );
-  showToast(`已匯出 ${series.length} 個系列`);
+  showToast(t('export_prompt_series_done', { count: series.length }));
 }
 
 function exportPromptSeriesMarkdown() {
@@ -3019,7 +3179,7 @@ function exportPromptSeriesMarkdown() {
     'text/markdown;charset=utf-8',
     { saveAs: true }
   );
-  showToast(`準備匯出 Markdown：${series.length} 個系列`);
+  showToast(t('export_prompt_series_md_ready', { count: series.length }));
 }
 
 function exportSchemaTemplates() {
@@ -3034,7 +3194,7 @@ function exportSchemaTemplates() {
     JSON.stringify(payload, null, 2),
     'application/json;charset=utf-8'
   );
-  showToast(`已匯出 ${schemaTemplates.length} 個 Schema`);
+  showToast(t('export_schema_done', { count: schemaTemplates.length }));
 }
 
 function exportSchemaTemplatesMarkdown() {
@@ -3044,14 +3204,14 @@ function exportSchemaTemplatesMarkdown() {
     'text/markdown;charset=utf-8',
     { saveAs: true }
   );
-  showToast(`準備匯出 Markdown：${schemaTemplates.length} 個 Schema`);
+  showToast(t('export_schema_md_ready', { count: schemaTemplates.length }));
 }
 
 async function importPromptSeries(file, mode = 'replace') {
   if (!file) return;
   if (mode === 'merge') {
-    if (!confirm('合併匯入會把新 Prompt 併入目前 Prompt 庫，是否繼續？')) return;
-  } else if (!confirm('取代匯入會覆蓋目前 Prompt 庫，是否繼續？')) return;
+    if (!confirm(t('import_prompt_merge_confirm'))) return;
+  } else if (!confirm(t('import_prompt_replace_confirm'))) return;
 
   const text = await file.text();
   const parsed = JSON.parse(text);
@@ -3087,19 +3247,24 @@ async function importPromptSeries(file, mode = 'replace') {
   });
   refreshPromptConsumers();
   if (mode === 'merge' && mergeStats) {
-    const renamePart = mergeStats.renamedPromptCount ? `，改名保留 ${mergeStats.renamedPromptCount} 個` : '';
-    const skipPart = mergeStats.skippedPromptCount ? `，略過重複 ${mergeStats.skippedPromptCount} 個` : '';
-    showToast(`合併匯入完成：新增 ${mergeStats.addedSeriesCount} 個系列、${mergeStats.addedPromptCount} 個 Prompt${renamePart}${skipPart}`);
+    const renamePart = mergeStats.renamedPromptCount ? t('import_rename_part', { count: mergeStats.renamedPromptCount }) : '';
+    const skipPart = mergeStats.skippedPromptCount ? t('import_skip_part', { count: mergeStats.skippedPromptCount }) : '';
+    showToast(t('import_prompt_merge_done', {
+      seriesCount: mergeStats.addedSeriesCount,
+      promptCount: mergeStats.addedPromptCount,
+      renamePart,
+      skipPart,
+    }));
   } else {
-    showToast(`已匯入 ${series.length} 個系列`);
+    showToast(t('import_prompt_done', { count: series.length }));
   }
 }
 
 async function importSchemaTemplates(file, mode = 'replace') {
   if (!file) return;
   if (mode === 'merge') {
-    if (!confirm('合併匯入會把新 Schema 併入目前 Schema 庫，是否繼續？')) return;
-  } else if (!confirm('取代匯入會覆蓋目前 Schema 庫，是否繼續？')) return;
+    if (!confirm(t('import_schema_merge_confirm'))) return;
+  } else if (!confirm(t('import_schema_replace_confirm'))) return;
 
   const text = await file.text();
   const parsed = JSON.parse(text);
@@ -3126,11 +3291,15 @@ async function importSchemaTemplates(file, mode = 'replace') {
   });
   refreshSchemaConsumers();
   if (mode === 'merge' && mergeStats) {
-    const renamePart = mergeStats.renamedSchemaCount ? `，改名保留 ${mergeStats.renamedSchemaCount} 個` : '';
-    const skipPart = mergeStats.skippedSchemaCount ? `，略過重複 ${mergeStats.skippedSchemaCount} 個` : '';
-    showToast(`合併匯入完成：新增 ${mergeStats.addedSchemaCount} 個 Schema${renamePart}${skipPart}`);
+    const renamePart = mergeStats.renamedSchemaCount ? t('import_rename_part', { count: mergeStats.renamedSchemaCount }) : '';
+    const skipPart = mergeStats.skippedSchemaCount ? t('import_skip_part', { count: mergeStats.skippedSchemaCount }) : '';
+    showToast(t('import_schema_merge_done', {
+      schemaCount: mergeStats.addedSchemaCount,
+      renamePart,
+      skipPart,
+    }));
   } else {
-    showToast(`已匯入 ${schemaTemplates.length} 個 Schema`);
+    showToast(t('import_schema_done', { count: schemaTemplates.length }));
   }
 }
 
@@ -3336,9 +3505,9 @@ function renderCards() {
       const p = cur.prompts[idx];
       try {
         await navigator.clipboard.writeText(p.text);
-        showToast(`已複製「${p.name}」`);
+        showToast(t('copied_named', { name: p.name }));
       } catch (_) {
-        alert('複製失敗，請確認瀏覽器權限。');
+        alert(t('copy_failed_permission'));
       }
     });
   });
@@ -3424,7 +3593,7 @@ function addSeriesPrompt() {
   renderCards();
   renderTabbar();
   CustomFlowController._renderTaskPicker();
-  showToast(`已新增「${name}」`);
+  showToast(t('added_named', { name }));
 }
 
 window.delSeries = async id => {

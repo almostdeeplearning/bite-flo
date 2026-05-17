@@ -20,14 +20,14 @@ const DistillRunBlock = {
     $('stopDistillBtn').addEventListener('click', () => {
       chrome.runtime.sendMessage({ type: 'STOP' });
       this.setUI(false);
-      dlog('已停止', 'warn');
+      dlog(window.t ? t('status_stopped') : '已停止', 'warn');
     });
     $('cfAutoSaveDistill').addEventListener('change', e =>
       chrome.storage.local.set({ cfAutoSave: e.target.checked }));
     $('copyDistillBtn').addEventListener('click', () => {
       if (!this.lastResult) return;
       navigator.clipboard.writeText(this.lastResult.content);
-      dlog('已複製', 'success');
+      dlog(window.t ? t('copied') : '已複製', 'success');
     });
     $('dlDistillBtn').addEventListener('click', () => {
       if (!this.lastResult) return;
@@ -105,7 +105,7 @@ const DistillRunBlock = {
         <div class="cf-card-body">
           <div id="distillResponseSection">
             <div class="cf-review-name-wrap">
-              <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && currentLanguage === 'en' ? 'Result name' : '結果名稱'}">
+              <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && window.t ? t('cf_result_name_label') : 'Result name'}">
             </div>
             <div class="cf-review-tools">
                 <button class="btn btn-xs" id="cfCaptureReplyBtn" data-i18n="capture_current_reply">⊕ 截取當前回覆</button>
@@ -134,10 +134,10 @@ const DistillRunBlock = {
       $('distillResultName').textContent = r.name;
       $('distillResponseText').textContent = r.content;
       $('distillResponseSection').style.display = '';
-      dlog('✅ 整理完成並已存檔！', 'success');
+      dlog(window.t ? t('cf_done_saved') : '✅ 整理完成並已存檔！', 'success');
       this.renderLibrary();
     } else {
-      dlog('✅ 已送出，請至 AI 對話框查看與討論', 'success');
+      dlog(window.t ? t('cf_sent_to_ai_discuss') : '✅ 已送出，請至 AI 對話框查看與討論', 'success');
     }
   },
 
@@ -148,7 +148,7 @@ const DistillRunBlock = {
 
   async startDistill() {
     const content = DistillSourceBlock.getContent();
-    if (!content) { dlog('請先輸入或抓取內容', 'error'); return; }
+    if (!content) { dlog(window.t ? t('enter_or_capture_first') : '請先輸入或抓取內容', 'error'); return; }
 
     const cfg = await chrome.storage.local.get(['fullAuto']);
     let wikiTpl = null;
@@ -176,13 +176,13 @@ const DistillRunBlock = {
       await chrome.storage.local.set({ library: lib });
       chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || '' });
       this.renderLibrary();
-      dlog(`✅ 已存為 ${name}`, 'success');
+      dlog(window.t ? t('cf_saved_named', { name }) : `✅ 已儲存：${name}`, 'success');
       return;
     }
 
     activeDistillContext = 'distill';
     this.setUI(true);
-    dlog(`送出整理（${fmtLabel}，目標：${DistillAIBlock.getAI()}）…`, 'info');
+    dlog(window.t ? t('cf_send_distill', { format: fmtLabel, ai: DistillAIBlock.getAI() }) : `送出整理（${fmtLabel}，目標：${DistillAIBlock.getAI()}）…`, 'info');
     chrome.runtime.sendMessage({
       type: 'START_DISTILL',
       content,
@@ -196,7 +196,7 @@ const DistillRunBlock = {
 
   async saveDraft() {
     const content = DistillSourceBlock.getContent();
-    if (!content) { dlog('請先輸入或抓取內容', 'error'); return; }
+    if (!content) { dlog(window.t ? t('enter_or_capture_first') : '請先輸入或抓取內容', 'error'); return; }
     const tStr = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const name = `draft_${tStr}.md`;
     const stored = await chrome.storage.local.get(['library', 'distillFolder']);
@@ -205,7 +205,7 @@ const DistillRunBlock = {
     await chrome.storage.local.set({ library: lib });
     this.renderLibrary();
     chrome.runtime.sendMessage({ type: 'DOWNLOAD_MD', name, content, folder: stored.distillFolder || '' });
-    dlog(`已儲存草稿並下載到本地：${name}`, 'success');
+    dlog(window.t ? t('draft_saved', { name }) : `已儲存草稿：${name}`, 'success');
   },
 
   async renderLibrary() {
@@ -215,6 +215,6 @@ const DistillRunBlock = {
     $('distillLibCount').textContent = items.length || '';
     el.innerHTML = items.length
       ? items.slice(0, 8).map(libItemHtml).join('')
-      : '<div style="padding:6px 0;font-size:10px;color:var(--text3)">尚無整理記錄</div>';
+      : `<div style="padding:6px 0;font-size:10px;color:var(--text3)">${window.t ? t('cf_no_records') : '尚無整理記錄'}</div>`;
   },
 };

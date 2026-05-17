@@ -60,6 +60,10 @@
   - `Prompt 庫 / Schema 庫` 對外命名更新為 `Prompt 管理 / 格式管理`，英文同步為 `Prompt Manager / Format Manager`。
   - Prompt 與 Schema 皆補齊 `取代匯入 / 合併匯入 / 匯出 JSON / 匯出 Markdown`；Markdown 匯出改為可跳出另存位置視窗。
   - Prompt 系列補上 `刪除系列`、空名稱提示與 autosave 可見回饋；Prompt / Schema 卡片編輯區的英文按鈕、placeholder、字數與提示文案已補齊。
+- **AI Flows 英文介面補齊完成（2026-05-17, created: 05-17 21）：**
+  - `AI Flows` 動態渲染卡片現在會正確套用 i18n，不再只翻靜態 tab / settings 文案。
+  - Source / Task / Format / Model / Execute / Review 的空狀態、placeholder、按鈕與執行 log 已補齊英文。
+  - `Capture Reply`、`Save .md / .html`、`Save Draft` 等流程提示已收斂為中英文一致，不再在 `EN` 模式下混出中文。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。

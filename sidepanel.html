@@ -1336,7 +1336,7 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   max-height: 260px;
 }
 .selected-prompt-preview[data-empty]::before {
-  content: 'No prompt selected yet';
+  content: attr(data-empty-label);
   font-style: italic;
   color: var(--text3);
 }
@@ -1981,7 +1981,8 @@ body { flex-direction: column; }
 .topnav-tabs .nav-item {
   flex: 1 1 auto;
   min-width: 64px;
-  height: 30px;
+  min-height: 42px;
+  height: auto;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -2006,15 +2007,18 @@ body { flex-direction: column; }
   font-weight: 500;
   letter-spacing: 0.2px;
   text-transform: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.15;
+  display: block;
 }
 html[data-lang="zh"] .topnav-tabs .nav-label {
   letter-spacing: 0;
 }
-.nav-zh-break {
-  display: none;
+.nav-break {
+  display: block;
 }
 .nav-cfg {
   width: 30px;
@@ -2073,9 +2077,6 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
     word-break: keep-all;
     overflow-wrap: normal;
     line-break: strict;
-  }
-  html[data-lang="zh"] .topnav-tabs .nav-label .nav-zh-break {
-    display: block;
   }
   body.font-comfortable .topnav-tabs .nav-label {
     font-size: 12px;
@@ -2399,12 +2400,12 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
     <div class="panel" id="tab-settings">
 
       <div class="sg">
-        <div class="label">自動化</div>
+        <div class="label" data-i18n="settings_automation">自動化</div>
         <div class="section">
           <div class="toggle-row">
             <div class="toggle-info">
-              <div class="toggle-label">全自動模式</div>
-              <div class="toggle-sub">Extension 自動開啟目標 AI、注入內容、抓取回應</div>
+              <div class="toggle-label" data-i18n="settings_full_auto">全自動模式</div>
+              <div class="toggle-sub" data-i18n="settings_full_auto_sub">Extension 自動開啟目標 AI、注入內容、抓取回應</div>
             </div>
             <label class="toggle">
               <input type="checkbox" id="fullAutoToggle" checked>
@@ -2413,7 +2414,7 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
           </div>
           <div class="toggle-row">
             <div class="toggle-info">
-              <div class="toggle-label">自動下載到本機</div>
+              <div class="toggle-label" data-i18n="settings_auto_download">自動下載到本機</div>
             </div>
             <label class="toggle">
               <input type="checkbox" id="autoDownload" checked>
@@ -2424,24 +2425,24 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
       </div>
 
       <div class="sg">
-        <div class="label">下載路徑</div>
+        <div class="label" data-i18n="settings_download_paths">下載路徑</div>
         <div class="section">
           <div class="sr">
-            <label>X ETL 資料夾（相對於 Downloads）</label>
+            <label data-i18n="settings_extract_folder">X ETL 資料夾（相對於 Downloads）</label>
             <input class="input" id="extractFolder" placeholder="biteflo/extract">
           </div>
           <div class="sr">
-            <label>長文整理 資料夾（相對於 Downloads）</label>
+            <label data-i18n="settings_distill_folder">長文整理 資料夾（相對於 Downloads）</label>
             <input class="input" id="distillFolder" placeholder="biteflo/distill">
           </div>
         </div>
       </div>
 
       <div class="sg">
-        <div class="label">Theme</div>
+        <div class="label" data-i18n="settings_theme_label">Theme</div>
         <div class="section">
           <div class="sr">
-            <label>視覺主題</label>
+            <label data-i18n="settings_visual_theme">視覺主題</label>
             <select class="select-compact" id="themeSel">
               <option value="nt-dark">NT Dark</option>
               <option value="editorial-light">Editorial Light</option>
@@ -2452,26 +2453,26 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
       </div>
 
       <div class="sg">
-        <div class="label">字體大小</div>
+        <div class="label" data-i18n="settings_font_size">字體大小</div>
         <div class="row" style="gap:8px">
-          <button class="btn font-btn active" data-font="standard">小</button>
-          <button class="btn font-btn" data-font="comfortable">中</button>
-          <button class="btn font-btn" data-font="large">大</button>
+          <button class="btn font-btn active" data-font="standard" data-i18n="settings_font_small">小</button>
+          <button class="btn font-btn" data-font="comfortable" data-i18n="settings_font_medium">中</button>
+          <button class="btn font-btn" data-font="large" data-i18n="settings_font_large">大</button>
         </div>
       </div>
 
       <div class="sg">
-        <div class="label">文字對比</div>
+        <div class="label" data-i18n="settings_text_contrast">文字對比</div>
         <div class="row" style="gap:8px">
-          <button class="btn contrast-btn active" data-contrast="standard">標準</button>
-          <button class="btn contrast-btn" data-contrast="bright">明亮</button>
-          <button class="btn contrast-btn" data-contrast="max">高對比</button>
+          <button class="btn contrast-btn active" data-contrast="standard" data-i18n="settings_contrast_standard">標準</button>
+          <button class="btn contrast-btn" data-contrast="bright" data-i18n="settings_contrast_bright">明亮</button>
+          <button class="btn contrast-btn" data-contrast="max" data-i18n="settings_contrast_max">高對比</button>
         </div>
       </div>
 
       <div class="row" style="justify-content:flex-end;margin-top:8px;gap:10px">
-        <span class="save-ok" id="saveOk">✓ 已儲存</span>
-        <button class="btn btn-primary btn-sm" id="saveSettingsBtn">儲存設定</button>
+        <span class="save-ok" id="saveOk" data-i18n="settings_saved">✓ 已儲存</span>
+        <button class="btn btn-primary btn-sm" id="saveSettingsBtn" data-i18n="settings_save">儲存設定</button>
       </div>
 
     </div>

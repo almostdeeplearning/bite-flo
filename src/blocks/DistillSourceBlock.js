@@ -6,15 +6,15 @@ const DistillSourceBlock = {
 
   _distillMarkup() {
     return `
-      <div class="section">
+        <div class="section">
         <div class="section-head">
-          <div class="section-title">來源內容</div>
+          <div class="section-title">${window.t ? t('cf_card_source') : '來源內容'}</div>
           <div class="row" style="gap:8px">
-            <span class="char-count" id="charCount">0 字</span>
-            <button class="btn btn-sm" id="grabPageBtn">⊕ 抓取當前頁面</button>
+            <span class="char-count" id="charCount">0</span>
+            <button class="btn btn-sm" id="grabPageBtn">${window.t ? t('grab_current_page') : '⊕ 抓取當前頁面'}</button>
           </div>
         </div>
-        <textarea class="ta" id="rawText" rows="6" placeholder="貼入長文，或點「抓取當前頁面」自動填入..."></textarea>
+        <textarea class="ta" id="rawText" rows="6" placeholder="${window.t ? t('cf_source_placeholder') : '貼入長文，或點「抓取當前頁面」自動填入...'}"></textarea>
       </div>
     `.trim();
   },
@@ -24,7 +24,9 @@ const DistillSourceBlock = {
     this.isInitialized = true;
     $('grabPageBtn').addEventListener('click', () => this.grabPage());
     $('rawText').addEventListener('input', () => {
-      $('charCount').textContent = $('rawText').value.length + ' 字';
+      $('charCount').textContent = window.getPromptCountLabel
+        ? getPromptCountLabel($('rawText').value.length)
+        : `${$('rawText').value.length}`;
     });
   },
 
@@ -57,9 +59,9 @@ const DistillSourceBlock = {
           </div>
           <button class="btn btn-ghost btn-xs" data-cf-toggle="source" data-i18n="hidden">隱藏</button>
         </div>
-        <div class="cf-card-body">
+          <div class="cf-card-body">
           <div class="row row-between" style="margin-bottom:8px">
-            <span class="char-count" id="cfCharCount">0 字</span>
+            <span class="char-count" id="cfCharCount">0</span>
             <div class="row" style="gap:6px">
               <button class="btn btn-ghost btn-xs" id="cfRawTextToggleBtn" data-i18n="expand">展開</button>
               <button class="btn btn-sm" id="cfGrabPageBtn" data-i18n="grab_current_page">⊕ 抓取當前頁面</button>
@@ -196,7 +198,9 @@ const DistillSourceBlock = {
     });
     const text = result?.result || '';
     $('rawText').value = text;
-    $('charCount').textContent = text.length + ' 字';
-    dlog(`已抓取頁面 ${text.length} 字`, 'success');
+    $('charCount').textContent = window.getPromptCountLabel
+      ? getPromptCountLabel(text.length)
+      : `${text.length}`;
+    dlog(window.t ? t('cf_page_captured_chars', { count: text.length }) : `已抓取頁面 ${text.length} 字`, 'success');
   },
 };
