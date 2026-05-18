@@ -15,6 +15,19 @@ const ETLCard4Block = {
           <span id="sn2" style="display:none"></span>
           <span id="st2" style="display:none"></span>
           <input id="delayInput" type="hidden" value="35">
+          <div class="cf-delay-block" style="margin-bottom:10px">
+            <div class="row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span class="cf-delay-label" data-i18n="cf_delay_label">Wait before next step (s)</span>
+              <select id="delayPresetSel" class="cf-delay-sel">
+                <option value="0" data-i18n="no_delay">No delay</option>
+                <option value="5">5s</option>
+                <option value="10">10s</option>
+                <option value="35">35s</option>
+                <option value="custom" data-i18n="cf_custom_delay">Custom</option>
+              </select>
+              <input id="delayCustomInput" class="cf-delay-custom" type="number" min="0" step="1" value="35" style="display:none">
+            </div>
+          </div>
           <div class="run-row">
             <button class="btn btn-primary etl-run-cta" id="startBtn">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l7 3.5-7 3.5V1.5z"/></svg>

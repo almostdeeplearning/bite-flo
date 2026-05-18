@@ -13,6 +13,7 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 - `popup.html` 保留作為開發參考，不再被 Extension 載入。
 - Main UI script: `src/sidepanel.js`.
 - Minimal language toggle: `中文 / English`, applied only to visible UI labels in the current release.
+- First-run default UI language: `English` when no saved `uiLanguage` exists.
 - Core UI tabs:
   - 快速生成（X ETL）
   - 自訂流程（Custom Flow）
@@ -52,6 +53,8 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 - Run the selected prompt against GPT, Gemini, Claude, or Grok based on Card 03.
 - Gemini and Claude routing may remain implemented underneath the ETL surface for compatibility, but they are not current first-class ETL UI targets.
 - Show send progress and logs in Card 04.
+- Show a temporary `Under construction` warning at the top of the Narrative Scan tab while the ETL workflow is being redesigned.
+- Expose an ETL inter-prompt delay control in Card 04 (`Wait before next step`) and pass that wait value into `START_EXTRACT.delaySeconds`.
 - Do not auto-capture replies in ETL; Card 05 should allow the user to manually capture the current reply from the active target tab, edit it, and save it as a local `.md` file.
 
 ### Custom Flow
@@ -84,6 +87,7 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 - Allow JSON export and import of prompt series for backup and transfer.
 - Store prompt series locally.
 - Make prompt series available to X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
+- Built-in starter prompt series are seeded on first use: `Narrative Scan Starter Pack`, `AI Flow Starter Pack`.
 
 ### Schema
 
@@ -102,7 +106,7 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
     - default: `en` when no saved `uiLanguage` exists
   - theme（`nt-dark` / `editorial-light` / `studio-light`）
   - font size（standard / comfortable / large；套疊於基礎 CSS 預設值 body 14px）
-  - text contrast（standard / bright / max；套疊於基礎色票 `--text2` `#B8B2A6`、`--text3` `#7A7468`、`--bg` `#13110F`）
+  - text contrast（standard / bright / max；套疊於基礎色票 `--text2` `#C7CEDE`、`--text3` `#8F97AB`、`--bg` `#0B1020`）
 
 ## Non-Functional Requirements
 

@@ -54,7 +54,7 @@ This document summarizes the current data contracts used by the extension. It is
 | `distillAI` | `AiTarget` | AI target for Distill |
 | `extractAI` | `AiTarget` | Selected target AI in X ETL Card 03 |
 | `extractGrokMode` | `"page" \| "inline"` | When `extractAI === "grok"`, chooses full Grok page or the inline Grok panel on x.com |
-| `delaySeconds` | `number` | Legacy ETL wait setting retained in storage; current ETL send-only flow no longer uses it for auto-capture |
+| `delaySeconds` | `number` | Visible ETL inter-prompt wait setting used by Card 04 to control the send interval between multiple ETL prompts |
 | `fullAuto` | `boolean` | Whether workflows should auto-continue when possible |
 | `cfAutoSave` | `boolean` | Shared autosave flag used by both Distill and Custom Flow when sending `START_DISTILL.autoSave` |
 
@@ -76,14 +76,14 @@ This document summarizes the current data contracts used by the extension. It is
 | `popupFontSize` | `"standard" \| "comfortable" \| "large"` | Font size mode |
 | `popupTextContrast` | `"standard" \| "bright" \| "max"` | Text contrast mode |
 
-注意：storage 中的偏好設定以 body class 的形式套疊於基礎 CSS 預設值之上，基礎值本身不進 storage。基礎預設值（2026-05-05 更新）：body 14px、按鈕 12px、label 11px、輸入框 15px；`--bg` `#13110F`、`--text2` `#B8B2A6`、`--text3` `#7A7468`。
+注意：storage 中的偏好設定以 body class 的形式套疊於基礎 CSS 預設值之上，基礎值本身不進 storage。基礎預設值（2026-05-18 更新）：body 14px、按鈕 12px、label 11px、輸入框 15px；`--bg` `#0B1020`、`--text2` `#C7CEDE`、`--text3` `#8F97AB`。
 
 ### Migration-Only Storage Keys
 
 | Key | Type | Current Use |
 |---|---|---|
-| `wikiTpl` | `string` | Legacy migration source only. Read by `loadSettings()` only when `schemaTemplates` is empty, to seed the initial `wiki.md` schema template. Not written back and not part of the active storage contract. |
-| `noteTpl` | `string` | Legacy migration source only. Read by `loadSettings()` only when `schemaTemplates` is empty, to seed the initial `筆記.md` schema template. Not written back and not part of the active storage contract. |
+| `wikiTpl` | `string` | Legacy-only compatibility residue. No longer used to seed starter schemas. |
+| `noteTpl` | `string` | Legacy-only compatibility residue. No longer used to seed starter schemas. |
 
 Notes:
 
@@ -114,7 +114,7 @@ type PromptSeries = {
 
 type SchemaTemplate = {
   id: string;
-  name: string;   // e.g. "wiki.md", "YAML", "Table"
+  name: string;   // e.g. "wiki.md", "table.md"
   text: string;   // prompt text; {{content}} is substituted with source material in Distill
 };
 
@@ -163,6 +163,7 @@ type CustomFlowPreset = {
 Notes:
 
 - `START_EXTRACT` now includes `targetAI`; when that target is Grok it also includes `grokMode` (`page` or `inline`).
+- `START_EXTRACT` now also includes `delaySeconds`, used as the visible ETL inter-prompt wait control in Card 04.
 - `START_DISTILL` from Custom Flow always includes `fullAuto: true`.
 - `START_DISTILL` now includes `autoSave`, and `background.js` treats that message field as the source of truth for autosave behavior.
 - `START_DISTILL` uses `targetAI` for AI routing and may include `grokMode` when the target is Grok.
@@ -194,7 +195,7 @@ The X ETL pipeline no longer routes raw responses through a separate AI structur
 1. Card 01: User selects a prompt series and prompt from `extractPromptList` (`<select>`); the selected text becomes the single editable task area for the current ETL run.
 2. Card 02: User selects an optional schema template.
 3. Card 03: User selects a target AI pill; this saves `extractAI`. When the target is Grok, the user may also choose `extractGrokMode` (`page` or `inline`).
-4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into the selected AI tab; the current ETL path is send-only and does not auto-poll replies.
+4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into the selected AI tab; the current ETL path is send-only, does not auto-poll replies, and uses `delaySeconds` as the wait time between multiple ETL prompts.
 5. Card 05: User manually captures the current AI reply from the active target tab, reviews/edits the text in `extractResultText`, then saves it as a `.md` file.
 
 The schema template system replaces the old post-structuring concept. `grokTpl` / `structureTpl` may still appear in older notes, but they are deprecated docs residue rather than active runtime storage keys or supported runtime contracts. There is no intermediate structured table review stage.
@@ -205,7 +206,7 @@ The schema template system replaces the old post-structuring concept. `grokTpl` 
 - `wikiTpl` and `noteTpl` are now legacy-only storage keys. Current starter schema initialization no longer restores them into `schemaTemplates`.
 - `grokTpl` and `structureTpl` are deprecated docs residue only. Current runtime code does not read or write them.
 - `START_VERIFY_WIKI`, `RUN_AI_STRUCTURE`, and `DOWNLOAD_TEXT` still exist as runtime message handlers in the current graph, but they are legacy/compatibility-oriented paths rather than the main Side Panel workflow surface.
-- Because migration only runs when `schemaTemplates` is empty, a partially populated `schemaTemplates` value may not receive missing default templates automatically.
+- Because starter initialization is now guarded by `schemaLibraryInitialized`, deleting all schemas after first-run will not recreate the starter set unless the flag is also reset.
 - If a storage key is renamed, keep legacy fallback behavior until existing user data can be migrated.
 - Side Panel migration is complete. Storage contracts are unchanged from the Popup era.
 - Grok as a Distill AI target uses `handleDistillGrok()` in `background.js` (direct `executeScript` injection), not the `cs_ai.js` storage-queue approach. This applies to both Distill Tab and Custom Flow.

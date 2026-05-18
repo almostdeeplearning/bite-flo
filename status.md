@@ -4,6 +4,8 @@
 - 分享版最小雙語切換已完成：Topnav 加入 `中文 / English`，偏好儲存於 `uiLanguage`。
 - Side Panel 舊 Distill UI shell 已移除；目前只保留 `AI Flows`、`Narrative Scan`、`Prompt Manager`、`Format Manager` 與 `Settings`。
 - ETL 主工作流已收斂為 `GPT + Grok` 可見選項；Grok `page / inline` 仍是一級入口，Gemini / Claude 先退到隱藏實作層以降低維護成本。
+- 首次安裝體驗正在收斂：預設英文介面、Starter Prompt 系列、Starter Schema 模板已接線。
+- `Narrative Scan` 目前暫時以 `Under construction` 提示對外揭露，避免使用者誤判其穩定度。
 
 ## Progress
 - **Side Panel 遷移完成（2026-05-03）**
@@ -64,10 +66,16 @@
   - `AI Flows` 動態渲染卡片現在會正確套用 i18n，不再只翻靜態 tab / settings 文案。
   - Source / Task / Format / Model / Execute / Review 的空狀態、placeholder、按鈕與執行 log 已補齊英文。
   - `Capture Reply`、`Save .md / .html`、`Save Draft` 等流程提示已收斂為中英文一致，不再在 `EN` 模式下混出中文。
+- **分享版 first-run / ETL / 視覺收斂完成（2026-05-18, created: 05-18 20）：**
+  - Prompt 首次初始化改為一次性 Starter 系列：`Narrative Scan Starter Pack`、`AI Flow Starter Pack`；Schema 首次初始化改為一次性 Starter 模板：`wiki.md`、`table.md`。
+  - 預設語言改為英文；若 storage 中無 `uiLanguage`，首次打開 Side Panel 會以 English UI 顯示。
+  - ETL Card 04 補上可見的 `Wait before next step` 控制，`delaySeconds` 會實際傳到 `START_EXTRACT` 並控制多個 ETL prompts 之間的送出間隔。
+  - `Narrative Scan` 頁首新增 `Under construction` 紅色提示，明確引導目前先以 `AI Flows` 作為較穩定的工作流。
+  - 深色主題色票改為冷藍黑 control-panel 方向，並為 `Narrative Scan` / `AI Flows` 卡片加入彩色步驟序號與 active 邊框呼應。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
-- Schema 首次遷移邏輯依賴 `schemaTemplates` 為空才觸發，若 storage 已有部分資料可能不會補入預設模板。
+- Starter Prompt / Schema 只會在 first-run 初始化時 seed；若 storage 中已經有既有 `promptSeries` / `schemaTemplates`，新的 starter 內容不會主動覆蓋既有使用者資料。
 - Custom Flow 「一鍵跑完全部」在未選 Prompt 等情境下，目前無錯誤提示。
 - ETL 目前改為半手動結果回收；若目標 AI 尚未完成生成就按下 Card 05 的「截取當前回覆」，仍可能抓不到內容。
 - Card 05 目前是對「目前 active tab」做手動截取；若使用者送出後切到別頁再截取，可能抓錯頁面。
@@ -81,6 +89,7 @@
 - `Distill*Block` 命名仍為歷史名稱；雖然對外 UI 已不再顯示 Distill，但內部模組與部分 runtime 路徑尚未重命名。
 - 中英混合介面的字體策略仍是局部調整；若後續擴大英文 surface，可能需要更系統化地區分 mono、UI font 與 editorial font 的使用邊界。
 - Prompt / Schema 的 Markdown 目前僅支援匯出，不支援直接從 Markdown 回匯。
+- `Narrative Scan` 的 5 張卡目前在語意上看起來像 step-by-step workflow，但 runtime 仍是「設定卡 + Card 04 單次送出」；若未來要做成真正兩階段 `extract -> schema` 工作流，需要重整 ETL 的資料流與卡片責任。
 
 ## Next Steps
 - 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
@@ -90,6 +99,7 @@
 - 選擇性：若分享版文案定稿，再決定是否將 `Distill*Block` 重新命名為更中性的 `Workflow*Block`。
 - 選擇性：若英文分享版仍覺得視覺不順，可只在 `data-lang="en"` 下再微調 topnav / Workflow 的字級、字重與間距。
 - 選擇性：若外部以 VS Code 維護 Prompt / Schema 成為常態，可再評估補上 Markdown 匯入。
+- 決策：確認 `Narrative Scan` 是否應從目前的單次 `prompt + schema` 合併送出，升級為真正兩階段 `extract -> schema` 工作流。
 
 ## Planned Refactor Blueprint
 - **Status:** 尚未開始；目前先作為下一階段規劃記錄，避免在正式動工前遺失脈絡。

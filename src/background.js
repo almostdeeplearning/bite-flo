@@ -37,6 +37,7 @@ async function handleExtract({ prompts, delaySeconds, targetAI, grokMode }) {
   let sentCount = 0;
   const ai = ['gpt', 'gemini', 'claude', 'grok'].includes(targetAI) ? targetAI : 'gpt';
   const mode = grokMode === 'inline' ? 'inline' : 'page';
+  const waitSeconds = Math.max(0, Number(delaySeconds) || 0);
   const target = await resolveExtractTargetTab(ai, mode);
 
   if (!target?.tabId) {
@@ -80,7 +81,7 @@ async function handleExtract({ prompts, delaySeconds, targetAI, grokMode }) {
       bcast({ type: 'PROGRESS', current: i+1, total: prompts.length, promptIndex: i, status: 'error' });
       logE(`✗ #${i+1}: ${e.message}`, 'error');
     }
-    if (i < prompts.length - 1 && !stopped) await sleep(2000);
+    if (i < prompts.length - 1 && !stopped && waitSeconds > 0) await sleep(waitSeconds * 1000);
   }
 
   if (!sentCount) {

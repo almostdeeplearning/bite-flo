@@ -24,22 +24,28 @@ input, button, select, optgroup, textarea { font-family: inherit; font-size: inh
   --radius-md: 8px;
   --radius-lg: 14px;
 
-  --shadow-card: 0 2px 12px rgba(0,0,0,.3);
+  --shadow-card: 0 8px 24px rgba(0,0,0,.22);
 
-  --bg:        #13110F;
-  --bg2:       #111111;
-  --bg3:       #1a1a1a;
-  --line:      #222222;
-  --line2:     #2e2e2e;
-  --text:      #f0f0f0;
-  --text2:     #B8B2A6;
-  --text3:     #7A7468;
-  --accent:    #f0f0f0;
-  --accent-bg: rgba(240,240,240,0.06);
-  --green:     #3ecf8e;
-  --red:       #f87171;
+  --bg:        #0b1020;
+  --bg2:       #11182a;
+  --bg3:       #171f33;
+  --line:      rgba(255,255,255,0.08);
+  --line2:     rgba(255,255,255,0.14);
+  --text:      #f3f6ff;
+  --text2:     #c7cede;
+  --text3:     #8f97ab;
+  --accent:    #8b5cf6;
+  --accent-bg: rgba(139,92,246,0.12);
+  --green:     #46b96b;
+  --red:       #ff6b6b;
   --amber:     #f59e0b;
-  --blue:      #60a5fa;
+  --blue:      #6ea8ff;
+  --step-1:    #8b5cf6;
+  --step-2:    #6366f1;
+  --step-3:    #4f7cff;
+  --step-4:    #2ea6a6;
+  --step-5:    #46b96b;
+  --step-6:    #f59e0b;
 
   --page-bg: var(--bg);
   --panel-bg: var(--bg2);
@@ -50,20 +56,20 @@ input, button, select, optgroup, textarea { font-family: inherit; font-size: inh
   --text-primary: var(--text);
   --text-secondary: var(--text2);
   --text-muted: var(--text3);
-  --text-heading: var(--text2);
+  --text-heading: var(--text);
 
   --btn-bg: transparent;
   --btn-border: var(--line2);
   --btn-text: var(--text2);
-  --btn-hover-bg: transparent;
-  --btn-hover-border: var(--text3);
+  --btn-hover-bg: rgba(255,255,255,0.02);
+  --btn-hover-border: rgba(255,255,255,0.22);
   --btn-hover-text: var(--text);
-  --btn-primary-bg: var(--text);
-  --btn-primary-border: var(--text);
-  --btn-primary-text: var(--bg);
-  --btn-primary-hover-bg: #d0d0d0;
-  --btn-primary-hover-border: #d0d0d0;
-  --btn-primary-hover-text: var(--bg);
+  --btn-primary-bg: rgba(139,92,246,0.08);
+  --btn-primary-border: #8b5cf6;
+  --btn-primary-text: #c4b5fd;
+  --btn-primary-hover-bg: rgba(139,92,246,0.16);
+  --btn-primary-hover-border: #a78bfa;
+  --btn-primary-hover-text: #ede9fe;
 
   --input-bg: var(--bg3);
   --input-border: var(--line);
@@ -76,9 +82,9 @@ input, button, select, optgroup, textarea { font-family: inherit; font-size: inh
   --pill-text: var(--text3);
   --pill-hover-border: var(--text3);
   --pill-hover-text: var(--text2);
-  --pill-active-bg: var(--bg3);
-  --pill-active-border: var(--text);
-  --pill-active-text: var(--text);
+  --pill-active-bg: rgba(139,92,246,0.10);
+  --pill-active-border: #8b5cf6;
+  --pill-active-text: #ddd6fe;
 
   --sidebar-w: 44px;
   --r:         var(--radius-sm);
@@ -88,7 +94,7 @@ input, button, select, optgroup, textarea { font-family: inherit; font-size: inh
 }
 
 :root[data-theme="nt-dark"] {
-  --shadow-card: 0 2px 12px rgba(0,0,0,.3);
+  --shadow-card: 0 8px 24px rgba(0,0,0,.22);
 }
 
 :root[data-theme="editorial-light"] {
@@ -1729,6 +1735,12 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 
 /* Active highlight during run-all */
 .cf-card.cf-active { border-color: var(--text2); }
+.cf-card[data-cf-card="source"].cf-active { border-color: rgba(139,92,246,0.55); box-shadow: 0 0 0 1px rgba(139,92,246,0.10); }
+.cf-card[data-cf-card="task"].cf-active { border-color: rgba(99,102,241,0.55); box-shadow: 0 0 0 1px rgba(99,102,241,0.10); }
+.cf-card[data-cf-card="format"].cf-active { border-color: rgba(79,124,255,0.55); box-shadow: 0 0 0 1px rgba(79,124,255,0.10); }
+.cf-card[data-cf-card="ai"].cf-active { border-color: rgba(46,166,166,0.55); box-shadow: 0 0 0 1px rgba(46,166,166,0.10); }
+.cf-card[data-cf-card="run"].cf-active,
+.cf-card[data-cf-linked-card="run"].cf-active { border-color: rgba(70,185,107,0.55); box-shadow: 0 0 0 1px rgba(70,185,107,0.10); }
 
 .cf-card {
   background: var(--card-bg);
@@ -1745,11 +1757,25 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 }
 .cf-card.cf-collapsed .cf-card-head { border-bottom: none; }
 .cf-card-num {
-  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
-  letter-spacing: 0.5px; color: var(--text3);
-  background: var(--bg3); border: 1px solid var(--line2);
-  border-radius: 3px; padding: 2px 6px; flex-shrink: 0;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2px; color: #f8fbff;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)), var(--bg3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 4px 8px; flex-shrink: 0;
+  min-width: 30px; text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
+.cf-card[data-cf-card="source"] .cf-card-num,
+.cf-card[data-etl-card="prompt"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-1); border-color: rgba(139,92,246,0.55); }
+.cf-card[data-cf-card="task"] .cf-card-num,
+.cf-card[data-etl-card="schema"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-2); border-color: rgba(99,102,241,0.55); }
+.cf-card[data-cf-card="format"] .cf-card-num,
+.cf-card[data-etl-card="ai"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-3); border-color: rgba(79,124,255,0.55); }
+.cf-card[data-cf-card="ai"] .cf-card-num,
+.cf-card[data-etl-card="run"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-4); border-color: rgba(46,166,166,0.55); }
+.cf-card[data-cf-card="run"] .cf-card-num,
+.cf-card[data-etl-card="save"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-5); border-color: rgba(70,185,107,0.55); }
+.cf-card[data-cf-linked-card="run"] .cf-card-num { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), var(--step-6); border-color: rgba(245,158,11,0.55); }
 .cf-card-title {
   font-family: var(--font-ui); font-size: 14px;
   font-weight: 600;
@@ -1866,6 +1892,34 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   background: var(--bg3);
 }
 .cf-card-num.done { border-color: var(--green); }
+.cf-card[data-etl-card="prompt"]:has(.cf-card-num.active) { border-color: rgba(139,92,246,0.55); box-shadow: 0 0 0 1px rgba(139,92,246,0.10); }
+.cf-card[data-etl-card="schema"]:has(.cf-card-num.active) { border-color: rgba(99,102,241,0.55); box-shadow: 0 0 0 1px rgba(99,102,241,0.10); }
+.cf-card[data-etl-card="ai"]:has(.cf-card-num.active) { border-color: rgba(79,124,255,0.55); box-shadow: 0 0 0 1px rgba(79,124,255,0.10); }
+.cf-card[data-etl-card="run"]:has(.cf-card-num.active) { border-color: rgba(46,166,166,0.55); box-shadow: 0 0 0 1px rgba(46,166,166,0.10); }
+.cf-card[data-etl-card="save"]:has(.cf-card-num.active) { border-color: rgba(70,185,107,0.55); box-shadow: 0 0 0 1px rgba(70,185,107,0.10); }
+
+.extract-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0 0 10px;
+  color: var(--red);
+  border-bottom: 1px dashed rgba(255,107,107,0.45);
+}
+.extract-notice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.10);
+  flex-shrink: 0;
+}
+.extract-notice-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--red);
+}
 
 /* ══════════════════════════════════════
    TOPNAV — replaces vertical sidebar + topbar
@@ -2294,6 +2348,10 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
 
     <!-- ════ TAB: EXTRACT ════ -->
     <div class="panel active" id="tab-extract">
+      <div class="extract-notice">
+        <span class="extract-notice-dot" aria-hidden="true"></span>
+        <div class="extract-notice-text" data-i18n="extract_under_construction">Under construction: Narrative Scan is currently unstable. AI Flows is the recommended path for now.</div>
+      </div>
       <div id="etlContainer"></div>
     </div>
 

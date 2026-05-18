@@ -92,6 +92,12 @@ Distill off-ramp note:
 
 Panel: `tab-extract`
 
+Top-of-tab notice:
+
+- `sidepanel.html` now renders a static `.extract-notice` warning row above `etlContainer`
+- The warning text uses i18n key `extract_under_construction`
+- Current intent: explicitly warn that `Narrative Scan` is unstable / under reconstruction and steer users toward `AI Flows`
+
 ### ETL Card Rendering
 
 The tab is rendered dynamically by `initETLTab()` in `src/sidepanel.js`.
@@ -209,7 +215,9 @@ DOM IDs:
 - `stepSection2`
 - `startBtn`
 - `stopBtn`
-- `delayInput` — hidden legacy compatibility field; no longer exposed as a visible ETL control
+- `delayInput` — hidden persisted backing field for the visible ETL delay UI
+- `delayPresetSel` — visible ETL inter-prompt delay preset dropdown
+- `delayCustomInput` — visible custom ETL delay input when preset = `custom`
 - `prog`
 - `progFill`
 - `progTxt`
@@ -219,6 +227,8 @@ DOM IDs:
 JS bindings:
 
 - `startBtn click` calls `startExtract()` — concatenates selected prompt text and selected schema text as `prompt.text + "\n\n" + schema.text`
+- `delayPresetSel change` updates `delayInput`, toggles `delayCustomInput`, and persists `delaySeconds`
+- `delayCustomInput input` updates `delayInput` and persists `delaySeconds`
 - `startExtract()` now routes to GPT / Gemini / Claude / Grok based on `extractAI`
 - `stopBtn click` sends `STOP`
 
@@ -241,7 +251,7 @@ Storage keys:
 Notes:
 
 - Card 04 is now send-only. It no longer auto-polls replies or auto-fills Card 05.
-- `delayInput` / `delaySeconds` remain only as hidden compatibility state.
+- `delayInput` / `delaySeconds` no longer act as hidden-only compatibility state; they now back the visible `Wait before next step` UI and control the interval between multiple ETL prompt sends.
 
 ### Card 05: Save Result
 
@@ -782,6 +792,7 @@ Message field note:
 
 - `START_DISTILL.wikiTpl` is part of the message payload and remains an active runtime dependency.
 - That field name should not be confused with the legacy storage key `wikiTpl`, which is migration-only and read only by `loadSettings()` when seeding `schemaTemplates`.
+- `START_EXTRACT.delaySeconds` is now an active runtime field sourced from the visible ETL delay control in Card 04.
 
 Received by `src/sidepanel.js` in `listenBg()`:
 

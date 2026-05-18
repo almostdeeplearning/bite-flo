@@ -402,3 +402,27 @@
 - **Reason:** 原本的自動儲存與匯入匯出能力雖然可用，但缺乏足夠的操作語意與可見回饋，容易讓使用者誤判風險；尤其在系列名稱清空、舊資料匯入與外部編輯需求下，UI 若沒有明確提示，會放大不確定感。
 - **Alternatives considered:** 改回每張卡片手動按「儲存」；只保留 JSON 匯出，不提供 Markdown；把系列刪除隱含在清空名稱後存檔；維持單一覆蓋式匯入。
 - **Expected impact:** Prompt / Schema 管理流程更可預期；使用者可以安全地做合併匯入與外部 Markdown 編輯；自動儲存保留輕量編輯體驗，但不再是不可見的隱性行為。
+
+## Decision 54
+- **Decision:** Prompt 與 Schema 的 first-run 體驗改為一次性 Starter Pack 初始化，並以 `promptLibraryInitialized` / `schemaLibraryInitialized` 作為初始化旗標，避免使用者日後刪光資料後又被自動補回。
+- **Date:** 2026-05-18
+- **created:** 05-18 20
+- **Reason:** 分享版與新使用者體驗需要「裝好即可試」的 starter 內容，但舊的「只要空陣列就永遠重建預設」會讓使用者刪除資料後產生系統在對抗自己的感受。
+- **Alternatives considered:** 維持完全空白的 Prompt / Schema 初始狀態；保留舊的空陣列即重建邏輯；要求使用者手動匯入示範 Prompt / Schema。
+- **Expected impact:** 新使用者首次安裝即可看到示範用 `Prompt` / `Schema`；之後若使用者主動清空資料，starter 內容不會反覆自動長回來。
+
+## Decision 55
+- **Decision:** 分享版將 `uiLanguage` 的 first-run 預設值改為 English，並把 `Narrative Scan` 頁首明確標示為 `Under construction`，暫時引導使用者優先使用 `AI Flows`。
+- **Date:** 2026-05-18
+- **created:** 05-18 20
+- **Reason:** 目前分享版以英文展示為主；同時 `Narrative Scan` 的卡片表面仍可能讓使用者誤以為它是穩定的逐步工作流，因此需要在產品表面主動揭露其正在重構中的狀態。
+- **Alternatives considered:** 維持中文為 first-run 預設；不加任何警示直接讓使用者自行踩到不穩定流程；直接隱藏整個 `Narrative Scan` tab。
+- **Expected impact:** 第一次開啟 Side Panel 時會以英文介面呈現，更符合外部分享語境；`Narrative Scan` 的風險也會在頁首被明確揭露，降低錯誤期待。
+
+## Decision 56
+- **Decision:** ETL 將既有的 `delaySeconds` 從隱藏相容欄位提升為 Card 04 的可見控制，作為多個 ETL prompts 之間的送出間隔設定。
+- **Date:** 2026-05-18
+- **created:** 05-18 20
+- **Reason:** 在目前 ETL 仍為 Card 04 單次驅動、連續送出多個 prompts 的前提下，使用者需要能直接控制 prompt 之間的等待秒數，以降低目標 AI 還沒穩定就接續下一次送出的風險。
+- **Alternatives considered:** 保持固定 2 秒間隔；把等待控制放進其他 ETL 卡片；等未來完整兩階段 ETL 重構時再處理。
+- **Expected impact:** 使用者可在 ETL 主表面直接調整 `Wait before next step`；`START_EXTRACT.delaySeconds` 會實際影響 background 送出節奏，降低連續注入過快造成的上下文混線。

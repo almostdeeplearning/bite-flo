@@ -153,6 +153,7 @@ const I18N = {
     etl_progress_idle: '尚未開始',
     etl_progress_idle_sub: '尚未開始執行',
     etl_log_placeholder: '詳細執行記錄會顯示在這裡。',
+    extract_under_construction: '施工中：Narrative Scan 目前仍不穩定，暫時建議優先使用 AI Flows。',
     etl_result_placeholder: '等待目標 AI 回覆完成後，按「截取當前回覆」，可在這裡直接微調再儲存。',
     cf_card_source: '擷取內容',
     cf_card_task: '選擇分析',
@@ -183,6 +184,7 @@ const I18N = {
     cf_send_distill: '送出整理（{format}，目標：{ai}）…',
     cf_no_records: '尚無整理記錄',
     cf_delay_label: '下一步前等',
+    no_delay: '無延遲',
     cf_custom_delay: '自訂',
     seconds: '秒',
     cf_source_placeholder: '貼入長文，或點「抓取當前頁面」自動填入...',
@@ -333,6 +335,7 @@ const I18N = {
     etl_progress_idle: 'Not started',
     etl_progress_idle_sub: 'Ready to run',
     etl_log_placeholder: 'Execution logs will appear here.',
+    extract_under_construction: 'Under construction: Narrative Scan is currently unstable. AI Flows is the recommended path for now.',
     etl_result_placeholder: 'After the target AI finishes, click "Grab Reply" to review and save the response here.',
     cf_card_source: 'Source',
     cf_card_task: 'Task',
@@ -363,6 +366,7 @@ const I18N = {
     cf_send_distill: 'Sending distill task ({format}, target: {ai})…',
     cf_no_records: 'No distill records yet',
     cf_delay_label: 'Wait before next step (s)',
+    no_delay: 'No delay',
     cf_custom_delay: 'Custom',
     seconds: 's',
     cf_source_placeholder: 'Paste text here, or click "Capture Page" to fill it automatically.',
@@ -2247,10 +2251,14 @@ function bindAll() {
         $('delayCustomInput').style.display = 'none';
         $('delayInput').value = $('delayPresetSel').value;
       }
+      chrome.storage.local.set({ delaySeconds: Math.max(0, parseInt($('delayInput').value, 10) || 0) });
     });
     $('delayCustomInput').addEventListener('input', () => {
       const next = parseInt($('delayCustomInput').value, 10);
-      if (Number.isFinite(next)) $('delayInput').value = String(Math.max(0, next));
+      if (Number.isFinite(next)) {
+        $('delayInput').value = String(Math.max(0, next));
+        chrome.storage.local.set({ delaySeconds: Math.max(0, next) });
+      }
     });
   }
   if ($('themeSel')) {
@@ -2597,14 +2605,16 @@ async function startExtract() {
   lastExtractResult = null;
   setExtractRunState('waiting', { current: 0, total: combined.length });
   setRunUI(true);
+  const delaySeconds = Math.max(0, parseInt($('delayInput')?.value, 10) || 0);
   chrome.runtime.sendMessage({
     type: 'START_EXTRACT',
     prompts: combined,
+    delaySeconds,
     targetAI: extractAI,
     grokMode: extractGrokMode,
   });
   elog(
-    `開始送出 ${combined.length} 個 Prompt 到 ${getExtractAITargetLabel()}${schema ? '（含 Schema: ' + schema.name + '）' : ''}…`,
+    `開始送出 ${combined.length} 個 Prompt 到 ${getExtractAITargetLabel()}${schema ? '（含 Schema: ' + schema.name + '）' : ''}；每則間隔 ${delaySeconds} 秒…`,
     'info'
   );
 }
