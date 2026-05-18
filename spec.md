@@ -91,7 +91,7 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 - Each template has a name and a prompt text body.
 - Allow JSON export and import of schema templates for backup and transfer.
 - Templates are available as schema pickers in X ETL and Custom Flow. Legacy Distill-related storage may remain temporarily during migration.
-- Built-in defaults (wiki.md, YAML, Table, Markdown) are seeded on first use.
+- Built-in starter schemas (`wiki.md`, `table.md`) are seeded on first use.
 
 ### Settings
 
@@ -99,6 +99,7 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 - Store output folder settings for extract and distill workflows.
 - Store UI preferences:
   - language（`zh` / `en`；current release limits translation to visible UI labels）
+    - default: `en` when no saved `uiLanguage` exists
   - theme（`nt-dark` / `editorial-light` / `studio-light`）
   - font size（standard / comfortable / large；套疊於基礎 CSS 預設值 body 14px）
   - text contrast（standard / bright / max；套疊於基礎色票 `--text2` `#B8B2A6`、`--text3` `#7A7468`、`--bg` `#13110F`）

@@ -91,6 +91,76 @@
 - 選擇性：若英文分享版仍覺得視覺不順，可只在 `data-lang="en"` 下再微調 topnav / Workflow 的字級、字重與間距。
 - 選擇性：若外部以 VS Code 維護 Prompt / Schema 成為常態，可再評估補上 Markdown 匯入。
 
+## Planned Refactor Blueprint
+- **Status:** 尚未開始；目前先作為下一階段規劃記錄，避免在正式動工前遺失脈絡。
+- **Why now:** `src/sidepanel.js` 目前約 3326 行 / 146 KB，已同時承擔 i18n、navigation、settings、ETL、Custom Flow、Prompt Manager、Schema Manager、import/export、background message routing 等責任；雖然仍可維護，但已進入每次修改都容易互相牽動的區間。
+- **Primary goal:** 先做低風險拆檔與責任分離，不改產品行為；讓 `src/sidepanel.js` 最終收斂為 app entry / bootstrapping 檔案。
+
+### Phase 1 Scope
+- 維持目前 `sidepanel.html` + plain `<script>` 載入模式，不在這一輪改為 ES module。
+- 不先改 `background.js` 的 message contract。
+- 不先改 `chrome.storage.local` schema。
+- 不先處理 `Distill*Block` 重命名。
+- 不在這一輪直接做可自由新增卡片的 workflow builder。
+
+### Target File Structure
+- `src/core/app-state.js`
+  - 集中目前散落在 `sidepanel.js` 的共享 state，例如 `prompts`、`series`、`schemaTemplates`、`extractAI`、`extractGrokMode`、`activeDistillContext`、`currentLanguage`。
+- `src/core/dom-utils.js`
+  - 收納 `$`、`esc`、toast、timestamp、filename sanitize、log append、download helper 等通用工具。
+- `src/core/storage.js`
+  - 收納 `loadSettings()`、legacy migration、storage helper。
+- `src/core/i18n.js`
+  - 收納 `I18N`、`t()`、`applyI18n()`、`setLanguage()`、`refreshI18nUI()`。
+- `src/core/navigation.js`
+  - 收納 `switchTab()` 與 topnav / panel 切換相關邏輯。
+- `src/core/messages.js`
+  - 收納 `listenBg()` 與 Side Panel <-> background 的訊息分派。
+- `src/features/extract/`
+  - `extract-ui.js`：ETL UI render / state helper。
+  - `extract-runner.js`：`startExtract()` 與 ETL 送出 orchestration。
+  - `extract-capture.js`：AI reply selector / 手動截取邏輯。
+  - `extract-library.js`：ETL 結果儲存、library render、copy / delete / download。
+- `src/features/flow/`
+  - `flow-controller.js`：先整包承接 `CustomFlowController`。
+  - `flow-runner.js`：之後可再拆出 run-all / pipeline orchestration。
+  - `flow-capture.js`：Workflow `Capture Reply`、`.md / .html` 儲存。
+  - `flow-preset.js`：preset save / load / delete。
+  - `flow-ui.js`：Workflow picker / card / status / review UI。
+- `src/features/prompts/`
+  - `prompt-manager.js`：Prompt cards / series UI 管理。
+  - `prompt-import-export.js`：Prompt JSON / Markdown 匯入匯出與 merge。
+- `src/features/schema/`
+  - `schema-manager.js`：Schema cards UI 管理。
+  - `schema-import-export.js`：Schema JSON / Markdown 匯入匯出與 merge。
+- `src/features/settings/settings-ui.js`
+  - 收納 theme / font / contrast / settings save。
+
+### Recommended Execution Order
+- **Batch 1:** `core/` + `settings/` + `i18n`
+- **Batch 2:** `prompts/` + `schema/` + import/export
+- **Batch 3:** `extract/` + `flow/` + `messages/` + `src/sidepanel.js` 收尾
+
+### Validation After Each Batch
+- Side Panel 能開啟、Topnav 能切 tab、console 無新錯誤。
+- Prompt Manager：新增系列 / Prompt、rename、autosave、JSON / Markdown 匯出入正常。
+- Schema Manager：新增 / 編輯 / 刪除、JSON / Markdown 匯出入正常。
+- ETL：Prompt / Schema picker、AI pills、送出、Card 05 手動截取、`.md` 儲存正常。
+- Workflow：preset、`runAll()`、`Capture Reply`、`.md / .html` 正常。
+- Settings / i18n：theme、font、contrast、中英切換正常。
+
+### Forward Path For Future Dynamic Cards
+- 目前 `AI Flows` 仍是固定 5-block 架構；這次 refactor 只先為未來動態化鋪路，不直接實作。
+- 建議在 refactor 過程中逐步把 Workflow 內部表示收斂為 card-definition-driven 方向，例如：
+  - 將 block metadata 集中定義。
+  - 讓 `runAll()` 先建立 step / pipeline 清單再執行，而不是直接寫死順序。
+  - 慢慢把 `cf*` 平鋪欄位整理成較一致的 config object。
+- 未來若要進一步做：
+  - **Level 1:** 固定卡片，可顯示/隱藏、排序。
+  - **Level 2:** 可新增系統提供的卡片類型。
+  - **Level 3:** 真正自由的 workflow builder（含資料流 / 分支）。
+- 建議路線仍是：先拆檔，再 card-definition-driven，最後才決定是否開放使用者自行新增卡片。
+
 ## Important Notes
 - Side Panel 固定在瀏覽器右側，寬度由使用者拖曳決定，高度等於瀏覽器視窗高度。
 - 修改程式後必須在 `chrome://extensions/` 重新載入，service worker 才會更新。

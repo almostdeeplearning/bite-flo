@@ -21,6 +21,7 @@ This document summarizes the current data contracts used by the extension. It is
 | `extractSeriesId` | `string \| null` | Selected series in X ETL |
 | `distillSeriesId` | `string \| null` | Selected series in Distill |
 | `distillPromptIdx` | `number \| null` | Selected prompt index in Distill |
+| `promptLibraryInitialized` | `boolean` | One-time initialization flag for starter prompt series; prevents re-seeding after the user later deletes all prompt series |
 
 ### Schema Templates
 
@@ -29,6 +30,7 @@ This document summarizes the current data contracts used by the extension. It is
 | `schemaTemplates` | `SchemaTemplate[]` | Format template library (persisted, user-managed in Schema tab) |
 | `extractSchemaId` | `string \| null` | Schema selected in X ETL |
 | `distillSchemaId` | `string \| null` | Schema selected in Distill |
+| `schemaLibraryInitialized` | `boolean` | One-time initialization flag for starter schema templates; prevents re-seeding after the user later deletes all schemas |
 
 ### Custom Flow State
 
@@ -85,9 +87,10 @@ This document summarizes the current data contracts used by the extension. It is
 
 Notes:
 
-- `wikiTpl` and `noteTpl` remain in code only as a compatibility bridge for older local storage.
-- `src/sidepanel.js` `loadSettings()` reads them only when `schemaTemplates` is empty, then seeds the initial templates and persists `schemaTemplates`.
+- `wikiTpl` and `noteTpl` remain in code only as legacy compatibility references, but starter schema seeding now uses the built-in starter schema set instead of restoring those legacy template values.
 - The `wikiTpl` field used in `START_DISTILL` messages is a runtime message field, not this legacy storage key.
+- `promptLibraryInitialized` is separate from `promptSeries` itself. It exists so the starter Prompt series can be seeded once for first-run/demo UX without being restored again after a user intentionally deletes all Prompt series later.
+- `schemaLibraryInitialized` is separate from `schemaTemplates` itself. It exists so the starter Schema set can be seeded once for first-run/demo UX without being restored again after a user intentionally deletes all schemas later.
 
 ## Data Shapes
 
@@ -199,7 +202,7 @@ The schema template system replaces the old post-structuring concept. `grokTpl` 
 ## Compatibility Notes
 
 - HTML extension pages must load scripts externally to satisfy MV3 CSP.
-- `wikiTpl` and `noteTpl` are migration-only storage keys. `loadSettings()` reads them only when `schemaTemplates` is empty, seeds the initial schema templates, and then persists `schemaTemplates`.
+- `wikiTpl` and `noteTpl` are now legacy-only storage keys. Current starter schema initialization no longer restores them into `schemaTemplates`.
 - `grokTpl` and `structureTpl` are deprecated docs residue only. Current runtime code does not read or write them.
 - `START_VERIFY_WIKI`, `RUN_AI_STRUCTURE`, and `DOWNLOAD_TEXT` still exist as runtime message handlers in the current graph, but they are legacy/compatibility-oriented paths rather than the main Side Panel workflow surface.
 - Because migration only runs when `schemaTemplates` is empty, a partially populated `schemaTemplates` value may not receive missing default templates automatically.

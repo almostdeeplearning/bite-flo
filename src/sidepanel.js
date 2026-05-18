@@ -362,11 +362,11 @@ const I18N = {
     cf_page_captured_chars: 'Captured page ({count} chars)',
     cf_send_distill: 'Sending distill task ({format}, target: {ai})…',
     cf_no_records: 'No distill records yet',
-    cf_delay_label: 'Delay',
+    cf_delay_label: 'Wait before next step (s)',
     cf_custom_delay: 'Custom',
     seconds: 's',
     cf_source_placeholder: 'Paste text here, or click "Capture Page" to fill it automatically.',
-    grab_current_page: 'Capture Page',
+    grab_current_page: '⊕ Capture Page',
     save_flow_draft: 'Save Draft',
     logs: 'Logs',
     cf_log_placeholder: 'Execution logs will appear here.',
@@ -1803,6 +1803,260 @@ function normalizeLegacyPromptSeries(sourcePrompts) {
   return [{ id: crypto.randomUUID(), name: 'Migrated Prompts', prompts: items }];
 }
 
+function makeStarterPromptSeries() {
+  return [
+    {
+      id: crypto.randomUUID(),
+      name: 'Narrative Scan Starter Pack',
+      prompts: [
+        {
+          id: crypto.randomUUID(),
+          name: 'Narrative Scan',
+          text: `You are a buy-side equity research assistant specialized in real-time narrative scanning on X.com.
+
+Task
+Perform a dual time-window narrative scan for (ticker:    ):
+Primary window: past 14 days (current market attention and pricing)
+Secondary window: days 15-30 prior (early signals, fading risks, or low-salience concerns)
+(Timezone: Asia/Taipei, UTC+8)
+
+Goal:
+Identify material price and implied volatility drivers, clearly distinguishing currently priced-in narratives from under-discussed or potential downside risks.
+
+Hard Rules (Strict - Do Not Violate)
+Every factual claim or narrative must be supported by exact X post URL(s).
+All timestamps must be in YYYY-MM-DD HH:MM (UTC+8) format.
+Output language: English.
+Keep all financial terms, metrics, company names, and technical jargon in English.
+Clearly distinguish facts, interpretations, and speculation.
+Do not extrapolate, smooth, or infer missing information.
+
+Workflow
+A) Narrative Collection & Clustering
+Use English keywords and semantic search. Core keywords include but are not limited to:
+PGY, Pagaya, AI lending, AI underwriting, personal loans, origination, delinquency, charge-off, ABS, securitization, funding, guidance, earnings, short interest, credit performance.
+
+Primary Scan (0-14 days): Identify currently dominant and actively discussed narratives.
+Secondary Scan (15-30 days): Always perform this scan. Label findings clearly as "early / fading / low-salience".
+
+B) Narrative Summary Table
+Present findings in a clean markdown table with the following columns:
+| Narrative_Type | Polarity | One-line Summary | Key Evidence | Confidence | Window | Uncertainty |
+
+Narrative_Type: Driver / Risk / Event / Technical / Sentiment
+Polarity: Bull / Bear / Mixed / Neutral
+Key Evidence: 1-2 representative posts with URL + timestamp (UTC+8)
+Confidence: High / Medium / Low
+
+Aim for balanced representation of Bull and Bear narratives.
+If bearish/risk narratives are scarce, explicitly note:
+"Bearish narratives are currently limited on X, which may reflect market focus on positive developments rather than absence of risk."
+
+C) Deep Dive: Top 5 Narratives (ranked by potential market impact)
+Select the top 5 narratives with the highest potential to influence near-term price or implied volatility (not based on popularity).
+
+Requirements:
+Include at least 1-2 Risk/Bear narratives if they exist in either window.
+For each narrative:
+- 2-3 representative X posts (including at least one from an informed/expert account)
+- Brief explanation of why the account is considered informed
+- Transmission mechanism
+- Impact_Horizon (1 week / 1 month / 1 quarter)
+- Price_Direction (Up / Down / Range / Unclear)
+- IV_Direction (Up / Down / Stable / Unclear)
+- Invalidation condition (one concrete, observable future event or data point)
+
+D) Unverified Rumors & Speculation
+List 2-5 notable unverified or speculative claims circulating on X (include both bullish and bearish if present).
+For each:
+- URL + timestamp
+- What concrete evidence would confirm or reject it
+
+If none are found, state clearly:
+"No significant unverified rumors identified in the scanned windows."
+
+E) Forward-looking Catalysts
+List up to 3 upcoming dates or events only if explicitly mentioned in the posts (e.g., earnings date, guidance update, lock-up expiration).
+If none:
+"No explicit forward-looking dates or events were mentioned in the scanned posts."
+
+Mandatory Closing Notes
+Note that the absence of bearish narratives on X does not equal the absence of risk. Credit, funding, and macroeconomic risks must still be validated through formal filings and data.
+All analysis is based solely on public discussion on X as of the scan date.
+
+Output Style
+Professional, concise, objective buy-side tone. Use clear markdown formatting. No filler text, no motivational language, and do not restate the prompt.`
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Expert Signal Extraction & Validation',
+          text: `You are a senior buy-side equity research analyst focused on turning X.com narratives into high-conviction signals.
+
+Task
+Using the output from the previous Narrative Scan for (ticker:    ), perform an expert-weighted signal validation. Identify which narratives are most credible and actionable by evaluating the quality and track record of the accounts driving the discussion.
+
+Hard Rules
+Only strengthen or weaken a narrative based on verifiable expert input.
+Every signal must cite specific X post URLs.
+Timestamps in YYYY-MM-DD HH:MM (UTC+8).
+Output in clear, professional English.
+Clearly separate "High-Conviction Signal", "Moderate Signal", and "Noise".
+
+Workflow
+A) Expert Account Identification
+From the previous scan, identify the top 8-12 most relevant accounts. For each, provide:
+- Handle + brief credibility profile (e.g., "ex-hedge fund PM, specializes in fintech credit", "known for accurate earnings calls", "high follower count but mixed track record")
+- Why they qualify as expert/informed on this ticker or sector
+
+B) Signal Weighting Table
+Create a markdown table:
+| Narrative | Original Polarity | Key Expert Accounts | Expert Consensus | Signal Strength (High / Med / Low) | Conviction Rationale | Supporting Posts (URL + time) |
+
+C) Deep Validation of Top Signals
+For the top 4-6 signals (prioritizing those with expert involvement):
+- Summarize the expert view in 1-2 sentences
+- Historical context: Has this expert been right on similar situations before? (cite examples if available)
+- Consistency: Are multiple credible experts saying the same thing?
+- Counter-narratives: Which credible accounts disagree, and why?
+- Updated conviction level and recommended action bias (e.g., "Bullish bias - monitor for confirmation", "Bearish risk - high priority to hedge")
+
+D) Overall Signal Synthesis
+- High-Conviction Signals (list 1-3): Why they stand out
+- Watch-list Signals (medium conviction)
+- Dismissed / Low-Conviction Noise
+- Portfolio implication: How these signals should influence position sizing, hedging, or entry/exit timing
+
+E) Monitoring Recommendations
+Suggest 3-5 specific accounts or keyword combinations to monitor going forward for this ticker.
+Provide a ready-to-use follow-up search query for future scans.
+
+Mandatory Closing Notes
+Expert consensus on X does not replace formal channel checks, filings, or data verification.
+Past expert accuracy on X is not indicative of future performance.
+All assessments are based on public X discussion only.
+
+Output Style
+Concise, buy-side memo style. Use markdown tables and bullet points for readability. No fluff.`
+        },
+      ],
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'AI Flow Starter Pack',
+      prompts: [
+        {
+          id: crypto.randomUUID(),
+          name: 'BiteSize Breakdown',
+          text: `You are a professional, friendly, and clear explainer who specializes in breaking down X (Twitter) posts for general audiences.
+
+Please explain the following X post in a clear, easy-to-understand way:
+
+1. **One-Sentence Summary**: Start with 1-2 sentences that capture the core message of the post.
+2. **Clear Breakdown**: Explain the content step by step using simple language, bullet points, or short paragraphs.
+3. **Key Concepts**: Extract and clearly explain the 3-5 most important ideas, facts, or concepts in the post.
+4. **Tone & Context**: If the post has any noticeable emotion, opinion, sarcasm, or potential implications, briefly mention them.
+5. **Final Takeaway**: End with one short "Bottom Line" or "Key Thought" that the reader should remember.
+
+Here is the X post:
+
+[Insert post content here]
+
+Use a friendly, conversational tone like you're explaining it to a friend. Keep the explanation concise but insightful.`
+        },
+      ],
+    },
+  ];
+}
+
+function makeStarterSchemaTemplates() {
+  return [
+    {
+      id: crypto.randomUUID(),
+      name: 'wiki.md',
+      text: `Convert the above content into a clean, clear, and long-term usable Obsidian wiki note. You are an Obsidian expert who specializes in mimicking Andrej Karpathy's note-taking style - creating high-density linked, concept-oriented personal knowledge bases. Strictly follow the format below. Output only the note with no extra explanations, greetings, or additional text.
+
+---
+type: note
+topic: "[[Core Concept Name]]"
+category:
+  - domain
+  - subdomain
+created: {{date:YYYY-MM-DD}}
+last_updated: {{date:YYYY-MM-DD}}
+version: 1
+valid_context:
+sources:
+  - name: "Source Name"
+    published_date: "YYYY-MM-DD or unknown"
+tags:
+  - concept
+  - keyword
+related:
+  - "[[Related Concept 1]]"
+  - "[[Related Concept 2]]"
+status: draft
+---
+
+After the YAML block, leave one blank line and start the body. The body must strictly contain the following four sections with Markdown headings:
+
+## Summary (3-5 points)
+Summarize the core content using concise bullet points (1-2 lines each).
+Naturally embed [[wikilink]] for important concepts.
+
+## Key Concepts
+List the 4-8 most important concepts.
+Format each concept exactly as:
+[[Concept Name]]: Clear, neutral, one-sentence definition (keep it concise and objective).
+
+Always use [[wikilink]] format for the concept name.
+
+## Relationships Between These Concepts
+Describe the connections and interactions between the main concepts using simple sentences or bullet points.
+Create a dense knowledge network by embedding [[wikilink]] generously.
+
+## Uncertainties and Controversies
+List any ambiguous, unclear, or debatable parts in the original content that need further verification.
+If there are none, write: "No obvious uncertainties or controversies at this time."
+
+Strict Rules (Must Follow Exactly):
+Use professional, precise, and readable English.
+Maintain atomicity: Focus on one core concept as the main topic. If the article covers multiple distinct major ideas, choose the most central one as topic and move others to related.
+Use [[Concept Name]] wikilinks consistently. Concept names should be precise and reusable in the future.
+In Summary, Relationships, and other sections, naturally embed [[wikilink]] for important terms to increase link density.
+YAML must follow Obsidian Properties format:
+All arrays (category, tags, related) must use multi-line - format. Do not use single-line [].
+Each item in related must be wrapped in double quotes and on its own line.
+topic must be a string like "[[Transformer]]".
+Use empty array [] if a list has no items.
+
+Date rules:
+created / last_updated: Use today's date.
+sources.published_date: Use the original publication date if available, otherwise "unknown".
+
+Do not add conclusions, predictions, personal opinions, or extra commentary.
+Keep the overall format clean and beautiful for direct copy-paste into Obsidian.
+
+{{content}}`
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'table.md',
+      text: `You are an expert data organizer. Please convert the above content into a clear, well-structured Markdown table.
+
+Requirements:
+- Create meaningful and appropriate column headers based on the content
+- Include as many relevant rows as needed
+- If the content has dates or sequence, add a proper order or date column
+- If it's comparative content, make it a clear comparison table
+- Make the table comprehensive and easy to read
+
+Only output the Markdown table. Do not add any extra text, explanations, or code blocks.
+
+{{content}}`
+    },
+  ];
+}
+
 async function loadSettings() {
   const d = await chrome.storage.local.get([
     'prompts', 'extractAI', 'extractGrokMode', 'distillAI', 'delaySeconds',
@@ -1813,6 +2067,8 @@ async function loadSettings() {
     'schemaTemplates', 'extractSchemaId', 'distillSchemaId',
     'cfCardVisible', 'cfSeriesId', 'cfPromptIdx', 'cfSchemaId', 'cfAI', 'cfGrokMode', 'cfAutoSave', 'cfBlockDelays',
     'customFlowPresets', 'cfDefaultPresetId',
+    'promptLibraryInitialized',
+    'schemaLibraryInitialized',
   ]);
 
   prompts         = d.prompts || [];
@@ -1821,11 +2077,15 @@ async function loadSettings() {
   extractGrokMode = normalizedExtract.grokMode;
   series          = d.promptSeries || [];
   let migratedPromptSeries = false;
+  let seededStarterPromptSeries = false;
   if (!series.length) {
     const migrated = normalizeLegacyPromptSeries(d.prompts || []);
     if (migrated.length) {
       series = migrated;
       migratedPromptSeries = true;
+    } else if (!d.promptLibraryInitialized) {
+      series = makeStarterPromptSeries();
+      seededStarterPromptSeries = true;
     }
   }
   currentSeriesId = d.currentSeriesId || series[0]?.id || null;
@@ -1833,35 +2093,47 @@ async function loadSettings() {
     currentSeriesId = series[0]?.id || null;
   }
   extractSeriesId = d.extractSeriesId || null;
+  if (seededStarterPromptSeries && !extractSeriesId) {
+    extractSeriesId = series[0]?.id || null;
+  }
   extractSchemaId = d.extractSchemaId || null;
 
   schemaTemplates = d.schemaTemplates || [];
+  let seededStarterSchemas = false;
   if (!schemaTemplates.length) {
-    const defaults = [
-      { id: crypto.randomUUID(), name: 'wiki.md',
-        text: d.wikiTpl || '請將以下原文整理成 Wikipedia 條目風格的 markdown：包含簡介段落、## 背景、## 主要內容（子節）、## 相關概念、## 參考來源。只輸出 markdown。\n\n{{content}}' },
-      { id: crypto.randomUUID(), name: 'YAML',
-        text: '請將以下內容整理成 YAML 格式，包含關鍵欄位與值。只輸出 YAML。\n\n{{content}}' },
-      { id: crypto.randomUUID(), name: 'Table',
-        text: '請將以下內容整理成 Markdown 表格，包含適當的欄位標題。只輸出 Markdown 表格。\n\n{{content}}' },
-      { id: crypto.randomUUID(), name: 'Markdown',
-        text: '請將以下內容整理成結構清晰的 Markdown 文件。只輸出 markdown。\n\n{{content}}' },
-    ];
-    if (d.noteTpl) defaults.unshift({ id: crypto.randomUUID(), name: '筆記.md', text: d.noteTpl });
-    schemaTemplates = defaults;
-    await chrome.storage.local.set({ schemaTemplates });
+    if (!d.schemaLibraryInitialized) {
+      schemaTemplates = makeStarterSchemaTemplates();
+      seededStarterSchemas = true;
+      extractSchemaId = extractSchemaId || schemaTemplates[0]?.id || null;
+      await chrome.storage.local.set({
+        schemaTemplates,
+        extractSchemaId,
+        schemaLibraryInitialized: true,
+      });
+    }
   }
 
   if (migratedPromptSeries) {
     await chrome.storage.local.set({ promptSeries: series, currentSeriesId });
+  } else if (seededStarterPromptSeries) {
+    await chrome.storage.local.set({
+      promptSeries: series,
+      currentSeriesId,
+      extractSeriesId,
+      promptLibraryInitialized: true,
+    });
   } else if ((d.currentSeriesId || null) !== currentSeriesId) {
     await chrome.storage.local.set({ currentSeriesId });
+  }
+
+  if (!seededStarterSchemas && (d.extractSchemaId || null) !== extractSchemaId) {
+    await chrome.storage.local.set({ extractSchemaId });
   }
 
   applyTheme(d.uiTheme || 'nt-dark');
   applyPopupFontSize(d.popupFontSize || 'standard');
   applyPopupTextContrast(d.popupTextContrast || 'standard');
-  setLanguage(d.uiLanguage || 'zh', { persist: false });
+  setLanguage(d.uiLanguage || 'en', { persist: false });
 
   $('delayInput').value        = d.delaySeconds || 35;
   syncExtractDelayControls(d.delaySeconds || 35);
