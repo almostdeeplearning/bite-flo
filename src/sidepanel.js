@@ -136,6 +136,7 @@ const I18N = {
     run_all: '▶▶ Run all',
     start_generation: '開始生成',
     capture_current_reply: '⊕ 截取當前回覆',
+    cf_try_capture: '⊕ 嘗試截取',
     save_md: '⬇ 儲存 .md',
     save_html: '⬇ 儲存 .html',
     recent_extract: '最近萃取',
@@ -159,6 +160,7 @@ const I18N = {
     cf_card_task: '選擇分析',
     cf_card_format: '選擇格式',
     cf_card_ai: '選擇 AI',
+    cf_grok_inline_hint: '使用 Grok Inline 前，請先在 x.com 頁面手動打開 Grok 小視窗。',
     cf_card_run: '送出與回收結果',
     cf_card_execute: '執行送出',
     cf_card_review: '回收與儲存',
@@ -318,6 +320,7 @@ const I18N = {
     run_all: 'Run Workflow',
     start_generation: 'Execute',
     capture_current_reply: '⊕ Capture Reply',
+    cf_try_capture: '⊕ Try Capture',
     save_md: '⬇ Save .md',
     save_html: '⬇ Save .html',
     recent_extract: 'Recent Runs',
@@ -341,6 +344,7 @@ const I18N = {
     cf_card_task: 'Task',
     cf_card_format: 'Format',
     cf_card_ai: 'Model',
+    cf_grok_inline_hint: 'Before using Grok Inline, open the Grok side panel on x.com first.',
     cf_card_run: 'Send & Capture',
     cf_card_execute: 'Execute',
     cf_card_review: 'Review',
@@ -473,6 +477,13 @@ function normalizeVisibleExtractAI(ai, grokMode) {
   return { ai: 'gpt', grokMode: 'page' };
 }
 
+function normalizeVisibleFlowAI(ai, grokMode) {
+  if (ai === 'grok') return { ai: 'grok', grokMode: grokMode === 'inline' ? 'inline' : 'page' };
+  if (ai === 'gpt') return { ai: 'gpt', grokMode: 'page' };
+  // AI Flows currently exposes only GPT / Grok Page / Grok Inline.
+  return { ai: 'gpt', grokMode: 'page' };
+}
+
 function updateExtractAIModeUI() {
   const activeKey = getExtractAIPillKey();
   document.querySelectorAll('#extractAiSel .ai-pill').forEach(btn => {
@@ -532,8 +543,9 @@ const CustomFlowController = {
     this.seriesId  = d.cfSeriesId  || null;
     this.promptIdx = d.cfPromptIdx ?? null;
     this.schemaId  = d.cfSchemaId  || null;
-    this.ai        = d.cfAI        || 'gpt';
-    this.grokMode  = d.cfGrokMode === 'inline' ? 'inline' : 'page';
+    const normalizedFlow = normalizeVisibleFlowAI(d.cfAI || 'gpt', d.cfGrokMode);
+    this.ai        = normalizedFlow.ai;
+    this.grokMode  = normalizedFlow.grokMode;
 
     // Card toggles
     document.querySelectorAll('[data-cf-toggle]').forEach(btn =>
@@ -751,8 +763,9 @@ const CustomFlowController = {
       { source: 0, task: 0, format: 0, ai: 0, run: 0 },
       config?.blockDelays || {}
     );
-    const ai = ['gpt', 'gemini', 'claude', 'grok'].includes(config?.ai) ? config.ai : 'gpt';
-    const grokMode = config?.grokMode === 'inline' ? 'inline' : 'page';
+    const normalizedFlow = normalizeVisibleFlowAI(config?.ai, config?.grokMode);
+    const ai = normalizedFlow.ai;
+    const grokMode = normalizedFlow.grokMode;
     const seriesId = typeof config?.seriesId === 'string' && series.some(x => x.id === config.seriesId)
       ? config.seriesId
       : null;
@@ -1431,7 +1444,7 @@ const CustomFlowController = {
     if (!content) { this._log(t('enter_or_capture_first'), 'error'); return; }
 
     const cfg = await chrome.storage.local.get(['fullAuto']);
-    const autoSaveChecked = this._isAutoSaveEnabled();
+    const autoSaveChecked = false;
     let wikiTpl  = null;
     let fmtLabel = 'draft';
 
@@ -1664,7 +1677,7 @@ const CustomFlowController = {
   async _runWithPipeline(pipeline) {
     const { content, prompt, schema, ai } = pipeline;
     const grokMode = pipeline.grokMode === 'inline' ? 'inline' : 'page';
-    const autoSaveChecked = this._isAutoSaveEnabled();
+    const autoSaveChecked = false;
 
     if (!content) {
       this._log(currentLanguage === 'en' ? '❌ No source content. Run the Source block first.' : '❌ 無來源內容，請先執行 Source block', 'error');

@@ -108,7 +108,7 @@ const DistillRunBlock = {
               <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && window.t ? t('cf_result_name_label') : 'Result name'}">
             </div>
             <div class="cf-review-tools">
-                <button class="btn btn-xs" id="cfCaptureReplyBtn" data-i18n="capture_current_reply">⊕ 截取當前回覆</button>
+                <button class="btn btn-xs" id="cfCaptureReplyBtn" data-i18n="cf_try_capture">⊕ 嘗試截取</button>
                 <button class="btn btn-xs" id="cfCopyBtn" data-i18n="copy">複製</button>
                 <button class="btn btn-xs" id="cfSaveResultBtn" data-i18n="save_md">⬇ 儲存 .md</button>
                 <button class="btn btn-xs" id="cfSaveHtmlBtn" data-i18n="save_html">⬇ 儲存 .html</button>

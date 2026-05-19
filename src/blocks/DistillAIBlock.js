@@ -66,10 +66,11 @@ const DistillAIBlock = {
         <div class="cf-card-body">
           <div class="ai-pills" id="cfAiSelect">
             <button class="ai-pill active" data-ai="gpt">GPT</button>
-            <button class="ai-pill" data-ai="gemini">Gemini</button>
-            <button class="ai-pill" data-ai="claude">Claude</button>
             <button class="ai-pill" data-ai="grok-inline">Grok Inline</button>
             <button class="ai-pill" data-ai="grok-page">Grok Page</button>
+          </div>
+          <div class="cf-inline-hint" id="cfGrokInlineHint" data-i18n="cf_grok_inline_hint">
+            使用 Grok Inline 前，請先在 x.com 頁面手動打開 Grok 小視窗。
           </div>
         </div>
       </div>
