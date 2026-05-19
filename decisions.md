@@ -426,3 +426,19 @@
 - **Reason:** 在目前 ETL 仍為 Card 04 單次驅動、連續送出多個 prompts 的前提下，使用者需要能直接控制 prompt 之間的等待秒數，以降低目標 AI 還沒穩定就接續下一次送出的風險。
 - **Alternatives considered:** 保持固定 2 秒間隔；把等待控制放進其他 ETL 卡片；等未來完整兩階段 ETL 重構時再處理。
 - **Expected impact:** 使用者可在 ETL 主表面直接調整 `Wait before next step`；`START_EXTRACT.delaySeconds` 會實際影響 background 送出節奏，降低連續注入過快造成的上下文混線。
+
+## Decision 57
+- **Decision:** 先以卡片定義（`CARD_DEFINITIONS`）與流程版面（`FlowLayout`）作為 Side Panel 模組化的第一階段資料模型，並同步將 `Narrative Scan` 的可見語意收斂為 `Setup -> Send -> Review`，但本輪不重寫既有 runner、message contract 或 storage schema。
+- **Date:** 2026-05-19
+- **Reason:** 目前 `Narrative Scan` 與 `AI Flows` 已經共享越來越多卡片語意，例如 Prompt、Schema、Target AI、Send、Review，但實作層仍分散在 ETL 與 Custom Flow 的既有路徑中。若在語意尚未穩定前直接重寫 runtime，容易讓單純的 UI 收斂膨脹成高風險架構改動。先抽出共用資料模型，可讓後續卡片顯示/隱藏、排序、流程組合與 render 重構有一致基礎，同時避免過早綁死尚未定型的執行流程。
+- **Alternatives considered:** 直接將 ETL 與 Custom Flow 合併成單一 runner（風險過高，會同時碰觸 `START_EXTRACT` / `START_DISTILL` 路徑與背景自動化行為）；只做文案調整、不先定資料模型（短期可行，但會把後續模組化重構推遲到沒有共用語意基礎的情況下）；立刻實作自由 workflow builder（需求與複雜度都超出本輪目標）。
+- **Expected impact:** `Narrative Scan` 與 `AI Flows` 之後可逐步對齊到同一套卡片語意與 layout 結構；本輪先讓 `Narrative Scan` 的可見表面更誠實地反映目前實際流程是送出優先、手動回收優先；未來若要支援卡片排序、顯示/隱藏、不同 flow 組合，將可直接建立在 `CARD_DEFINITIONS` / `FlowLayout` 上，而不必重新發明資料模型。
+- **Implementation notes:**
+  - 第一階段只定義卡片 metadata 與 flow layout schema，不把它作為 runtime 唯一真相。
+  - `CARD_DEFINITIONS` 用來描述卡片類型、支援哪些 flow、標題/說明 key、以及是否可隱藏、可排序等能力。
+  - `FlowLayout` 用來描述某一個 flow 目前使用哪些卡片、顯示狀態與順序。
+  - `Narrative Scan` 的中間版可見語意先收斂為 `Prompt -> Schema -> Target AI -> Send -> Review`；`AI Flows` 仍維持既有 block-based runtime，但後續可映射到同一套 card type。
+  - 本輪不修改 `START_EXTRACT` / `START_DISTILL` 的 message contract。
+  - 本輪不替換現有 `chrome.storage.local` 既有 key；若要持久化 layout，應新增獨立 key（例如 `sidepanelLayouts`）而非直接覆寫既有 ETL / Flow state。
+  - 本輪不實作拖拉排序 UI，也不開放使用者自由新增卡片。
+- **Future extensibility note:** 這套結構預留了未來擴充到使用者自訂卡片的能力。後續可在 `CardDefinition` 中補上 `category`、`minInstances`、`maxInstances`、`removable` 等欄位，並讓 `FlowCardInstance.config` 從鬆散物件逐步收斂為結構化設定，以支援使用者自行新增、移除、重排特定卡片類型。

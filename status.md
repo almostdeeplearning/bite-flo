@@ -72,6 +72,13 @@
   - ETL Card 04 補上可見的 `Wait before next step` 控制，`delaySeconds` 會實際傳到 `START_EXTRACT` 並控制多個 ETL prompts 之間的送出間隔。
   - `Narrative Scan` 頁首新增 `Under construction` 紅色提示，明確引導目前先以 `AI Flows` 作為較穩定的工作流。
   - 深色主題色票改為冷藍黑 control-panel 方向，並為 `Narrative Scan` / `AI Flows` 卡片加入彩色步驟序號與 active 邊框呼應。
+- **Side Panel 模組化 draft 常數已落地（2026-05-19）：**
+  - `FLOW_IDS`、`CARD_TYPES`、`CARD_DEFINITIONS`、`FLOW_LAYOUTS_DRAFT` 已自 `src/sidepanel.js` 抽出到 `src/core/flow-layout-draft.js`。
+  - `sidepanel.html` 目前僅在 `src/sidepanel.js` 前載入這個 draft 檔案；仍沿用 plain `<script>` 而非 ES module。
+  - draft 常數目前統一掛在 `window.BiteFloDraft` namespace 下，以降低傳統 `<script>` 載入下的全域命名風險，同時明確標示其 draft 身分。
+  - `src/sidepanel.js` 開頭已加入 draft safety check；若 `window.BiteFloDraft.FLOW_LAYOUTS_DRAFT` 未載入，只做 `console.warn` 提醒，不 throw error，也不阻斷 runtime。
+  - 目前這批常數是 draft-only：完全不接 runtime、storage、render 或 message routing，也不作為任何 source of truth。
+  - `CARD_TYPES.SAVE` 已先預留，但目前尚未定義獨立的 save card；現況仍由 `review` 承擔回收與儲存責任。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
@@ -90,6 +97,7 @@
 - 中英混合介面的字體策略仍是局部調整；若後續擴大英文 surface，可能需要更系統化地區分 mono、UI font 與 editorial font 的使用邊界。
 - Prompt / Schema 的 Markdown 目前僅支援匯出，不支援直接從 Markdown 回匯。
 - `Narrative Scan` 的 5 張卡目前在語意上看起來像 step-by-step workflow，但 runtime 仍是「設定卡 + Card 04 單次送出」；若未來要做成真正兩階段 `extract -> schema` 工作流，需要重整 ETL 的資料流與卡片責任。
+- `src/core/flow-layout-draft.js` 雖已改掛 `window.BiteFloDraft` namespace，但目前仍透過傳統 `<script>` 載入；未來若要正式接到 render 層，仍需再決定是否維持 namespace 模式或改為更正式的 module 引入方式。
 
 ## Next Steps
 - 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
@@ -100,6 +108,7 @@
 - 選擇性：若英文分享版仍覺得視覺不順，可只在 `data-lang="en"` 下再微調 topnav / Workflow 的字級、字重與間距。
 - 選擇性：若外部以 VS Code 維護 Prompt / Schema 成為常態，可再評估補上 Markdown 匯入。
 - 決策：確認 `Narrative Scan` 是否應從目前的單次 `prompt + schema` 合併送出，升級為真正兩階段 `extract -> schema` 工作流。
+- 決策：確認 `src/core/flow-layout-draft.js` 在後續 refactor 中應持續維持 `window.BiteFloDraft` namespace，或改為正式 module import。
 
 ## Planned Refactor Blueprint
 - **Status:** 尚未開始；目前先作為下一階段規劃記錄，避免在正式動工前遺失脈絡。

@@ -145,6 +145,149 @@ type CustomFlowPreset = {
 };
 ```
 
+## Future Modular Layout Draft
+
+> Draft only. This section describes the planned card-definition data model for future Side Panel modularization.
+> It is not yet the source of truth for current runtime behavior, message routing, or storage reads/writes.
+
+```ts
+type FlowId = 'narrative_scan' | 'ai_flows';
+
+type CardType =
+  | 'source'
+  | 'prompt'
+  | 'schema'
+  | 'target_ai'
+  | 'send'
+  | 'review'
+  | 'save';
+
+type CardCapability = {
+  hideable?: boolean;
+  reorderable?: boolean;
+  removable?: boolean;
+  manualReview?: boolean;
+  sendOnly?: boolean;
+};
+
+type CardDefinition = {
+  type: CardType;
+  titleKey: string;
+  descriptionKey?: string;
+  supports: FlowId[];
+  capabilities?: CardCapability;
+};
+
+type FlowCardInstance = {
+  id: string;
+  type: CardType;
+  order: number;
+  visible: boolean;
+  enabled: boolean;
+  config?: Record<string, unknown>;
+};
+
+type FlowLayout = {
+  flowId: FlowId;
+  version: number;
+  cards: FlowCardInstance[];
+};
+```
+
+Planned system-level card definitions:
+
+```ts
+const CARD_DEFINITIONS: CardDefinition[] = [
+  {
+    type: 'source',
+    titleKey: 'cf_card_source',
+    descriptionKey: 'cf_source_helper',
+    supports: ['ai_flows'],
+    capabilities: { hideable: true, reorderable: true },
+  },
+  {
+    type: 'prompt',
+    titleKey: 'etl_card_prompt',
+    descriptionKey: 'etl_prompt_helper',
+    supports: ['narrative_scan', 'ai_flows'],
+    capabilities: { hideable: true, reorderable: true },
+  },
+  {
+    type: 'schema',
+    titleKey: 'etl_card_schema',
+    descriptionKey: 'etl_schema_helper',
+    supports: ['narrative_scan', 'ai_flows'],
+    capabilities: { hideable: true, reorderable: true },
+  },
+  {
+    type: 'target_ai',
+    titleKey: 'etl_card_ai',
+    descriptionKey: 'etl_ai_helper',
+    supports: ['narrative_scan', 'ai_flows'],
+    capabilities: { hideable: true, reorderable: true },
+  },
+  {
+    type: 'send',
+    titleKey: 'etl_card_run',
+    descriptionKey: 'etl_run_helper',
+    supports: ['narrative_scan', 'ai_flows'],
+    capabilities: { hideable: true, reorderable: true, sendOnly: true },
+  },
+  {
+    type: 'review',
+    titleKey: 'etl_card_save',
+    descriptionKey: 'etl_review_helper',
+    supports: ['narrative_scan', 'ai_flows'],
+    capabilities: { hideable: true, reorderable: true, manualReview: true },
+  },
+];
+```
+
+Planned default layout for `Narrative Scan`:
+
+```ts
+const NARRATIVE_SCAN_LAYOUT: FlowLayout = {
+  flowId: 'narrative_scan',
+  version: 1,
+  cards: [
+    { id: 'ns_prompt', type: 'prompt', order: 1, visible: true, enabled: true },
+    { id: 'ns_schema', type: 'schema', order: 2, visible: true, enabled: true },
+    { id: 'ns_target_ai', type: 'target_ai', order: 3, visible: true, enabled: true },
+    { id: 'ns_send', type: 'send', order: 4, visible: true, enabled: true },
+    { id: 'ns_review', type: 'review', order: 5, visible: true, enabled: true },
+  ],
+};
+```
+
+Planned default layout for `AI Flows`:
+
+```ts
+const AI_FLOWS_LAYOUT: FlowLayout = {
+  flowId: 'ai_flows',
+  version: 1,
+  cards: [
+    { id: 'af_source', type: 'source', order: 1, visible: true, enabled: true },
+    { id: 'af_prompt', type: 'prompt', order: 2, visible: true, enabled: true },
+    { id: 'af_schema', type: 'schema', order: 3, visible: true, enabled: true },
+    { id: 'af_target_ai', type: 'target_ai', order: 4, visible: true, enabled: true },
+    { id: 'af_send', type: 'send', order: 5, visible: true, enabled: true },
+    { id: 'af_review', type: 'review', order: 6, visible: true, enabled: true },
+  ],
+};
+```
+
+Planned storage direction:
+
+- A future layout-specific key such as `sidepanelLayouts` may persist `FlowLayout` objects for `narrative_scan` and `ai_flows`.
+- This key should remain separate from current ETL / Custom Flow runtime keys during the first modularization phase.
+- Current ETL / Flow state keys remain the source of truth until render and runner layers are explicitly migrated.
+
+Future extensibility note:
+
+- This draft is intended to support future user-customizable cards.
+- Likely next-step fields include `category`, `minInstances`, `maxInstances`, and `removable` on `CardDefinition`.
+- `FlowCardInstance.config` is intentionally loose in this draft and may later become a stricter per-card typed config as user-addable cards are introduced.
+
 ## Runtime Messages
 
 ### Side Panel To Background
