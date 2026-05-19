@@ -14,7 +14,7 @@ const DistillSourceBlock = {
             <button class="btn btn-sm" id="grabPageBtn">${window.t ? t('grab_current_page') : '⊕ 抓取當前頁面'}</button>
           </div>
         </div>
-        <textarea class="ta" id="rawText" rows="6" placeholder="${window.t ? t('cf_source_placeholder') : '貼入長文，或點「抓取當前頁面」自動填入...'}"></textarea>
+        <textarea class="ta" id="rawText" rows="6" placeholder="${window.t ? t('cf_source_placeholder') : '手動貼上貼文或長文內容，或點「嘗試抓取當前頁面」自動帶入...'}"></textarea>
       </div>
     `.trim();
   },
@@ -64,10 +64,10 @@ const DistillSourceBlock = {
             <span class="char-count" id="cfCharCount">0</span>
             <div class="row" style="gap:6px">
               <button class="btn btn-ghost btn-xs" id="cfRawTextToggleBtn" data-i18n="expand">展開</button>
-              <button class="btn btn-sm" id="cfGrabPageBtn" data-i18n="grab_current_page">⊕ 抓取當前頁面</button>
+              <button class="btn btn-sm" id="cfGrabPageBtn" data-i18n="cf_try_capture_page">⊕ 嘗試抓取當前頁面</button>
             </div>
           </div>
-          <textarea class="ta cf-source-textarea" id="cfRawText" rows="4" data-i18n-placeholder="cf_source_placeholder" placeholder="貼入長文，或點「抓取當前頁面」自動填入..."></textarea>
+          <textarea class="ta cf-source-textarea" id="cfRawText" rows="4" data-i18n-placeholder="cf_source_placeholder" placeholder="手動貼上貼文或長文內容，或點「嘗試抓取當前頁面」自動帶入..."></textarea>
           <div class="row" style="justify-content:flex-end;margin-top:10px">
             <button class="btn" id="cfSaveDraftBtn" data-i18n="save_flow_draft">存草稿</button>
           </div>

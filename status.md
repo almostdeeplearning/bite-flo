@@ -79,6 +79,11 @@
   - `src/sidepanel.js` 開頭已加入 draft safety check；若 `window.BiteFloDraft.FLOW_LAYOUTS_DRAFT` 未載入，只做 `console.warn` 提醒，不 throw error，也不阻斷 runtime。
   - 目前這批常數是 draft-only：完全不接 runtime、storage、render 或 message routing，也不作為任何 source of truth。
   - `CARD_TYPES.SAVE` 已先預留，但目前尚未定義獨立的 save card；現況仍由 `review` 承擔回收與儲存責任。
+- **Narrative Scan 首次接入 layout-driven render（2026-05-19）：**
+  - `initETLTab()` 現在會先讀 `window.BiteFloDraft.FLOW_LAYOUTS_DRAFT.narrative_scan.cards` 來決定 ETL 卡片 render 順序。
+  - 目前只做 `CardType -> 現有 ETLCard1–5Block` 的 mapping；仍沿用既有 block、既有 DOM ids、既有 runner 與既有 message contract。
+  - 若 draft layout 缺失、格式不合法或出現未知 card type，系統只會 `console.warn`，並回退到原本 hardcoded 的 `Prompt -> Schema -> Target AI -> Send -> Review` 順序，不阻斷整個 tab render。
+  - 這是第一個 layout-driven render 接點，但目前仍只影響 `Narrative Scan` 的卡片順序，不影響 state、capture、storage 或背景流程。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
@@ -86,6 +91,7 @@
 - Custom Flow 「一鍵跑完全部」在未選 Prompt 等情境下，目前無錯誤提示。
 - ETL 目前改為半手動結果回收；若目標 AI 尚未完成生成就按下 Card 05 的「截取當前回覆」，仍可能抓不到內容。
 - Card 05 目前是對「目前 active tab」做手動截取；若使用者送出後切到別頁再截取，可能抓錯頁面。
+- `AI Flows` 的 `Capture Page` 對 `x.com` 的 `Article / Longform Page` 抓取支援仍不完整，容易漏掉大量正文；目前較適合作為一般 `tweet / thread` 的 browser-native capture，而非長文頁的可靠全文擷取。現階段建議以 `Source` 卡中的手動貼上內容作為 fallback 主路徑，待 Side Panel 模組化穩定後再獨立處理 article-specific selector。
 - Grok `inline` 模式依賴 x.com 當前頁面真的已展開小視窗；若 X 再次改版，可能需要補更精準的 dialog / composer selector。
 - Custom Flow 的 Grok `inline` 同樣依賴 x.com 當前頁面已展開小視窗；若小視窗 UI 再改版，ETL 與 Flow 兩邊都可能需要同步調整 selector。
 - Custom Flow 的 `Format` 預設空選項現在只代表「不套用 Schema」；若 `Prompt / Schema` 都未選，流程會直接把原文送到 AI，而不是自動存草稿。
@@ -98,6 +104,7 @@
 - Prompt / Schema 的 Markdown 目前僅支援匯出，不支援直接從 Markdown 回匯。
 - `Narrative Scan` 的 5 張卡目前在語意上看起來像 step-by-step workflow，但 runtime 仍是「設定卡 + Card 04 單次送出」；若未來要做成真正兩階段 `extract -> schema` 工作流，需要重整 ETL 的資料流與卡片責任。
 - `src/core/flow-layout-draft.js` 雖已改掛 `window.BiteFloDraft` namespace，但目前仍透過傳統 `<script>` 載入；未來若要正式接到 render 層，仍需再決定是否維持 namespace 模式或改為更正式的 module 引入方式。
+- `Narrative Scan` 雖已開始讀 draft layout 決定 render 順序，但 card type 與 block 的 mapping 仍寫在 `src/sidepanel.js` 內；這層目前仍是 hardcoded glue，而非真正可重用的 modular renderer。
 
 ## Next Steps
 - 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
@@ -109,6 +116,8 @@
 - 選擇性：若外部以 VS Code 維護 Prompt / Schema 成為常態，可再評估補上 Markdown 匯入。
 - 決策：確認 `Narrative Scan` 是否應從目前的單次 `prompt + schema` 合併送出，升級為真正兩階段 `extract -> schema` 工作流。
 - 決策：確認 `src/core/flow-layout-draft.js` 在後續 refactor 中應持續維持 `window.BiteFloDraft` namespace，或改為正式 module import。
+- 後續：若這版 vocabulary 與卡片順序穩定，再評估把 `CardType -> Block` mapping 抽到更中性的 renderer helper，並逐步讓 `AI Flows` 接入相同的 layout-driven render 模式。
+- 未來架構草案：優先採用 flow-scoped renderer map，而非全域 block registry。可考慮新增 `src/core/flow-renderers.js`，分別維護 `narrative_scan` 與 `ai_flows` 的 `CardType -> Block renderer` 對照表，讓 layout 與 renderer 拆成兩層，但暫不在本輪實作。
 
 ## Planned Refactor Blueprint
 - **Status:** 尚未開始；目前先作為下一階段規劃記錄，避免在正式動工前遺失脈絡。

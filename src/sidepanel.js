@@ -201,7 +201,8 @@ const I18N = {
     no_delay: '無延遲',
     cf_custom_delay: '自訂',
     seconds: '秒',
-    cf_source_placeholder: '貼入長文，或點「抓取當前頁面」自動填入...',
+    cf_source_placeholder: '手動貼上貼文或長文內容，或點「嘗試抓取當前頁面」自動帶入...',
+    cf_try_capture_page: '⊕ 嘗試抓取當前頁面',
     grab_current_page: '⊕ 抓取當前頁面',
     save_flow_draft: '存草稿',
     logs: '執行紀錄',
@@ -392,7 +393,8 @@ const I18N = {
     no_delay: 'No delay',
     cf_custom_delay: 'Custom',
     seconds: 's',
-    cf_source_placeholder: 'Paste text here, or click "Capture Page" to fill it automatically.',
+    cf_source_placeholder: 'Paste post or long-form text manually, or click "Try Capture Page" to fill it automatically.',
+    cf_try_capture_page: '⊕ Try Capture Page',
     grab_current_page: '⊕ Capture Page',
     save_flow_draft: 'Save Draft',
     logs: 'Logs',
@@ -1773,11 +1775,45 @@ function initETLTab() {
   const etlSteps = document.createElement('div');
   etlSteps.className = 'etl-flow';
   etlSteps.id = 'etlSteps';
-  ETLCard1Block.render(etlSteps);
-  ETLCard2Block.render(etlSteps);
-  ETLCard3Block.render(etlSteps);
-  ETLCard4Block.render(etlSteps);
-  ETLCard5Block.render(etlSteps);
+
+  const fallbackOrder = [
+    { type: 'prompt', render: () => ETLCard1Block.render(etlSteps) },
+    { type: 'schema', render: () => ETLCard2Block.render(etlSteps) },
+    { type: 'target_ai', render: () => ETLCard3Block.render(etlSteps) },
+    { type: 'send', render: () => ETLCard4Block.render(etlSteps) },
+    { type: 'review', render: () => ETLCard5Block.render(etlSteps) },
+  ];
+
+  const renderByType = {
+    prompt: () => ETLCard1Block.render(etlSteps),
+    schema: () => ETLCard2Block.render(etlSteps),
+    target_ai: () => ETLCard3Block.render(etlSteps),
+    send: () => ETLCard4Block.render(etlSteps),
+    review: () => ETLCard5Block.render(etlSteps),
+  };
+
+  let usedDraftLayout = false;
+  const draftCards = window.BiteFloDraft?.FLOW_LAYOUTS_DRAFT?.narrative_scan?.cards;
+  if (Array.isArray(draftCards) && draftCards.length) {
+    const visibleCards = draftCards
+      .filter(card => card && card.visible !== false && card.enabled !== false)
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+    const allKnown = visibleCards.length > 0 && visibleCards.every(card => typeof renderByType[card.type] === 'function');
+    if (allKnown) {
+      visibleCards.forEach(card => renderByType[card.type]());
+      usedDraftLayout = true;
+    } else {
+      console.warn('[BiteFlo Draft] Narrative Scan draft layout contains unknown card types; falling back to hardcoded ETL render order');
+    }
+  } else {
+    console.warn('[BiteFlo Draft] Narrative Scan draft layout missing or invalid; falling back to hardcoded ETL render order');
+  }
+
+  if (!usedDraftLayout) {
+    fallbackOrder.forEach(item => item.render());
+  }
+
   etlContainer.appendChild(etlSteps);
   ETLCard5Block.renderLib(etlContainer);
 
