@@ -442,3 +442,11 @@
   - 本輪不替換現有 `chrome.storage.local` 既有 key；若要持久化 layout，應新增獨立 key（例如 `sidepanelLayouts`）而非直接覆寫既有 ETL / Flow state。
   - 本輪不實作拖拉排序 UI，也不開放使用者自由新增卡片。
 - **Future extensibility note:** 這套結構預留了未來擴充到使用者自訂卡片的能力。後續可在 `CardDefinition` 中補上 `category`、`minInstances`、`maxInstances`、`removable` 等欄位，並讓 `FlowCardInstance.config` 從鬆散物件逐步收斂為結構化設定，以支援使用者自行新增、移除、重排特定卡片類型。
+
+## Decision 58
+- **Decision:** `Narrative Scan` 與 `AI Flows` 未來應優先對齊 workflow UI 語法，包括主 CTA 視覺、tooltip 位置、warning 呈現、status strip 角色與卡片 header 節奏；若兩者需要不同體驗，應先保留底層能力可組合，再在特定 flow 的表面做合併或分流。
+- **Date:** 2026-05-20
+- **created:** 05-20 22
+- **Reason:** 本輪 `Narrative Scan` 的收斂主要是分開做的，已逐步長出自己的 CTA 樣式、全域狀態列、tooltip 與 warning 語法。若後續不刻意對齊 `AI Flows`，兩個主要工作流很容易因為各自演化而產生按鈕家族、卡片節奏、提示語氣與可選/必要步驟判讀上的落差，增加使用者切換心智成本。
+- **Alternatives considered:** 接受 `Narrative Scan` 與 `AI Flows` 長期維持各自獨立的 UI 語法（短期省事，但會放大整體產品的不一致感）；先強制兩者完全共用同一套卡片表面（會過早犧牲 flow-specific 的敘事與操作順序）；只在最後做視覺換皮、不整理互動語法（無法解決真正的使用心智不一致）。
+- **Expected impact:** 後續若再調整 workflow UI，會優先檢查兩個主要工作流在主 CTA、status、tooltip、warning、optional surface 等語法上是否仍能互相對照；同時保留底層 `schema / target_ai / send / review / save` 等能力可拆可合，避免為了某一個表面而焊死未來的自由組 flow 能力。
