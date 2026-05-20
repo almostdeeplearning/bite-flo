@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<title>BiteFlo</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
+```css
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 input, button, select, optgroup, textarea { font-family: inherit; font-size: inherit; }
@@ -359,12 +353,6 @@ body {
   gap: 4px;
   align-items: center;
 }
-.ai-pills-fluid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
-  gap: 6px;
-  align-items: stretch;
-}
 .ai-pill {
   font-family: var(--font-mono);
   font-size: 9px;
@@ -380,11 +368,6 @@ body {
 }
 .ai-pill:hover { color: var(--pill-hover-text); border-color: var(--pill-hover-border); }
 .ai-pill.active { color: var(--pill-active-text); border-color: var(--pill-active-border); background: var(--pill-active-bg); }
-.ai-pills-fluid .ai-pill {
-  width: 100%;
-  justify-content: center;
-  min-height: 30px;
-}
 
 /* Scroll area */
 .panel-scroll {
@@ -754,171 +737,6 @@ body {
 }
 .pi-del:hover { color: var(--red); }
 
-.ns-prompt-preview {
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--bg3);
-  padding: 12px;
-  cursor: pointer;
-  transition: border-color .16s ease, transform .16s ease;
-}
-.ns-prompt-preview:hover {
-  border-color: var(--line2);
-  transform: translateY(-1px);
-}
-.ns-prompt-preview-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.ns-prompt-preview-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text2);
-}
-.ns-prompt-preview-meta {
-  font-size: 10px;
-  color: var(--text3);
-  white-space: nowrap;
-}
-.ns-prompt-preview-body {
-  position: relative;
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--text);
-  white-space: pre-wrap;
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-}
-.ns-prompt-preview-tools {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-.ns-prompt-preview-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-.ns-prompt-preview-hint {
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 0.1px;
-}
-.ns-token-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  color: #f5c67a;
-  font-size: 10px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-.ns-prompt-token {
-  background: rgba(245, 158, 11, 0.18);
-  color: #ffd58a;
-  border-radius: 6px;
-  padding: 0 4px;
-}
-.ns-prompt-editor-tools {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.ns-target-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-.ns-inline-micro-hint {
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--amber);
-  white-space: nowrap;
-  display: none;
-}
-.ns-inline-micro-hint.is-visible {
-  display: inline;
-}
-.ns-inline-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.ns-inline-action-block {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-}
-.ns-inline-action-hint {
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--amber);
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateY(1px);
-  pointer-events: none;
-  transition: opacity .16s ease, transform .16s ease;
-}
-.ns-inline-action:hover .ns-inline-action-hint,
-.ns-inline-action:focus-within .ns-inline-action-hint {
-  opacity: 1;
-  transform: translateY(0);
-}
-.ns-inline-action-block .ns-inline-action-hint {
-  white-space: normal;
-}
-.ns-head-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-.ns-head-control-label {
-  font-size: 10px;
-  color: var(--text3);
-  white-space: nowrap;
-}
-.ns-head-control .cf-delay-sel {
-  min-width: 42px;
-  height: 22px;
-  padding: 1px 16px 1px 8px;
-}
-.ns-head-control .cf-delay-custom {
-  width: 44px;
-  padding: 2px 6px;
-}
-.btn-dashed {
-  border-style: dashed;
-  border-color: var(--line2);
-  color: var(--text3);
-  background: transparent;
-}
-.btn-dashed:hover {
-  border-color: var(--text2);
-  color: var(--text2);
-  background: var(--accent-bg);
-}
-
 /* ── Prompt chip picker ── */
 .chip-row {
   display: flex;
@@ -1009,11 +827,31 @@ body {
 .etl-run-cta {
   flex: 1 1 auto;
   min-width: 132px;
-  width: 100%;
+  width: auto;
   justify-content: center;
   gap: 6px;
   font-size: 12px;
   letter-spacing: 0.3px;
+}
+
+/* ── Progress ── */
+.progress { margin-top: 14px; display: block; opacity: .72; transition: opacity .15s; }
+.progress.on { opacity: 1; }
+.prog-bar { height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--text); border-radius: 99px; transition: width .35s; }
+.prog-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 7px;
+  display: flex;
+  justify-content: space-between;
+}
+.prog-subtxt {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text2);
 }
 
 /* ── Log strip ── */
@@ -1029,19 +867,7 @@ body {
   max-height: 72px;
   overflow-y: auto;
   line-height: 1.7;
-  margin-top: 12px;
-}
-.log-strip-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-.log-strip-title {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--text2);
+  margin-top: 10px;
 }
 .ll { display: block; }
 .log-placeholder { color: var(--text3); }
@@ -1111,10 +937,6 @@ td[contenteditable]:focus { background: var(--accent-bg); outline: none; color: 
   max-height: 320px;
   resize: vertical;
   outline: none;
-}
-.result-editor-optional::placeholder {
-  color: var(--amber);
-  opacity: 0.92;
 }
 .result-editor:focus {
   border-color: var(--input-border-focus);
@@ -1952,68 +1774,7 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   font-family: var(--font-ui); font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.2px; text-transform: none;
-  color: var(--text-heading);
-}
-.cf-card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-right: auto;
-  min-width: 0;
-}
-.card-help {
-  position: relative;
-  flex-shrink: 0;
-}
-.card-help-trigger {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid var(--line2);
-  background: transparent;
-  color: var(--text3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1;
-  cursor: pointer;
-  transition: border-color .16s ease, color .16s ease, background-color .16s ease;
-}
-.card-help-trigger:hover,
-.card-help-trigger:focus-visible,
-.card-help.is-open .card-help-trigger {
-  border-color: var(--text2);
-  color: var(--text);
-  background: rgba(255,255,255,0.04);
-  outline: none;
-}
-.card-help-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(240px, calc(100vw - 72px));
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line2);
-  background: var(--bg3);
-  box-shadow: var(--shadow-card);
-  color: var(--text2);
-  font-size: 11px;
-  line-height: 1.55;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-4px);
-  transition: opacity .16s ease, transform .16s ease;
-  z-index: 40;
-}
-.card-help:hover .card-help-panel,
-.card-help:focus-within .card-help-panel,
-.card-help.is-open .card-help-panel {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+  color: var(--text-heading); flex: 1;
 }
 .cf-card-body { padding: 14px; }
 .cf-card.cf-collapsed .cf-card-body { display: none; }
@@ -2050,16 +1811,6 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   font-size: 11px;
   line-height: 1.5;
   color: var(--text2);
-}
-.cf-risk-note {
-  margin-bottom: 8px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(245, 158, 11, 0.22);
-  background: rgba(245, 158, 11, 0.08);
-  color: #f5c67a;
-  font-size: 11px;
-  line-height: 1.45;
 }
 .cf-delay-block .row { justify-content: flex-start; }
 .cf-status-box {
@@ -2151,56 +1902,27 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 .cf-card[data-etl-card="run"]:has(.cf-card-num.active) { border-color: rgba(46,166,166,0.55); box-shadow: 0 0 0 1px rgba(46,166,166,0.10); }
 .cf-card[data-etl-card="save"]:has(.cf-card-num.active) { border-color: rgba(70,185,107,0.55); box-shadow: 0 0 0 1px rgba(70,185,107,0.10); }
 
-.extract-global-status {
+.extract-notice {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(143,151,171,0.28);
-  border-radius: 12px;
-  background: rgba(11,16,32,0.56);
-  color: var(--text2);
+  padding: 0 0 10px;
+  color: var(--red);
+  border-bottom: 1px dashed rgba(255,107,107,0.45);
 }
-.extract-global-status.idle {
-  border-color: rgba(143,151,171,0.28);
-  background: rgba(11,16,32,0.56);
-  color: var(--text2);
-}
-.extract-global-status.waiting,
-.extract-global-status.running {
-  border-color: rgba(243,197,106,0.38);
-  background: rgba(243,197,106,0.09);
-  color: #f3d89b;
-}
-.extract-global-status.success,
-.extract-global-status.done {
-  border-color: rgba(70,185,107,0.34);
-  background: rgba(70,185,107,0.09);
-  color: #9bd2aa;
-}
-.extract-global-status.error,
-.extract-global-status.stopped {
-  border-color: rgba(255,107,107,0.34);
-  background: rgba(255,107,107,0.08);
-  color: #ffb1b1;
-}
-.extract-global-status-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
+.extract-notice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.10);
   flex-shrink: 0;
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  color: currentColor;
 }
-.extract-global-status-text {
-  min-width: 0;
+.extract-notice-text {
   font-size: 12px;
-  line-height: 1.5;
-  color: currentColor;
+  line-height: 1.55;
+  color: var(--red);
 }
 
 /* ══════════════════════════════════════
@@ -2503,7 +2225,6 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
 /* ══════════════════════════════════════
    ETL TYPOGRAPHY & FLOW REFINEMENTS
 ══════════════════════════════════════ */
-/* STEP labels — larger, bolder, more breathing room */
 .etl-label {
   font-size: 15px;
   font-weight: 600;
@@ -2512,14 +2233,11 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
   margin-bottom: 14px;
   padding-top: 2px;
 }
-/* Sub-titles inside ETL blocks */
 #tab-extract .field-label {
   font-size: 13.5px;
   font-weight: 600;
 }
-/* General ETL text floor */
 #tab-extract { font-size: 12.5px; }
-/* Step circles — 32px, refined border */
 .etl-num {
   width: 32px;
   height: 32px;
@@ -2527,16 +2245,13 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
   border-width: 1.5px;
   flex-shrink: 0;
 }
-/* Vertical line — gradient top-bright → bottom-dim, min height */
 .etl-vline {
   background: linear-gradient(to bottom, var(--text3) 0%, var(--line) 100%);
   min-height: 32px;
 }
-/* Prompt series dropdown */
 .extract-prompt-sel {
   margin-bottom: 8px;
 }
-/* Prompt preview below dropdown */
 .extract-prompt-preview {
   display: none;
   font-size: 11.5px;
@@ -2553,7 +2268,6 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
 }
 .extract-prompt-preview.visible { display: block; }
 
-/* ── ETL card header (matches cf-card-head feel) ── */
 .etl-card-head {
   display: flex;
   align-items: center;
@@ -2565,278 +2279,4 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
   margin-bottom: 0;
   padding-top: 0;
 }
-</style>
-</head>
-<body>
-
-<!-- ══ Top Navigation ══ -->
-<nav class="topnav">
-
-  <!-- Scrollable tab list (middle) -->
-  <div class="topnav-tabs">
-    <button class="tab nav-item active" data-tab="extract">
-      <span class="nav-label" data-i18n="nav_extract">脈絡掃描</span>
-    </button>
-    <button class="tab nav-item" data-tab="flow">
-      <span class="nav-label" data-i18n="nav_flow">AI Flows</span>
-    </button>
-    <button class="tab nav-item" data-tab="prompts">
-      <span class="nav-label" data-i18n="nav_prompts">Prompt 管理</span>
-    </button>
-    <button class="tab nav-item" data-tab="schema">
-      <span class="nav-label" data-i18n="nav_schema">格式管理</span>
-    </button>
-  </div>
-
-  <!-- Right-side actions + settings -->
-  <div class="topnav-actions">
-    <div id="topbarPromptsActions" style="display:none"></div>
-    <div id="topbarSchemaActions" style="display:none"></div>
-    <div class="lang-toggle" id="langToggle" aria-label="Language toggle">
-      <button class="lang-toggle-trigger" id="langToggleBtn" type="button" aria-label="Language toggle" aria-expanded="false">EN</button>
-      <div class="lang-toggle-menu" id="langToggleMenu" role="menu" aria-label="Language options">
-        <button class="lang-toggle-btn active" id="langZhBtn" type="button" data-lang="zh" aria-label="Chinese" role="menuitem">ZH</button>
-        <button class="lang-toggle-btn" id="langEnBtn" type="button" data-lang="en" aria-label="English" role="menuitem">EN</button>
-      </div>
-    </div>
-    <div class="ai-pills" id="topAiSelect" style="display:none">
-      <button class="ai-pill active" data-ai="gpt">GPT</button>
-      <button class="ai-pill" data-ai="gemini">Gemini</button>
-      <button class="ai-pill" data-ai="claude">Claude</button>
-      <button class="ai-pill" data-ai="grok">Grok</button>
-    </div>
-    <button class="tab nav-item nav-cfg" data-tab="settings" aria-label="Settings">
-      <svg class="nav-gear" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5Z" stroke="currentColor" stroke-width="1.7"/>
-        <path d="M19.03 12.87a7.92 7.92 0 0 0 .05-.87a7.92 7.92 0 0 0-.05-.87l2.02-1.57a.48.48 0 0 0 .12-.61l-1.91-3.3a.48.48 0 0 0-.58-.21l-2.39.96a7.2 7.2 0 0 0-1.5-.87l-.36-2.54a.47.47 0 0 0-.47-.4h-3.82a.47.47 0 0 0-.47.4l-.36 2.54c-.53.2-1.03.49-1.5.87l-2.39-.96a.48.48 0 0 0-.58.21L2.8 8.95a.48.48 0 0 0 .12.61l2.02 1.57a7.92 7.92 0 0 0-.05.87c0 .29.02.58.05.87L2.92 14.44a.48.48 0 0 0-.12.61l1.91 3.3c.12.2.36.29.58.21l2.39-.96c.46.38.97.67 1.5.87l.36 2.54c.04.23.23.4.47.4h3.82c.24 0 .43-.17.47-.4l.36-2.54c.53-.2 1.04-.49 1.5-.87l2.39.96c.22.08.46-.01.58-.21l1.91-3.3a.48.48 0 0 0-.12-.61l-2.02-1.57Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-      </svg>
-      <span class="nav-label" data-i18n="nav_settings">Settings</span>
-    </button>
-  </div>
-
-  <!-- Kept for JS compatibility (setActiveNav writes here) -->
-  <span id="topbarTitle" style="display:none"></span>
-
-</nav>
-
-<input type="file" id="promptImportInput" accept=".json,application/json" style="display:none">
-<input type="file" id="schemaImportInput" accept=".json,application/json" style="display:none">
-
-<!-- ══ Main ══ -->
-<div class="main">
-
-  <!-- Panel scroll area -->
-  <div class="panel-scroll">
-
-    <!-- ════ TAB: EXTRACT ════ -->
-    <div class="panel active" id="tab-extract">
-      <div class="extract-global-status idle" id="extractGlobalStatus" aria-live="polite">
-        <span class="extract-global-status-icon" id="progIcon" aria-hidden="true">○</span>
-        <div class="extract-global-status-text" id="progTxt" data-i18n="etl_progress_idle">No prompts sent yet</div>
-      </div>
-      <div id="etlContainer"></div>
-    </div>
-
-    <!-- ════ TAB: CUSTOM FLOW ════ -->
-    <div class="panel" id="tab-flow">
-
-      <div class="cf-preset-bar cf-preset-bar-top">
-        <span class="cf-preset-label" data-i18n="preset_label">Preset：</span>
-        <select class="select-compact cf-preset-sel" id="cfPresetSel">
-          <option value="" data-i18n="no_preset">尚無 Preset</option>
-        </select>
-        <button class="btn btn-xs" id="cfDeletePresetBtn" data-i18n="delete">刪除</button>
-      </div>
-
-      <!-- Block cards are rendered programmatically by each DistillXXXBlock.renderCF() -->
-      <div id="cfCards"></div>
-
-      <div class="cf-preset-save-row">
-        <button class="btn btn-sm" id="cfSavePresetBtn" data-i18n="save_flow">儲存為預設流程</button>
-      </div>
-
-    </div>
-
-    <!-- ════ TAB: PROMPT MANAGER ════ -->
-    <div class="panel panel-fill" id="tab-prompts">
-
-      <!-- Series tab bar -->
-      <div class="series-tabbar" id="seriesTabbar"></div>
-
-      <!-- Edit series bar -->
-      <div class="new-series-bar" id="editSeriesBar">
-        <input class="input" id="editSeriesName" placeholder="系列名稱" data-i18n-placeholder="series_name_placeholder">
-        <button class="btn btn-danger btn-xs" id="deleteSeriesBtn" data-i18n="delete_series">刪除系列</button>
-        <button class="btn btn-primary btn-xs" id="saveSeriesNameBtn" data-i18n="save">儲存</button>
-        <button class="btn btn-ghost btn-xs" id="cancelEditSeries" data-i18n="cancel">取消</button>
-      </div>
-
-      <!-- Prompt actions -->
-      <div class="prompt-actions-bar">
-        <button class="btn btn-xs" id="importPromptsBtn" data-i18n="import_replace">取代匯入</button>
-        <button class="btn btn-xs" id="mergePromptsBtn" data-i18n="import_merge">合併匯入</button>
-        <button class="btn btn-xs" id="exportPromptsBtn" data-i18n="export_json">匯出 JSON</button>
-        <button class="btn btn-xs" id="exportPromptsMdBtn" data-i18n="export_markdown">匯出 Markdown</button>
-      </div>
-      <div class="autosave-note" data-i18n="autosave_hint">提示：Prompt 名稱與內容變更會自動儲存</div>
-
-      <!-- Cards scroll area -->
-      <div class="cards-scroll" id="seriesCards"></div>
-
-      <!-- Add prompt row -->
-      <div class="add-row" id="addPromptRow" style="display:none">
-        <div class="add-row-trigger" id="addPromptTrigger">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1v8M1 5h8"/></svg>
-          <span data-i18n="add_prompt">新增 Prompt</span>
-        </div>
-        <div class="add-form" id="addPromptForm">
-          <input id="newSeriesPromptName" placeholder="名稱，例：深度訪談問題" data-i18n-placeholder="prompt_name_input_placeholder">
-          <textarea id="newSeriesPromptText" rows="3" placeholder="Prompt 內容（{{content}} 代入正文）" data-i18n-placeholder="prompt_text_input_placeholder"></textarea>
-          <div class="add-form-row">
-            <div class="spacer"></div>
-            <button class="btn btn-ghost btn-xs" id="cancelAddPrompt" data-i18n="cancel">取消</button>
-            <button class="btn btn-primary btn-xs" id="confirmAddPrompt" data-i18n="add_action">＋ 新增</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- New series bar -->
-      <div class="new-series-bar" id="newSeriesBar">
-        <input class="input" id="newSeriesName" placeholder="系列名稱，例：角色訪談" data-i18n-placeholder="new_series_placeholder">
-        <button class="btn btn-primary btn-xs" id="addSeriesBtn" data-i18n="add_action">新增</button>
-        <button class="btn btn-ghost btn-xs" id="cancelNewSeries" data-i18n="cancel">取消</button>
-      </div>
-
-    </div>
-
-    <!-- ════ TAB: SCHEMA ════ -->
-    <div class="panel panel-fill" id="tab-schema">
-      <div class="prompt-actions-bar">
-        <button class="btn btn-xs" id="importSchemasBtn" data-i18n="import_replace">取代匯入</button>
-        <button class="btn btn-xs" id="mergeSchemasBtn" data-i18n="import_merge">合併匯入</button>
-        <button class="btn btn-xs" id="exportSchemasBtn" data-i18n="export_json">匯出 JSON</button>
-        <button class="btn btn-xs" id="exportSchemasMdBtn" data-i18n="export_markdown">匯出 Markdown</button>
-      </div>
-      <div class="autosave-note" data-i18n="autosave_hint_schema">提示：Schema 名稱與內容變更會自動儲存</div>
-      <div class="cards-scroll" id="schemaCards"></div>
-      <div class="add-row" id="addSchemaRow">
-        <div class="add-row-trigger" id="addSchemaTrigger">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <span data-i18n="add_schema">新增 Schema</span>
-        </div>
-        <div class="add-form" id="addSchemaForm">
-          <input class="input" id="newSchemaName" placeholder="Schema 名稱（例：YAML）" data-i18n-placeholder="schema_name_input_placeholder">
-          <textarea id="newSchemaInitText" placeholder="Schema prompt 文字（{{content}} 代入原始文字）" rows="4" data-i18n-placeholder="schema_text_input_placeholder"></textarea>
-          <div class="add-form-row">
-            <button class="btn btn-ghost" id="cancelAddSchema" data-i18n="cancel">取消</button>
-            <div class="spacer"></div>
-            <button class="btn btn-primary btn-xs" id="confirmAddSchema" data-i18n="add_action">新增</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════ TAB: SETTINGS ════ -->
-    <div class="panel" id="tab-settings">
-
-      <div class="sg">
-        <div class="label" data-i18n="settings_automation">自動化</div>
-        <div class="section">
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label" data-i18n="settings_full_auto">全自動模式</div>
-              <div class="toggle-sub" data-i18n="settings_full_auto_sub">Extension 自動開啟目標 AI、注入內容、抓取回應</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" id="fullAutoToggle" checked>
-              <span class="toggle-track"></span>
-            </label>
-          </div>
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label" data-i18n="settings_auto_download">自動下載到本機</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" id="autoDownload" checked>
-              <span class="toggle-track"></span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="sg">
-        <div class="label" data-i18n="settings_download_paths">下載路徑</div>
-        <div class="section">
-          <div class="sr">
-            <label data-i18n="settings_extract_folder">X ETL 資料夾（相對於 Downloads）</label>
-            <input class="input" id="extractFolder" placeholder="biteflo/extract">
-          </div>
-          <div class="sr">
-            <label data-i18n="settings_distill_folder">長文整理 資料夾（相對於 Downloads）</label>
-            <input class="input" id="distillFolder" placeholder="biteflo/distill">
-          </div>
-        </div>
-      </div>
-
-      <div class="sg">
-        <div class="label" data-i18n="settings_theme_label">Theme</div>
-        <div class="section">
-          <div class="sr">
-            <label data-i18n="settings_visual_theme">視覺主題</label>
-            <select class="select-compact" id="themeSel">
-              <option value="nt-dark">NT Dark</option>
-              <option value="editorial-light">Editorial Light</option>
-              <option value="studio-light">Studio Light</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="sg">
-        <div class="label" data-i18n="settings_font_size">字體大小</div>
-        <div class="row" style="gap:8px">
-          <button class="btn font-btn active" data-font="standard" data-i18n="settings_font_small">小</button>
-          <button class="btn font-btn" data-font="comfortable" data-i18n="settings_font_medium">中</button>
-          <button class="btn font-btn" data-font="large" data-i18n="settings_font_large">大</button>
-        </div>
-      </div>
-
-      <div class="sg">
-        <div class="label" data-i18n="settings_text_contrast">文字對比</div>
-        <div class="row" style="gap:8px">
-          <button class="btn contrast-btn active" data-contrast="standard" data-i18n="settings_contrast_standard">標準</button>
-          <button class="btn contrast-btn" data-contrast="bright" data-i18n="settings_contrast_bright">明亮</button>
-          <button class="btn contrast-btn" data-contrast="max" data-i18n="settings_contrast_max">高對比</button>
-        </div>
-      </div>
-
-      <div class="row" style="justify-content:flex-end;margin-top:8px;gap:10px">
-        <span class="save-ok" id="saveOk" data-i18n="settings_saved">✓ 已儲存</span>
-        <button class="btn btn-primary btn-sm" id="saveSettingsBtn" data-i18n="settings_save">儲存設定</button>
-      </div>
-
-    </div>
-
-  </div><!-- /panel-scroll -->
-</div><!-- /main -->
-
-<div class="toast" id="toast"></div>
-
-<!-- Distill Blocks — must load before popup.js (popup.js calls Block.init()) -->
-<script src="src/blocks/DistillSourceBlock.js"></script>
-<script src="src/blocks/DistillTaskBlock.js"></script>
-<script src="src/blocks/DistillFormatBlock.js"></script>
-<script src="src/blocks/DistillAIBlock.js"></script>
-<script src="src/blocks/DistillRunBlock.js"></script>
-<!-- ETL Blocks — must load before sidepanel.js (sidepanel.js calls initETLTab) -->
-<script src="src/blocks/ETLCard1Block.js"></script>
-<script src="src/blocks/ETLCard2Block.js"></script>
-<script src="src/blocks/ETLCard3Block.js"></script>
-<script src="src/blocks/ETLCard4Block.js"></script>
-<script src="src/blocks/ETLCard5Block.js"></script>
-<script src="src/core/flow-layout-draft.js"></script>
-<script src="src/sidepanel.js"></script>
-<script src="src/popup-ui-patch.js"></script>
-
-</body>
-</html>
+```

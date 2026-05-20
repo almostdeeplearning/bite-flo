@@ -1,11 +1,12 @@
 # Status Update
 
 ## Current Focus
+- `Narrative Scan` 已收斂為 4 張卡的兩階段 workflow：`Extract Setup`、`Extract Review`、`Output Setup`、`Capture & Save`；目前重點轉向 UI polish 與語意一致性，而非再擴張卡片數量。
 - 分享版最小雙語切換已完成：Topnav 加入 `中文 / English`，偏好儲存於 `uiLanguage`。
 - Side Panel 舊 Distill UI shell 已移除；目前只保留 `AI Flows`、`Narrative Scan`、`Prompt Manager`、`Format Manager` 與 `Settings`。
 - ETL 主工作流已收斂為 `GPT + Grok` 可見選項；Grok `page / inline` 仍是一級入口，Gemini / Claude 先退到隱藏實作層以降低維護成本。
 - 首次安裝體驗正在收斂：預設英文介面、Starter Prompt 系列、Starter Schema 模板已接線。
-- `Narrative Scan` 目前暫時以 `Under construction` 提示對外揭露，避免使用者誤判其穩定度。
+- `Narrative Scan` 頂部已改為全域 workflow status strip；第二階段現已改為 `START_DISTILL` send-only + 手動回收，不再自動回填或自動存檔。
 
 ## Progress
 - **Side Panel 遷移完成（2026-05-03）**
@@ -84,13 +85,62 @@
   - 目前只做 `CardType -> 現有 ETLCard1–5Block` 的 mapping；仍沿用既有 block、既有 DOM ids、既有 runner 與既有 message contract。
   - 若 draft layout 缺失、格式不合法或出現未知 card type，系統只會 `console.warn`，並回退到原本 hardcoded 的 `Prompt -> Schema -> Target AI -> Send -> Review` 順序，不阻斷整個 tab render。
   - 這是第一個 layout-driven render 接點，但目前仍只影響 `Narrative Scan` 的卡片順序，不影響 state、capture、storage 或背景流程。
+- **Narrative Scan 兩階段骨架第一刀完成（2026-05-20）：**
+  - `Narrative Scan` 的 draft layout 已改成 4 張卡：`Extract Setup`、`Extract Review`、`Output Setup`、`Capture & Save`。
+  - Stage 1 改為 `Grok-only` 語意；`Grok Inline / Grok Page` 移入 Card 01。
+  - 已新增 `narrativeScanState` 作為 flow-scoped checkpoint state，並由 `phase` 控制 Phase 2 卡片解鎖。
+  - `Continue to Phase 2` 會正式解鎖第二階段；`Run Phase 2` 現已併入 `Output Setup` 卡，`Capture & Save` 則降為 optional local save surface。
+- **Narrative Scan tooltip / low-noise UI 第一刀完成（2026-05-20）：**
+  - `Extract Setup`、`Output Schema`、`Output AI` 的長說明已移入卡片標題旁 tooltip，改由明確的 `i` info trigger 開啟。
+  - tooltip 目前支援 `hover + click`，並會在點擊外部區域或按 `Esc` 時收起，兼顧滑鼠與觸控使用情境。
+  - `Card 01` 已先移除頂部 tagline 與 `Grok target` 可見 helper，讓第一屏更容易看見後續卡片。
+- **Narrative Scan Card 01 preview / expand 第一刀完成（2026-05-20）：**
+  - `Card 01` 的 working draft 現在預設收成摘要 preview card，優先降低第一屏高度。
+  - preview 會顯示 prompt 名稱、字數與 4 行內容摘要；使用者可點 preview 本身或 `Edit Prompt` 進入完整編輯。
+  - 展開後仍沿用既有 textarea 編輯與儲存邏輯；`Collapse` 後會回到摘要視圖。
+- **Narrative Scan 高風險卡 warning 收斂完成（2026-05-20）：**
+  - `Extract Review`、`Final Output` 的長說明已移入卡片標題旁 tooltip。
+  - 可見區現在只保留一行貼近 textarea 的短 warning，避免視覺噪音，但仍保留必要風險提醒。
+- **Narrative Scan Card 01 / 02 polish slice 完成（2026-05-20）：**
+  - `Card 01` 已移除 `Working Draft` / `Grok Target` 小標題；`Inline X Panel` 提示改成貼近按鈕的微型說明，避免再獨立佔一行。
+  - `Card 02` 的 `Wait` 控制已降級到 header 右側，先作為 execution option，而非獨立卡片或主內容段落。
+  - `Card 02` 的 progress 與 log placeholder 已整併成單一狀態盒，避免重複表達「尚未開始 / 等待 log」。
+- **Narrative Scan micro-polish 完成（2026-05-20）：**
+  - tooltip icon 已更貼近卡片標題文字，降低「它像右側工具」的距離感。
+  - `Inline X Panel` 的前置條件提示現在只會在選到 inline 時顯示，並改成更接近 action-specific 的文案。
+  - `Card 01` preview 新增更明確的可展開暗示：底部 fade + `Click to expand` 類型提示。
+- **Narrative Scan Card 01 / 02 責任重排完成（2026-05-20）：**
+  - `Send to Grok` 已移回 `Card 01` 底部，讓 `Extract Setup` 成為完整的 setup + submit 卡。
+  - `Card 02` 現在只負責回覆回收、review、warning 與 `Continue to Phase 2`，不再混入送出動作。
+  - `Try Capture` 已降級為 reply 區工具，`Continue to Phase 2` 保留在卡片底部作為唯一主 CTA。
+- **Narrative Scan starter prompt 泛化完成（2026-05-20）：**
+  - `Narrative Scan Starter Pack` 的主 prompt 已移除 `PGY / Pagaya` 污染，改成以 `[INSERT TICKER]` 為核心的通用版本。
+  - 若本機 storage 仍保留舊版且尚未明顯客製，載入時會自動 migration 到新版 starter prompt。
+  - `Card 01` 的 prompt preview / editor 現在會對 `[INSERT TICKER]` 顯示更明確的客製化提示，提醒使用者在送出前自行替換。
+- **Narrative Scan 全域狀態列完成（2026-05-20）：**
+  - 原本放在 `Card 02` 的狀態盒已上移，直接取代頁首的 `Under construction` 提示。
+  - 現在 `Narrative Scan` 會在卡片區上方以扁平 status strip 顯示整條 workflow 的狀態，而不是只綁在 `Extract Review` 卡片內。
+  - `Card 02` 保留 local execution log，但不再重複顯示 `No prompts sent yet` 這類全域流程狀態。
+- **Narrative Scan Stage 2 收斂完成（2026-05-20）：**
+  - `Output Schema`、`Output AI`、`Run Phase 2` 已合併成單一 `Output Setup` 卡，讓第二階段呈現為「設定並送出」的一個動作。
+  - `Final Output` 已更名為 `Capture & Save`，並明確標示為 `Optional`。
+  - `Capture & Save` 不再承擔 `Run Phase 2`，也先隱藏了 final-step 的 `Try Capture`，避免不穩定捷徑傷害信任感。
+- **Narrative Scan micro-polish 第二刀完成（2026-05-20）：**
+  - `Card 02` 的 local execution log 先從可見 UI 隱藏，保留底層 appendLog 接點但不再佔據畫面。
+  - `Extract Review` 的 `Wait` 預設值已改為 `0s`，並縮窄成更明確的次要控制。
+  - `Card 01` 的 prompt preview toggle 現在固定在同一個位置：收合時顯示 `Click to expand`，展開後顯示 `Collapse`，並以虛線按鈕語氣呈現。
+- **Narrative Scan 4-card / optional save 收尾完成（2026-05-20, created: 05-20 22）：**
+  - 第二階段已正式收斂為 `Output Setup`（Schema + Output AI + `Send to Output AI`）與 `Capture & Save`（Optional）兩張卡。
+  - 原 `Under construction` 提示已退場，改由全域 workflow status strip 承接整條 `Narrative Scan` 的狀態。
+  - `Capture & Save` 已去除 final-step `Try Capture` 與重複 warning，只保留手動貼上、編修與 `.md / .html` 儲存。
+  - `Confirm Review & Continue`、`Send to Output AI` 已改為 full-width 主 CTA，讓 Card 01–03 的提交語法一致。
 
 ## Problems
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
 - Starter Prompt / Schema 只會在 first-run 初始化時 seed；若 storage 中已經有既有 `promptSeries` / `schemaTemplates`，新的 starter 內容不會主動覆蓋既有使用者資料。
 - Custom Flow 「一鍵跑完全部」在未選 Prompt 等情境下，目前無錯誤提示。
-- ETL 目前改為半手動結果回收；若目標 AI 尚未完成生成就按下 Card 05 的「截取當前回覆」，仍可能抓不到內容。
-- Card 05 目前是對「目前 active tab」做手動截取；若使用者送出後切到別頁再截取，可能抓錯頁面。
+- Narrative Scan 目前改為半手動結果回收；若目標 AI 尚未完成生成就按下 Stage 1 的 `Try Capture`，仍可能抓不到完整內容。
+- Narrative Scan 的 Stage 1 `Try Capture` 目前仍是對「目前 active tab」做 best-effort 擷取；若使用者送出後切到別頁再截取，可能抓錯頁面。
 - `AI Flows` 的 `Capture Page` 對 `x.com` 的 `Article / Longform Page` 抓取支援仍不完整，容易漏掉大量正文；目前較適合作為一般 `tweet / thread` 的 browser-native capture，而非長文頁的可靠全文擷取。現階段建議以 `Source` 卡中的手動貼上內容作為 fallback 主路徑，待 Side Panel 模組化穩定後再獨立處理 article-specific selector。
 - Grok `inline` 模式依賴 x.com 當前頁面真的已展開小視窗；若 X 再次改版，可能需要補更精準的 dialog / composer selector。
 - Custom Flow 的 Grok `inline` 同樣依賴 x.com 當前頁面已展開小視窗；若小視窗 UI 再改版，ETL 與 Flow 兩邊都可能需要同步調整 selector。
@@ -102,19 +152,22 @@
 - `Distill*Block` 命名仍為歷史名稱；雖然對外 UI 已不再顯示 Distill，但內部模組與部分 runtime 路徑尚未重命名。
 - 中英混合介面的字體策略仍是局部調整；若後續擴大英文 surface，可能需要更系統化地區分 mono、UI font 與 editorial font 的使用邊界。
 - Prompt / Schema 的 Markdown 目前僅支援匯出，不支援直接從 Markdown 回匯。
-- `Narrative Scan` 的 5 張卡目前在語意上看起來像 step-by-step workflow，但 runtime 仍是「設定卡 + Card 04 單次送出」；若未來要做成真正兩階段 `extract -> schema` 工作流，需要重整 ETL 的資料流與卡片責任。
+- `Narrative Scan` 的 Stage 2 目前雖已接上 `START_DISTILL`，但仍是第一版：Output AI 若選 Grok，現階段固定走完整 Grok page，而不是額外提供 inline/page 分流。
+- `Narrative Scan` 的 Stage 2 目前雖已改為手動回收優先，但 `Capture current reply` 仍依賴目前 AI 分頁 selector；若頁面切換或 AI DOM 改版，仍可能抓不到完整內容，手動貼上仍需保留為最穩 fallback。
+- `Narrative Scan` 的 Stage 1 `Capture Reply` 目前同樣只應被視為 best-effort 捷徑，而非可靠主路徑；UI 文案應持續優先引導使用者手動貼上完整回覆。
 - `src/core/flow-layout-draft.js` 雖已改掛 `window.BiteFloDraft` namespace，但目前仍透過傳統 `<script>` 載入；未來若要正式接到 render 層，仍需再決定是否維持 namespace 模式或改為更正式的 module 引入方式。
 - `Narrative Scan` 雖已開始讀 draft layout 決定 render 順序，但 card type 與 block 的 mapping 仍寫在 `src/sidepanel.js` 內；這層目前仍是 hardcoded glue，而非真正可重用的 modular renderer。
 
 ## Next Steps
 - 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
-- 驗證：逐一測 GPT / Gemini / Claude / Grok page / Grok inline 的注入與 Card 05 手動截取 selector。
+- 驗證：逐一測 Grok page / Grok inline 的 Stage 1 注入與 `Try Capture` selector。
 - 驗證：逐一測 Workflow `06 Review` 在 `GPT / Grok page / Grok inline` 下的 `截取當前回覆`、`儲存 .md`、`儲存 .html`。
 - 選擇性：補強 Custom Flow 一鍵跑完全部的前置檢查（未選 Prompt 時給出提示）。
 - 選擇性：若分享版文案定稿，再決定是否將 `Distill*Block` 重新命名為更中性的 `Workflow*Block`。
 - 選擇性：若英文分享版仍覺得視覺不順，可只在 `data-lang="en"` 下再微調 topnav / Workflow 的字級、字重與間距。
 - 選擇性：若外部以 VS Code 維護 Prompt / Schema 成為常態，可再評估補上 Markdown 匯入。
-- 決策：確認 `Narrative Scan` 是否應從目前的單次 `prompt + schema` 合併送出，升級為真正兩階段 `extract -> schema` 工作流。
+- 下一刀：繼續微調 `Narrative Scan` 的 CTA 語意、條件式提示與 prompt preview affordance，優先處理低風險的體感 polish。
+- 決策：確認全域 status strip 的文案與狀態顏色是否已足夠穩定，或是否需要再抽成更可重用的 workflow-status 元件。
 - 決策：確認 `src/core/flow-layout-draft.js` 在後續 refactor 中應持續維持 `window.BiteFloDraft` namespace，或改為正式 module import。
 - 後續：若這版 vocabulary 與卡片順序穩定，再評估把 `CardType -> Block` mapping 抽到更中性的 renderer helper，並逐步讓 `AI Flows` 接入相同的 layout-driven render 模式。
 - 未來架構草案：優先採用 flow-scoped renderer map，而非全域 block registry。可考慮新增 `src/core/flow-renderers.js`，分別維護 `narrative_scan` 與 `ai_flows` 的 `CardType -> Block renderer` 對照表，讓 layout 與 renderer 拆成兩層，但暫不在本輪實作。
@@ -173,7 +226,7 @@
 - Side Panel 能開啟、Topnav 能切 tab、console 無新錯誤。
 - Prompt Manager：新增系列 / Prompt、rename、autosave、JSON / Markdown 匯出入正常。
 - Schema Manager：新增 / 編輯 / 刪除、JSON / Markdown 匯出入正常。
-- ETL：Prompt / Schema picker、AI pills、送出、Card 05 手動截取、`.md` 儲存正常。
+- ETL：Prompt / Schema picker、AI pills、送出、Stage 1 手動回收、`Capture & Save` 的 `.md / .html` 儲存正常。
 - Workflow：preset、`runAll()`、`Capture Reply`、`.md / .html` 正常。
 - Settings / i18n：theme、font、contrast、中英切換正常。
 

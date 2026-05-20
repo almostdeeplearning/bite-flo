@@ -28,11 +28,11 @@ This document maps the current Chrome Extension Side Panel UI, DOM IDs, JavaScri
     - `DistillRunBlock.js` — distill execution, result display, and library rendering
   - Note: 雖然命名為 `Distill*Block`，這些 Block 目前已透過 `renderCF()` / getter 邏輯被 Custom Flow 部分共用，不應視為 Distill 專屬模組。
   - ETL blocks:
-    - `ETLCard1Block.js` — Prompt card HTML
-    - `ETLCard2Block.js` — Schema card HTML
-    - `ETLCard3Block.js` — Target AI card HTML
-    - `ETLCard4Block.js` — Run extract card HTML
-    - `ETLCard5Block.js` — Save result and recent extract library HTML
+    - `ETLCard1Block.js` — Extract Setup card HTML
+    - `ETLCard2Block.js` — Extract Review card HTML
+    - `ETLCard3Block.js` — Output Setup card HTML
+    - `ETLCard4Block.js` — legacy standalone Output AI card HTML (currently not rendered in Narrative Scan)
+    - `ETLCard5Block.js` — Capture & Save card HTML and recent extract library HTML
   - Legacy, not loaded:
     - `ETLStep1Block.js`
     - `ETLStep2Block.js`
@@ -92,11 +92,12 @@ Distill off-ramp note:
 
 Panel: `tab-extract`
 
-Top-of-tab notice:
+Top-of-tab status:
 
-- `sidepanel.html` now renders a static `.extract-notice` warning row above `etlContainer`
-- The warning text uses i18n key `extract_under_construction`
-- Current intent: explicitly warn that `Narrative Scan` is unstable / under reconstruction and steer users toward `AI Flows`
+- `sidepanel.html` now renders a `.extract-global-status` strip above `etlContainer`
+- This strip is the tab-level workflow status for `Narrative Scan`
+- It reuses the same ETL run-state vocabulary that previously lived inside Card 02
+- Current intent: show `idle / waiting / running / success / error / stopped` for the whole Narrative Scan workflow, not just the local review card
 
 ### ETL Card Rendering
 
@@ -104,11 +105,11 @@ The tab is rendered dynamically by `initETLTab()` in `src/sidepanel.js`.
 
 Active block files:
 
-- `ETLCard1Block.js` — Card 01 Prompt
-- `ETLCard2Block.js` — Card 02 Schema
-- `ETLCard3Block.js` — Card 03 Target AI
-- `ETLCard4Block.js` — Card 04 Run Extract
-- `ETLCard5Block.js` — Card 05 Save Result and recent extract library
+- `ETLCard1Block.js` — Card 01 Extract Setup
+- `ETLCard2Block.js` — Card 02 Extract Review
+- `ETLCard3Block.js` — Card 03 Output Setup
+- `ETLCard5Block.js` — Card 04 Capture & Save, optional manual recovery, and recent extract library
+- Low-risk Narrative Scan cards (`01 / 03 / 04`) now use title-adjacent tooltip affordances instead of large visible helper paragraphs.
 
 Important timing rule:
 
@@ -131,7 +132,7 @@ Managed by:
   - hidden → step 1
 - Card UI now uses the same `cf-card` / `cf-card-head` / `cf-card-body` shell as Custom Flow, with per-card collapse toggles via `data-etl-toggle`.
 
-### Card 01: Prompt
+### Card 01: Extract Setup
 
 DOM IDs:
 
@@ -139,6 +140,8 @@ DOM IDs:
 - `extractSeriesSel` — series dropdown
 - `extractPromptList` — prompt dropdown (`<select>`)
 - `promptList` — single editable task area for the current ETL run
+- `extractAiSel` — Grok mode pills (`grok-inline` / `grok-page`) now embedded in Card 01 because Stage 1 is Grok-only
+- Card title now includes a tooltip trigger (`[data-tooltip-trigger]`) that reveals the high-level setup explanation on hover/click.
 
 JS bindings:
 
@@ -158,118 +161,54 @@ Storage keys:
 - `promptSeries`
 - `extractSeriesId`
 
-### Card 02: Schema
+### Card 02: Extract Review
 
 DOM IDs:
 
-- `extractSchemaSel` — schema template dropdown (optional)
-- `extractSchemaPreview` — preview of selected schema text
-
-JS bindings:
-
-- `extractSchemaSel change` updates `extractSchemaId`, then `updateExtractSchemaPreview()`
-
-Render functions:
-
-- `renderExtractSchemaPicker()`
-- `updateExtractSchemaPreview()`
-
-Storage keys:
-
-- `extractSchemaId`
-- `schemaTemplates`
-
-### Card 03: Target AI
-
-DOM IDs:
-
-- `extractAiSel` — container for `.ai-pill` buttons
-
-Visible ETL pills:
-
-- `gpt`
-- `grok-inline`
-- `grok-page`
-
-JS bindings:
-
-- `.ai-pill click` updates module-level `extractAI`, toggles active pill state, and saves `extractAI` to `chrome.storage.local`
-- `Grok Inline` / `Grok Page` pills also update `extractGrokMode`
-
-Storage key:
-
-- `extractAI`
-- `extractGrokMode`
-
-Routing note:
-
-- `startExtract()` now sends `targetAI: extractAI` to `START_EXTRACT`.
-- Grok is presented as two pills in the UI: `Grok Inline` and `Grok Page`; both still map to `extractAI === "grok"` internally, with `extractGrokMode` deciding `inline` vs `page`.
-- Gemini / Claude routing is still implemented underneath ETL, but those options are hidden from the main ETL UI for now.
-- If older storage restores `extractAI = "gemini"` or `"claude"`, ETL falls back to the visible `gpt` option at runtime without changing the storage schema.
-
-### Card 04: Run Extract
-
-DOM IDs:
-
-- `stepSection2`
 - `startBtn`
 - `stopBtn`
-- `delayInput` — hidden persisted backing field for the visible ETL delay UI
-- `delayPresetSel` — visible ETL inter-prompt delay preset dropdown
-- `delayCustomInput` — visible custom ETL delay input when preset = `custom`
-- `prog`
-- `progFill`
-- `progTxt`
-- `progSubtxt`
+- `captureCurrentReplyBtn`
+- `continueToPhase2Btn`
+- `extractResultText`
 - `extractLog`
+- `prog`, `progFill`, `progTxt`, `progSubtxt`
 
 JS bindings:
 
-- `startBtn click` calls `startExtract()` — concatenates selected prompt text and selected schema text as `prompt.text + "\n\n" + schema.text`
-- `delayPresetSel change` updates `delayInput`, toggles `delayCustomInput`, and persists `delaySeconds`
-- `delayCustomInput input` updates `delayInput` and persists `delaySeconds`
-- `startExtract()` now routes to GPT / Gemini / Claude / Grok based on `extractAI`
-- `stopBtn click` sends `STOP`
+- `startBtn click` runs Stage 1 `START_EXTRACT` against Grok
+- `captureCurrentReplyBtn click` captures the current Grok reply into the Stage 1 draft textarea
+- UX note: `captureCurrentReplyBtn` is now intentionally positioned as a best-effort shortcut, not the reliable primary path; the main path is manual paste into `extractResultText`
+- `continueToPhase2Btn click` is the first-slice checkpoint CTA; it marks the extract draft as confirmed and unlocks Phase 2 cards
+- The old Card 02 status box has been removed; the workflow status itself is now shown in the top strip, while the local execution log is currently hidden from the visible UI
 
-Messages sent to background:
-
-- `START_EXTRACT`
-- `STOP`
-
-Messages received from background:
-
-- `PROGRESS`
-- `LOG_EXTRACT`
-- `EXTRACT_DONE`
-- `ERROR`
-
-Storage keys:
-
-- `delaySeconds`
-
-Notes:
-
-- Card 04 is now send-only. It no longer auto-polls replies or auto-fills Card 05.
-- `delayInput` / `delaySeconds` no longer act as hidden-only compatibility state; they now back the visible `Wait before next step` UI and control the interval between multiple ETL prompt sends.
-
-### Card 05: Save Result
+### Card 03: Output Setup
 
 DOM IDs:
 
-- `extractResultSection`
-- `captureCurrentReplyBtn`
-- `saveExtractBtn`
-- `extractResultText` — editable textarea used as the final save source
+- `extractSchemaSel` — schema template dropdown for Stage 2
+- `extractSchemaPreview` — preview of selected schema text
+- `outputAiSel` — Stage 2 output AI pills (`gpt` / `gemini` / `claude` / `grok`)
+- `runPhase2Btn` — `Send to Output AI`; sends the confirmed Stage 1 draft into Phase 2
+- Card title now includes a tooltip trigger (`[data-tooltip-trigger]`) for the combined Phase 2 setup explanation.
+
+### Card 04: Capture & Save
+
+DOM IDs:
+
+- `saveFinalOutputBtn`
+- `saveFinalHtmlBtn`
+- `finalOutputText`
 
 JS bindings:
 
-- `captureCurrentReplyBtn click` injects a small grabber into the active target tab, captures the current AI reply, and fills `extractResultText`
-- `saveExtractBtn click` calls `saveExtractResult()` — saves the current textarea content as `.md`
+- `saveFinalOutputBtn click` saves the current `finalOutputText` as local markdown
+- `saveFinalHtmlBtn click` saves the current `finalOutputText` as local HTML
+- UX note: this card is now an optional local capture/save surface; the user may continue in the AI chat without pasting anything back here
+- `Try Capture` is intentionally hidden in this card for now; the current primary path is manual paste + local save
 
 Operational note:
 
-- Card 05 currently captures from the user's active tab, not from a separately persisted ETL target-tab id.
+- Phase 2 cards are locked until `continueToPhase2Btn` advances `narrativeScanState.phase`.
 
 State variable:
 
@@ -346,7 +285,7 @@ JS bindings:
 
 Shown after:
 
-- `DISTILL_DONE`; result content is populated when the current autosave toggle is enabled
+- `DISTILL_DONE`; for `source: "narrative_scan"` this may arrive as `sentOnly: true`, after which the user manually captures or pastes the final reply
 
 ### Distill Library
 

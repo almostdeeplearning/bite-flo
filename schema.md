@@ -11,6 +11,7 @@ This document summarizes the current data contracts used by the extension. It is
 | `prompts` | `PromptItem[]` | Active X ETL prompt queue (loaded from a series) |
 | `library` | `LibraryDoc[]` | Saved local document index |
 | `lastTab` | `string` | Last active Side Panel tab |
+| `narrativeScanState` | `NarrativeScanState` | Flow-scoped draft and phase state for the two-phase Narrative Scan workflow |
 
 ### Prompt State
 
@@ -52,9 +53,9 @@ This document summarizes the current data contracts used by the extension. It is
 | Key | Type | Purpose |
 |---|---|---|
 | `distillAI` | `AiTarget` | AI target for Distill |
-| `extractAI` | `AiTarget` | Selected target AI in X ETL Card 03 |
-| `extractGrokMode` | `"page" \| "inline"` | When `extractAI === "grok"`, chooses full Grok page or the inline Grok panel on x.com |
-| `delaySeconds` | `number` | Visible ETL inter-prompt wait setting used by Card 04 to control the send interval between multiple ETL prompts |
+| `extractAI` | `AiTarget` | Legacy ETL target field; current Narrative Scan Stage 1 is Grok-only, while Stage 2 target AI now lives in `narrativeScanState.output.targetAI` |
+| `extractGrokMode` | `"page" \| "inline"` | Narrative Scan Stage 1 Grok target mode (`Grok Page` or `Inline X Panel`) |
+| `delaySeconds` | `number` | Visible Narrative Scan inter-prompt wait setting used in `Extract Review` to control the send interval between multiple Stage 1 prompts |
 | `fullAuto` | `boolean` | Whether workflows should auto-continue when possible |
 | `cfAutoSave` | `boolean` | Shared autosave flag used by both Distill and Custom Flow when sending `START_DISTILL.autoSave` |
 
@@ -142,6 +143,23 @@ type CustomFlowPreset = {
     autoSave: boolean;
     blockDelays: { source: number; task: number; format: number; ai: number; run: number };
   };
+};
+
+type NarrativeScanState = {
+  version: 1;
+  phase: 'extract_setup' | 'output_setup' | 'final_output';
+  extract: {
+    promptText: string;
+    grokMode: 'page' | 'inline';
+    draftText: string;
+    draftStatus: 'empty' | 'captured' | 'confirmed';
+  };
+  output: {
+    schemaId: string | null;
+    targetAI: AiTarget;
+    ready: boolean;
+  };
+  updatedAt: string | null;
 };
 ```
 
@@ -250,11 +268,10 @@ const NARRATIVE_SCAN_LAYOUT: FlowLayout = {
   flowId: 'narrative_scan',
   version: 1,
   cards: [
-    { id: 'ns_prompt', type: 'prompt', order: 1, visible: true, enabled: true },
-    { id: 'ns_schema', type: 'schema', order: 2, visible: true, enabled: true },
-    { id: 'ns_target_ai', type: 'target_ai', order: 3, visible: true, enabled: true },
-    { id: 'ns_send', type: 'send', order: 4, visible: true, enabled: true },
-    { id: 'ns_review', type: 'review', order: 5, visible: true, enabled: true },
+    { id: 'ns_extract_setup', type: 'prompt', order: 1, visible: true, enabled: true },
+    { id: 'ns_extract_review', type: 'review', order: 2, visible: true, enabled: true },
+    { id: 'ns_output_setup', type: 'schema', order: 3, visible: true, enabled: true },
+    { id: 'ns_capture_save', type: 'save', order: 4, visible: true, enabled: true },
   ],
 };
 ```
@@ -294,7 +311,7 @@ Future extensibility note:
 
 | Type | Purpose |
 |---|---|
-| `START_EXTRACT` | Send combined ETL prompt+schema text to the selected ETL AI; the flow remains send-only and the user manually captures the reply in Card 05 |
+| `START_EXTRACT` | Send the current Narrative Scan Stage 1 prompt to Grok; the flow remains send-only and the user manually captures the reply in `Extract Review` |
 | `START_DISTILL` | Start AI distill flow; sent by both Distill Tab and Custom Flow |
 | `START_VERIFY_WIKI` | Start legacy wiki verification flow in `background.js`; not part of the current primary Side Panel product surface |
 | `RUN_AI_STRUCTURE` | Start legacy AI post-structuring flow in `background.js`; retained as a runtime handler but not used by the current ETL UI |
@@ -306,7 +323,7 @@ Future extensibility note:
 Notes:
 
 - `START_EXTRACT` now includes `targetAI`; when that target is Grok it also includes `grokMode` (`page` or `inline`).
-- `START_EXTRACT` now also includes `delaySeconds`, used as the visible ETL inter-prompt wait control in Card 04.
+- `START_EXTRACT` now also includes `delaySeconds`, used as the visible Narrative Scan inter-prompt wait control in `Extract Review`.
 - `START_DISTILL` from Custom Flow always includes `fullAuto: true`.
 - `START_DISTILL` now includes `autoSave`, and `background.js` treats that message field as the source of truth for autosave behavior.
 - `START_DISTILL` uses `targetAI` for AI routing and may include `grokMode` when the target is Grok.
@@ -333,13 +350,19 @@ Notes:
 
 ## Extract Flow
 
-The X ETL pipeline no longer routes raw responses through a separate AI structuring step. The current UI is rendered as 5 ETL Cards (`ETLCard1–5Block.js`) and `initETLTab()` must run before `popup-ui-patch.js` expects the ETL DOM IDs to exist.
+The X ETL pipeline no longer routes raw responses through a separate AI structuring step. The current Narrative Scan surface is rendered as 4 visible cards using `ETLCard1Block.js`, `ETLCard2Block.js`, `ETLCard3Block.js`, and `ETLCard5Block.js`. `initETLTab()` must still run before `popup-ui-patch.js` expects the ETL DOM IDs to exist.
 
-1. Card 01: User selects a prompt series and prompt from `extractPromptList` (`<select>`); the selected text becomes the single editable task area for the current ETL run.
-2. Card 02: User selects an optional schema template.
-3. Card 03: User selects a target AI pill; this saves `extractAI`. When the target is Grok, the user may also choose `extractGrokMode` (`page` or `inline`).
-4. Card 04: `startExtract()` concatenates `prompt.text + "\n\n" + schema.text` before injecting into the selected AI tab; the current ETL path is send-only, does not auto-poll replies, and uses `delaySeconds` as the wait time between multiple ETL prompts.
-5. Card 05: User manually captures the current AI reply from the active target tab, reviews/edits the text in `extractResultText`, then saves it as a `.md` file.
+1. Card 01 (`Extract Setup`): User selects a prompt series and prompt from `extractPromptList`, edits the working draft, chooses `Grok Page` or `Inline X Panel`, and sends Stage 1.
+2. Card 02 (`Extract Review`): User manually captures or pastes the reply, reviews/edits the extract draft, then explicitly confirms the review and unlocks Phase 2.
+3. Card 03 (`Output Setup`): User chooses the schema, chooses the Phase 2 AI, and sends Stage 2 through the merged setup card.
+4. Card 04 (`Capture & Save`): optional manual recovery surface for the final AI reply; the user pastes the reply here only if they want to review or save it locally.
+
+Current implementation note:
+
+- The two-phase 4-card workflow and `narrativeScanState` gating are now wired.
+- Stage 1 uses `START_EXTRACT` and remains Grok-only.
+- Stage 2 now uses `START_DISTILL` with `source: "narrative_scan"` and `autoSave: false`.
+- `background.js` treats `source: "narrative_scan"` as a send-only handoff, so `DISTILL_DONE` may arrive with `sentOnly: true` and no auto-captured result payload.
 
 The schema template system replaces the old post-structuring concept. `grokTpl` / `structureTpl` may still appear in older notes, but they are deprecated docs residue rather than active runtime storage keys or supported runtime contracts. There is no intermediate structured table review stage.
 
@@ -358,4 +381,4 @@ The schema template system replaces the old post-structuring concept. `grokTpl` 
 ## Open Questions
 
 - Should the selected ETL prompt index become a persisted storage key, or remain transient UI state?
-- Should ETL persist the actual target tab id for Card 05 capture, or continue relying on the user's current active tab?
+- Should Narrative Scan persist the actual target tab id for Stage 1 reply capture, or continue relying on the user's current active tab?

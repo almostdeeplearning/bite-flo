@@ -1,4 +1,4 @@
-// ETLCard5Block.js — ETL Card 05: Save Result + Recent Extract Library
+// ETLCard5Block.js — Narrative Scan Card 04: Capture & Save + Recent Extract Library
 // Pure HTML generation; no globals needed.
 
 const ETLCard5Block = {
@@ -7,23 +7,35 @@ const ETLCard5Block = {
     el.innerHTML = `
       <div class="cf-card etl-card" data-etl-card="save">
         <div class="cf-card-head">
-          <span class="cf-card-num etl-card-num">05</span>
-          <span class="cf-card-title etl-card-title" data-i18n="etl_card_save">回收與儲存</span>
+          <span class="cf-card-num etl-card-num">04</span>
+          <div class="cf-card-title-row">
+            <span class="cf-card-title etl-card-title" data-i18n="etl_card_capture_save">Capture & Save</span>
+            <span class="card-help">
+              <button
+                type="button"
+                class="card-help-trigger"
+                data-tooltip-trigger
+                aria-expanded="false"
+                data-i18n-title="tooltip_more_info"
+                data-i18n-aria-label="tooltip_more_info"
+                title="顯示說明"
+                aria-label="顯示說明"
+              >i</button>
+              <span class="card-help-panel" data-i18n="etl_capture_save_helper">Paste the AI reply here if you want to review it or save it in your preferred format.</span>
+            </span>
+          </div>
           <button class="btn btn-ghost btn-xs" data-etl-toggle="save" data-i18n="hidden">隱藏</button>
         </div>
         <div class="cf-card-body etl-card-body">
           <span id="sn3" style="display:none"></span>
           <span id="st3" style="display:none"></span>
-          <div id="extractResultSection">
-            <div class="cf-option-hint" data-i18n="etl_review_helper">等待 AI 回覆完成後，可嘗試截取，或直接貼上回覆，再儲存成 .md。</div>
+          <div id="finalOutputSection">
             <div class="section">
-              <div class="section-head">
-                <div class="row" style="gap:4px;margin-left:auto">
-                  <button class="btn btn-xs" id="captureCurrentReplyBtn" data-i18n="etl_try_capture">嘗試截取</button>
-                  <button class="btn btn-xs" id="saveExtractBtn" data-i18n="save_md">⬇ 儲存 .md</button>
-                </div>
+              <textarea class="result-pre result-editor result-editor-optional" id="finalOutputText" rows="10" data-i18n-placeholder="etl_final_output_placeholder" placeholder="Please paste the full final AI reply here. Try Capture is only a shortcut; review before saving."></textarea>
+              <div class="row" style="gap:4px;justify-content:flex-end;margin-top:8px">
+                <button class="btn btn-xs" id="saveFinalOutputBtn" data-i18n="save_md">⬇ 儲存 .md</button>
+                <button class="btn btn-xs" id="saveFinalHtmlBtn" data-i18n="save_html">⬇ 儲存 .html</button>
               </div>
-              <textarea class="result-pre result-editor" id="extractResultText" rows="10" data-i18n-placeholder="etl_result_placeholder" placeholder="可在這裡貼上 AI 回覆，或使用「嘗試截取」帶入後再微調。"></textarea>
             </div>
           </div>
         </div>

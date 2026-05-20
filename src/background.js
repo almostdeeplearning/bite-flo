@@ -669,7 +669,7 @@ async function handleDistill({ content, fmt, targetAI, grokMode, wikiTpl, fullAu
   const tag = `DISTILL_${(fmt || 'wiki').toUpperCase()}`;
   console.log('[BG] handleDistill: tag=', tag, '| finalPromptLen=', prompt.length);
   logD(`整理 ${fmt || 'wiki'}.md…`, 'info');
-  if (source === 'flow') {
+  if (source === 'flow' || source === 'narrative_scan') {
     await handleDistillSendOnly(prompt, targetAI, grokMode);
     return;
   }
@@ -678,7 +678,7 @@ async function handleDistill({ content, fmt, targetAI, grokMode, wikiTpl, fullAu
   if (targetAI === 'grok') {
     await handleDistillGrok(prompt, tag, fullAuto, {
       grokMode: grokMode === 'inline' ? 'inline' : 'page',
-      conservativePolling: source === 'flow',
+      conservativePolling: source === 'flow' || source === 'narrative_scan',
       autoSaveOverride: typeof autoSave === 'boolean' ? autoSave : undefined,
     });
   } else {

@@ -68,10 +68,9 @@ const FLOW_LAYOUTS_DRAFT = Object.freeze({
     version: 1,
     cards: Object.freeze([
       Object.freeze({ id: 'ns_prompt', type: CARD_TYPES.PROMPT, order: 1, visible: true, enabled: true }),
-      Object.freeze({ id: 'ns_schema', type: CARD_TYPES.SCHEMA, order: 2, visible: true, enabled: true }),
-      Object.freeze({ id: 'ns_target_ai', type: CARD_TYPES.TARGET_AI, order: 3, visible: true, enabled: true }),
-      Object.freeze({ id: 'ns_send', type: CARD_TYPES.SEND, order: 4, visible: true, enabled: true }),
-      Object.freeze({ id: 'ns_review', type: CARD_TYPES.REVIEW, order: 5, visible: true, enabled: true }),
+      Object.freeze({ id: 'ns_extract_review', type: CARD_TYPES.REVIEW, order: 2, visible: true, enabled: true }),
+      Object.freeze({ id: 'ns_output_setup', type: CARD_TYPES.SCHEMA, order: 3, visible: true, enabled: true }),
+      Object.freeze({ id: 'ns_capture_save', type: CARD_TYPES.SAVE, order: 4, visible: true, enabled: true }),
     ]),
   }),
   [FLOW_IDS.AI_FLOWS]: Object.freeze({

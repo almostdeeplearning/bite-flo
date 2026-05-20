@@ -36,26 +36,28 @@ It is not intended to be only a generic AI chat wrapper or pasted-text summarize
 
 ### X ETL
 
-- Present the workflow as 5 vertical timeline Cards:
-  - Card 01 Prompt
-  - Card 02 Schema
-  - Card 03 Target AI
-  - Card 04 Run Extract
-  - Card 05 Save Result
+- Present the workflow as 4 vertical timeline Cards:
+  - Card 01 Extract Setup
+  - Card 02 Extract Review
+  - Card 03 Output Setup
+  - Card 04 Capture & Save
 - Render the ETL UI from `ETLCard1–5Block.js` via `initETLTab()` before other DOM-dependent initialization.
 - Allow the user to select a prompt from a reusable prompt series using a dropdown.
 - Allow the selected prompt to become the single editable task area for the current ETL run.
-- Allow the user to optionally select a schema template to combine with each prompt.
-- Concatenate `prompt.text + "\n\n" + schema.text` before injecting into the selected AI.
-- Persist the selected ETL target AI in `extractAI` through Card 03.
-- The current ETL main UI should expose only `GPT`, `Grok Inline`, and `Grok Page`.
-- When `extractAI === "grok"`, allow choosing between the full Grok page (`x.com/i/grok`) and the inline Grok panel on x.com.
-- Run the selected prompt against GPT, Gemini, Claude, or Grok based on Card 03.
-- Gemini and Claude routing may remain implemented underneath the ETL surface for compatibility, but they are not current first-class ETL UI targets.
-- Show send progress and logs in Card 04.
-- Show a temporary `Under construction` warning at the top of the Narrative Scan tab while the ETL workflow is being redesigned.
-- Expose an ETL inter-prompt delay control in Card 04 (`Wait before next step`) and pass that wait value into `START_EXTRACT.delaySeconds`.
-- Do not auto-capture replies in ETL; Card 05 should allow the user to manually capture the current reply from the active target tab, edit it, and save it as a local `.md` file.
+- Card 01 should also include the Stage 1 Grok target selection (`Grok Inline` or `Grok Page`).
+- Stage 1 is Grok-only in the current Narrative Scan direction.
+- Card 02 is the Stage 1 workstation: send to Grok, capture the current reply, refine the extracted narrative draft, and explicitly continue to Phase 2.
+- Card 03 should combine the Stage 2 setup surface:
+  - choose the output schema
+  - choose the Stage 2 output AI
+  - trigger `Run Phase 2`
+- Card 04 is an optional `Capture & Save` surface rather than a mandatory final step.
+- `Run Phase 2` should send the confirmed Stage 1 draft into `START_DISTILL`, using the selected schema and Stage 2 output AI.
+- Stage 2 should remain send-first, manual-recovery-first: after the send, the user may continue discussing inside the AI chat, or paste the reply into `Capture & Save` if they want to review it locally or save it as `.md` / `.html`.
+- Persist Narrative Scan phase state in a dedicated flow-scoped object instead of relying only on legacy ETL keys.
+- Show a global Narrative Scan workflow status strip at the top of the tab; it replaces the older `Under construction` warning and reflects the current run state across both phases.
+- Expose an ETL inter-prompt delay control in Card 02 (`Wait before next step`) and pass that wait value into `START_EXTRACT.delaySeconds`.
+- Do not auto-capture replies in ETL; Stage 1 and Stage 2 reply recovery both remain manual-first.
 
 ### Custom Flow
 

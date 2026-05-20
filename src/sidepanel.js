@@ -17,8 +17,12 @@ let extractProgressTotal = 0;
 let schemaTemplates = [];
 let expandedSchemaIdx = null;
 let extractSchemaId = null;
+let narrativeScanState = null;
+let narrativeScanPhase2TargetTabId = null;
+let etlPromptEditorExpanded = false;
+let cardTooltipUIBound = false;
 
-let activeDistillContext = null; // 'distill' | 'flow' | null
+let activeDistillContext = null; // 'distill' | 'flow' | 'narrative_scan' | null
 let currentLanguage = 'zh';
 
 // Draft-only safety check - dev warning only, never blocks runtime.
@@ -145,17 +149,41 @@ const I18N = {
     cf_try_capture: '⊕ 嘗試截取',
     save_md: '⬇ 儲存 .md',
     save_html: '⬇ 儲存 .html',
+    tooltip_more_info: '顯示說明',
+    etl_edit_prompt: '編輯 Prompt',
+    etl_wait_short: '等待',
+    grok_inline_micro_hint: '先打開 Grok inline panel',
+    etl_expand_prompt_hint: '點一下展開',
+    etl_ticker_token_hint: '請把 [INSERT TICKER] 換成你要掃描的股票代號',
     recent_extract: '最近萃取',
-    etl_card_prompt: '任務設定',
-    etl_card_schema: '輸出格式',
-    etl_card_ai: '目標 AI',
-    etl_card_run: '送出任務',
-    etl_card_save: '回收與儲存',
-    etl_flow_tagline: '先設定，再送出，最後回收與儲存。',
-    etl_schema_helper: '選擇要附加到本次任務的 Schema。',
-    etl_ai_helper: '選擇這次要送往哪個 AI。',
-    etl_run_helper: '把目前的 Prompt + Schema 送到目標 AI。這一步只負責送出，不會自動回收回覆。',
-    etl_review_helper: '等待 AI 回覆完成後，可嘗試截取，或直接貼上回覆，再儲存成 .md。',
+    etl_card_prompt: '擷取設定',
+    etl_card_extract_review: '擷取審閱',
+    etl_card_schema: '輸出 Schema',
+    etl_card_ai: '輸出 AI',
+    etl_card_output_ai: '輸出 AI',
+    etl_card_output_setup: '輸出設定',
+    etl_card_run: '擷取審閱',
+    etl_card_save: '最終輸出',
+    etl_card_capture_save: '回收與儲存',
+    etl_flow_tagline: '先設定 Grok 掃描，再審閱第一輪整理稿，最後才進入格式化輸出。',
+    etl_extract_target_label: 'Grok 目標',
+    etl_extract_target_helper: '第一階段固定使用 Grok，只需要選擇要注入完整 Grok 頁面，或 x.com 頁內小視窗。',
+    etl_extract_review_helper: '把第一階段 prompt 送到 Grok 後，請優先手動貼上完整回覆；「嘗試截取」只是 best-effort 輔助捷徑。',
+    etl_extract_review_warning: '內容不完整時，請手動貼上完整回覆再繼續。',
+    etl_schema_helper: '第二階段會把你已確認的整理稿，依這個 Schema 轉成最後輸出。',
+    etl_schema_phase2_helper: '第二階段會把你已確認的整理稿，依這個 Schema 轉成最後輸出。',
+    etl_ai_helper: '選擇第二階段要使用哪個 AI 來整理最終格式。',
+    etl_output_ai_helper: '選擇第二階段要使用哪個 AI 來整理最終格式。',
+    etl_output_setup_helper: '選擇第二階段格式、輸出 AI，然後送出已確認的整理稿。',
+    etl_run_helper: '把第一階段 prompt 送到 Grok，截取回覆後微調這份觀點整理稿，再決定是否進入第二階段。',
+    etl_output_ai_hint: '這個選項只會在第二階段使用，不影響第一階段的 Grok 掃描。',
+    etl_capture_save_helper: '如果你想在這裡整理或另存格式，可以把 AI 回覆貼到下方。',
+    etl_capture_save_optional: '如果你想在這裡整理或另存格式，可以把 AI 回覆貼到下方。',
+    etl_final_output_helper: '第二階段會把已確認的整理稿送到指定 AI。等回覆完成後，請優先手動貼上完整回覆；「嘗試截取」只是 best-effort 輔助捷徑。',
+    etl_final_output_warning: '儲存前請確認這裡是完整最終回覆。',
+    etl_send_to_grok: '送出到 Grok',
+    etl_continue_phase2: '確認審閱並繼續',
+    etl_run_phase2: '送出到 Output AI',
     etl_delay_label: '下一次送出前等待',
     etl_grok_mode_label: 'Grok 注入模式',
     etl_grok_mode_page: '完整 Grok 頁面',
@@ -163,11 +191,14 @@ const I18N = {
     etl_prompt_label: '任務工作稿',
     etl_prompt_helper: '選一個 Prompt，並把它改成這次要送出的工作稿。',
     etl_schema_none: '-不選擇schema格式-',
-    etl_progress_idle: '尚未開始',
+    etl_progress_idle: '尚未送出 Prompt',
     etl_progress_idle_sub: '尚未開始執行',
-    etl_log_placeholder: '詳細執行記錄會顯示在這裡。',
+    etl_log_title: '執行紀錄',
+    etl_log_placeholder: '送出後，執行紀錄會顯示在這裡。',
     extract_under_construction: '施工中：Narrative Scan 目前採送出後手動回收的流程。若需要更穩定的整理體驗，建議優先使用 AI Flows。',
-    etl_result_placeholder: '可在這裡貼上 AI 回覆，或使用「嘗試截取」帶入後再微調。',
+    etl_result_placeholder: '請手動貼上完整第一輪 Grok 回覆；「嘗試截取」可能不完整，貼上後再微調並確認。',
+    etl_final_output_placeholder: '如果你想在這裡整理或另存格式，可以把 AI 回覆貼到下方。',
+    optional_label: '選填',
     cf_card_source: '擷取內容',
     cf_card_task: '選擇分析',
     cf_card_format: '選擇格式',
@@ -337,17 +368,41 @@ const I18N = {
     cf_try_capture: '⊕ Try Capture',
     save_md: '⬇ Save .md',
     save_html: '⬇ Save .html',
+    tooltip_more_info: 'Show details',
+    etl_edit_prompt: 'Edit Prompt',
+    etl_wait_short: 'Wait',
+    grok_inline_micro_hint: 'Open Grok inline panel first',
+    etl_expand_prompt_hint: 'Click to expand',
+    etl_ticker_token_hint: 'Replace [INSERT TICKER] with the ticker you want to scan',
     recent_extract: 'Recent Runs',
-    etl_card_prompt: 'Task Setup',
-    etl_card_schema: 'Output Format',
-    etl_card_ai: 'Target AI',
-    etl_card_run: 'Send Task',
-    etl_card_save: 'Review & Save',
-    etl_flow_tagline: 'Set it up, send it out, then review and save.',
-    etl_schema_helper: 'Choose the schema to attach to this run.',
-    etl_ai_helper: 'Choose where this run should be sent.',
-    etl_run_helper: 'Send the current prompt + schema to the target AI. This step sends only and does not auto-recover the reply.',
-    etl_review_helper: 'After the AI reply finishes, try capture or paste the reply here, then save it as .md.',
+    etl_card_prompt: 'Extract Setup',
+    etl_card_extract_review: 'Extract Review',
+    etl_card_schema: 'Output Schema',
+    etl_card_ai: 'Output AI',
+    etl_card_output_ai: 'Output AI',
+    etl_card_output_setup: 'Output Setup',
+    etl_card_run: 'Extract Review',
+    etl_card_save: 'Final Output',
+    etl_card_capture_save: 'Capture & Save',
+    etl_flow_tagline: 'Set up the Grok scan, review the extracted narrative, then move into formatting.',
+    etl_extract_target_label: 'Grok Target',
+    etl_extract_target_helper: 'Stage 1 is Grok-only. Choose whether to inject into the full Grok page or the inline panel on x.com.',
+    etl_extract_review_helper: 'Send the Stage 1 prompt to Grok, then paste the full reply here manually. Try Capture is only a best-effort shortcut.',
+    etl_extract_review_warning: 'If the capture is incomplete, paste the full reply manually before continuing.',
+    etl_schema_helper: 'Choose how the confirmed extract draft should be transformed in Phase 2.',
+    etl_schema_phase2_helper: 'Choose how the confirmed extract draft should be transformed in Phase 2.',
+    etl_ai_helper: 'Choose which AI should format the confirmed extract draft in Phase 2.',
+    etl_output_ai_helper: 'Choose which AI should format the confirmed extract draft in Phase 2.',
+    etl_output_setup_helper: 'Choose the Phase 2 format, pick the output AI, then send the confirmed extract draft.',
+    etl_run_helper: 'Send the Stage 1 prompt to Grok, capture the reply, refine the extracted narrative, then continue to Phase 2.',
+    etl_output_ai_hint: 'This target is only used in Phase 2. It does not affect the Stage 1 Grok scan.',
+    etl_capture_save_helper: 'Paste the AI reply here if you want to review it or save it in your preferred format.',
+    etl_capture_save_optional: 'Paste the AI reply here if you want to review or save it locally.',
+    etl_final_output_helper: 'Phase 2 sends the confirmed extract draft to the selected AI. Paste the full final reply here manually. Try Capture is only a best-effort shortcut.',
+    etl_final_output_warning: 'Before saving, make sure this is the full final reply.',
+    etl_send_to_grok: 'Send to Grok',
+    etl_continue_phase2: 'Confirm Review & Continue',
+    etl_run_phase2: 'Send to Output AI',
     etl_delay_label: 'Wait before next send',
     etl_grok_mode_label: 'Grok Target',
     etl_grok_mode_page: 'Full Grok Page',
@@ -355,11 +410,14 @@ const I18N = {
     etl_prompt_label: 'Working Draft',
     etl_prompt_helper: 'Choose a prompt, then edit it into the working draft for this run.',
     etl_schema_none: 'No format',
-    etl_progress_idle: 'Not started',
+    etl_progress_idle: 'No prompts sent yet',
     etl_progress_idle_sub: 'Ready to run',
-    etl_log_placeholder: 'Execution logs will appear here.',
+    etl_log_title: 'Execution log',
+    etl_log_placeholder: 'Logs will appear here after you send the prompt.',
     extract_under_construction: 'Under construction: Narrative Scan currently uses a send-first, manual-review flow. For a steadier workflow, use AI Flows.',
-    etl_result_placeholder: 'Paste the AI reply here, or use "Try Capture" and refine it before saving.',
+    etl_result_placeholder: 'Paste the full first-pass Grok reply here manually. Try Capture may be incomplete, so review and fix it before Phase 2.',
+    etl_final_output_placeholder: 'Paste the AI reply here if you want to review it or save it in your preferred format.',
+    optional_label: 'Optional',
     cf_card_source: 'Source',
     cf_card_task: 'Task',
     cf_card_format: 'Format',
@@ -431,6 +489,12 @@ function applyI18n(root = document) {
   root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
   });
+  root.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.setAttribute('title', t(el.dataset.i18nTitle));
+  });
+  root.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+  });
 }
 
 function setLanguage(lang, { persist = true } = {}) {
@@ -498,6 +562,42 @@ function normalizeVisibleExtractAI(ai, grokMode) {
   return { ai: 'gpt', grokMode: 'page' };
 }
 
+function closeCardTooltips(except = null) {
+  document.querySelectorAll('.card-help.is-open').forEach(node => {
+    if (except && node === except) return;
+    node.classList.remove('is-open');
+    node.querySelector('[data-tooltip-trigger]')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function bindCardTooltipUI() {
+  if (cardTooltipUIBound) return;
+  cardTooltipUIBound = true;
+
+  document.addEventListener('click', e => {
+    const trigger = e.target.closest('[data-tooltip-trigger]');
+    if (trigger) {
+      e.preventDefault();
+      e.stopPropagation();
+      const host = trigger.closest('.card-help');
+      if (!host) return;
+      const nextOpen = !host.classList.contains('is-open');
+      closeCardTooltips(host);
+      host.classList.toggle('is-open', nextOpen);
+      trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+      return;
+    }
+
+    if (!e.target.closest('.card-help')) {
+      closeCardTooltips();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCardTooltips();
+  });
+}
+
 function normalizeVisibleFlowAI(ai, grokMode) {
   if (ai === 'grok') return { ai: 'grok', grokMode: grokMode === 'inline' ? 'inline' : 'page' };
   if (ai === 'gpt') return { ai: 'gpt', grokMode: 'page' };
@@ -505,11 +605,175 @@ function normalizeVisibleFlowAI(ai, grokMode) {
   return { ai: 'gpt', grokMode: 'page' };
 }
 
+function makeDefaultNarrativeScanState() {
+  return {
+    version: 1,
+    phase: 'extract_setup',
+    extract: {
+      promptText: '',
+      grokMode: 'page',
+      draftText: '',
+      draftStatus: 'empty',
+    },
+    output: {
+      schemaId: null,
+      targetAI: 'gpt',
+      ready: false,
+    },
+    updatedAt: null,
+  };
+}
+
+function normalizeNarrativeScanState(raw) {
+  const base = makeDefaultNarrativeScanState();
+  const next = raw && typeof raw === 'object' ? raw : {};
+  const extract = next.extract && typeof next.extract === 'object' ? next.extract : {};
+  const output = next.output && typeof next.output === 'object' ? next.output : {};
+  return {
+    version: 1,
+    phase: typeof next.phase === 'string' ? next.phase : base.phase,
+    extract: {
+      promptText: typeof extract.promptText === 'string' ? extract.promptText : base.extract.promptText,
+      grokMode: extract.grokMode === 'inline' ? 'inline' : 'page',
+      draftText: typeof extract.draftText === 'string' ? extract.draftText : base.extract.draftText,
+      draftStatus: ['empty', 'captured', 'confirmed'].includes(extract.draftStatus) ? extract.draftStatus : base.extract.draftStatus,
+    },
+    output: {
+      schemaId: typeof output.schemaId === 'string' ? output.schemaId : null,
+      targetAI: ['gpt', 'gemini', 'claude', 'grok'].includes(output.targetAI) ? output.targetAI : base.output.targetAI,
+      ready: output.ready === true,
+    },
+    updatedAt: typeof next.updatedAt === 'string' ? next.updatedAt : null,
+  };
+}
+
+function markNarrativeScanUpdated() {
+  if (!narrativeScanState) narrativeScanState = makeDefaultNarrativeScanState();
+  narrativeScanState.updatedAt = new Date().toISOString();
+}
+
+function setNarrativeScanState(nextState, options = {}) {
+  const { persist = true } = options;
+  narrativeScanState = normalizeNarrativeScanState(nextState);
+  markNarrativeScanUpdated();
+  if (persist) chrome.storage.local.set({ narrativeScanState });
+  updateNarrativeScanPhaseUI();
+}
+
+function resetNarrativeScanForNewExtract(promptText = '') {
+  const next = normalizeNarrativeScanState(narrativeScanState);
+  next.phase = 'extract_setup';
+  next.extract.promptText = promptText;
+  next.extract.grokMode = extractGrokMode === 'inline' ? 'inline' : 'page';
+  next.extract.draftText = '';
+  next.extract.draftStatus = 'empty';
+  next.output.ready = false;
+  setNarrativeScanState(next);
+  setEtlPromptEditorExpanded(false);
+  narrativeScanPhase2TargetTabId = null;
+  if ($('finalOutputText')) $('finalOutputText').value = '';
+}
+
+function getNarrativeScanPhase() {
+  return narrativeScanState?.phase || 'extract_setup';
+}
+
+function setNarrativeScanCardLocked(cardKey, locked) {
+  const card = document.querySelector(`#etlSteps [data-etl-card="${cardKey}"]`);
+  if (!card) return;
+  card.classList.toggle('ns-card-locked', locked);
+  card.style.opacity = locked ? '0.58' : '';
+  card.style.filter = locked ? 'saturate(0.8)' : '';
+  card.querySelectorAll('.cf-card-body button, .cf-card-body select, .cf-card-body input, .cf-card-body textarea').forEach(el => {
+    el.disabled = locked;
+    if (locked) el.setAttribute('aria-disabled', 'true');
+    else el.removeAttribute('aria-disabled');
+  });
+}
+
+function updateOutputAIModeUI() {
+  const activeKey = narrativeScanState?.output?.targetAI || 'gpt';
+  document.querySelectorAll('#outputAiSel .ai-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ai === activeKey);
+  });
+}
+
+function updateNarrativeScanPhaseUI() {
+  const phase = getNarrativeScanPhase();
+  const outputLocked = phase !== 'output_setup' && phase !== 'final_output';
+  setNarrativeScanCardLocked('schema', outputLocked);
+  setNarrativeScanCardLocked('save', outputLocked);
+
+  const continueBtn = $('continueToPhase2Btn');
+  if (continueBtn) {
+    const hasDraft = String($('extractResultText')?.value || narrativeScanState?.extract?.draftText || '').trim().length > 0;
+    continueBtn.disabled = !hasDraft;
+    if (!hasDraft) continueBtn.setAttribute('aria-disabled', 'true');
+    else continueBtn.removeAttribute('aria-disabled');
+  }
+
+  updateOutputAIModeUI();
+}
+
+function getNarrativeScanSchemaName() {
+  return schemaTemplates.find(x => x.id === (narrativeScanState?.output?.schemaId || extractSchemaId))?.name || 'output';
+}
+
+function getFinalOutputContent() {
+  return $('finalOutputText')?.value || '';
+}
+
+function setFinalOutputContent(text) {
+  const next = String(text || '');
+  if ($('finalOutputText')) $('finalOutputText').value = next;
+}
+
+function makeNarrativeScanOutputName() {
+  const schemaName = sanitizeFilenameSegment(getNarrativeScanSchemaName(), 'output');
+  return `nscan_${schemaName}_${makeShortTimestamp()}.md`;
+}
+
+function makeNarrativeScanHtmlName() {
+  return makeNarrativeScanOutputName().replace(/\.md$/i, '.html');
+}
+
+function wrapNarrativeScanResultHtml(title, content) {
+  const escapeHtml = s => String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  const safeTitle = escapeHtml(title);
+  const safeContent = escapeHtml(content);
+  return `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${safeTitle}</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #0b1020; color: #e8ecf5; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 24px 56px; }
+    h1 { font-size: 20px; margin: 0 0 18px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #141b31; border: 1px solid #2b3557; border-radius: 12px; padding: 18px; line-height: 1.65; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${safeTitle}</h1>
+    <pre>${safeContent}</pre>
+  </main>
+</body>
+</html>`;
+}
+
 function updateExtractAIModeUI() {
   const activeKey = getExtractAIPillKey();
   document.querySelectorAll('#extractAiSel .ai-pill').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.ai === activeKey);
   });
+  $('extractInlineHint')?.classList.toggle('is-visible', activeKey === 'grok-inline');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1778,18 +2042,16 @@ function initETLTab() {
 
   const fallbackOrder = [
     { type: 'prompt', render: () => ETLCard1Block.render(etlSteps) },
-    { type: 'schema', render: () => ETLCard2Block.render(etlSteps) },
-    { type: 'target_ai', render: () => ETLCard3Block.render(etlSteps) },
-    { type: 'send', render: () => ETLCard4Block.render(etlSteps) },
-    { type: 'review', render: () => ETLCard5Block.render(etlSteps) },
+    { type: 'review', render: () => ETLCard2Block.render(etlSteps) },
+    { type: 'schema', render: () => ETLCard3Block.render(etlSteps) },
+    { type: 'save', render: () => ETLCard5Block.render(etlSteps) },
   ];
 
   const renderByType = {
     prompt: () => ETLCard1Block.render(etlSteps),
-    schema: () => ETLCard2Block.render(etlSteps),
-    target_ai: () => ETLCard3Block.render(etlSteps),
-    send: () => ETLCard4Block.render(etlSteps),
-    review: () => ETLCard5Block.render(etlSteps),
+    review: () => ETLCard2Block.render(etlSteps),
+    schema: () => ETLCard3Block.render(etlSteps),
+    save: () => ETLCard5Block.render(etlSteps),
   };
 
   let usedDraftLayout = false;
@@ -1831,6 +2093,7 @@ function initETLTab() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   initETLTab();                       // synchronous DOM build — must run before any await
+  bindCardTooltipUI();
   await clearLegacyCloudSettings();
   await migrateLegacyDistillAutoSave();
   const d = await loadSettings();
@@ -1842,6 +2105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderExtractSchemaPicker();
   bindAll();
   updateExtractAIModeUI();
+  updateNarrativeScanPhaseUI();
   listenBg();
   renderExtractLibrary();
 });
@@ -1875,6 +2139,233 @@ function normalizeLegacyPromptSeries(sourcePrompts) {
   return [{ id: crypto.randomUUID(), name: 'Migrated Prompts', prompts: items }];
 }
 
+function getNarrativeScanStarterPromptText() {
+  return `You are a buy-side equity research assistant specialized in real-time narrative scanning on X.com.
+
+Task
+Perform a dual time-window narrative scan for the following stock:
+
+Ticker: [INSERT TICKER]
+
+Primary window:
+Past 14 days (current market attention and pricing)
+
+Secondary window:
+Days 15-30 prior (early signals, fading risks, or low-salience concerns)
+
+Timezone:
+Asia/Taipei (UTC+8)
+
+Goal
+Identify the most material narratives currently influencing, or potentially capable of influencing:
+
+* Price action
+* Implied volatility
+* Market sentiment
+* Positioning expectations
+
+The scan must discover narratives organically from X discussion rather than relying on predefined industry assumptions.
+
+Hard Rules (Strict - Do Not Violate)
+
+* Every factual claim or narrative must be supported by exact X post URL(s).
+* All timestamps must use YYYY-MM-DD HH:MM (UTC+8).
+* Output language: English.
+* Keep all financial terms, metrics, company names, and technical jargon in English.
+* Clearly distinguish:
+
+  * Facts
+  * Interpretations
+  * Speculation
+* Do not extrapolate, smooth, or infer missing information.
+* Do not assume industry-specific drivers before evidence appears in the scan.
+
+Workflow
+
+A) Narrative Discovery & Clustering
+
+Use broad semantic and keyword search centered around:
+
+* ticker
+* company name
+* product names
+* executive names
+* earnings
+* guidance
+* valuation
+* demand
+* competition
+* regulation
+* macro exposure
+* positioning
+* sentiment
+* supply chain
+* technology
+* customer trends
+* market structure
+* capital flows
+* legal or geopolitical developments
+
+Primary Scan (0-14 days)
+Identify currently dominant and actively discussed narratives.
+
+Secondary Scan (15-30 days)
+Always perform this scan.
+Label findings clearly as:
+
+* early
+* fading
+* under-discussed
+* low-salience
+
+Actively search for:
+
+* Bullish narratives
+* Bearish narratives
+* Contrarian narratives
+* Emerging narratives not yet broadly priced in
+
+Do not overweight narrative frequency alone.
+Prioritize potential market impact.
+
+B) Narrative Summary Table
+
+Present findings in markdown table format:
+
+| Narrative_Type | Polarity | One-line Summary | Key Evidence | Confidence | Window | Uncertainty |
+
+Definitions:
+
+* Narrative_Type:
+  Driver / Risk / Event / Technical / Sentiment / Macro / Positioning
+
+* Polarity:
+  Bull / Bear / Mixed / Neutral
+
+* Key Evidence:
+  1-2 representative X posts including URL + timestamp
+
+* Confidence:
+  High / Medium / Low
+
+Aim for balanced Bull and Bear representation.
+
+If bearish narratives are scarce, explicitly state:
+"Bearish narratives are currently limited on X, which may reflect market focus on positive developments rather than absence of risk."
+
+C) Deep Dive: Top 5 Narratives
+
+Rank by potential impact on:
+
+* Price
+* Implied volatility
+* Market positioning
+
+Do NOT rank purely by popularity.
+
+Requirements:
+
+* Include at least 1-2 Bear/Risk narratives if present in either window.
+* Include emerging or under-discussed narratives if potentially material.
+
+For each narrative provide:
+
+* 2-3 representative X posts
+* At least one informed/expert account if available
+* Brief explanation of why the account may be informed
+* Transmission mechanism
+* Why this narrative matters financially
+* Impact_Horizon:
+  1 week / 1 month / 1 quarter
+* Price_Direction:
+  Up / Down / Range / Unclear
+* IV_Direction:
+  Up / Down / Stable / Unclear
+* Whether the narrative appears:
+  priced-in / partially priced-in / underpriced / unclear
+* One concrete invalidation condition
+
+D) Unverified Rumors & Speculation
+
+List 2-5 notable speculative or unverified claims if present.
+
+Include:
+
+* Bullish speculation
+* Bearish speculation
+* Positioning rumors
+* Supply chain chatter
+* Customer/order rumors
+* Regulatory speculation
+
+For each:
+
+* URL + timestamp
+* What evidence would confirm or reject it
+
+If none:
+"No significant unverified rumors identified in the scanned windows."
+
+E) Forward-looking Catalysts
+
+List up to 5 upcoming catalysts only if explicitly referenced in posts:
+
+* earnings
+* conferences
+* product launches
+* legal rulings
+* macro events
+* lock-up expirations
+* guidance updates
+* customer announcements
+* regulatory decisions
+
+For each catalyst:
+
+* Expected date (if available)
+* Why market participants appear focused on it
+
+If none:
+"No explicit forward-looking catalysts were identified in the scanned posts."
+
+Mandatory Closing Notes
+
+* Absence of bearish narratives on X does not imply absence of risk.
+* Narrative intensity on social media may diverge from fundamental reality.
+* All analysis is based solely on public discussion on X as of the scan date.
+* Formal filings, earnings materials, macro data, and industry research remain necessary for validation.
+
+Output Style
+
+Professional, concise, objective buy-side tone.
+Use clean markdown formatting.
+No filler text.
+No motivational language.
+Do not restate the prompt.`;
+}
+
+function migrateNarrativeScanStarterSeries(sourceSeries) {
+  let changed = false;
+  const nextSeries = Array.isArray(sourceSeries) ? sourceSeries.map(seriesItem => {
+    if (seriesItem?.name !== 'Narrative Scan Starter Pack' || !Array.isArray(seriesItem.prompts)) return seriesItem;
+    const nextPrompts = seriesItem.prompts.map(prompt => {
+      if (prompt?.name !== 'Narrative Scan' || typeof prompt.text !== 'string') return prompt;
+      const text = String(prompt.text || '');
+      const alreadyGeneral = text.includes('[INSERT TICKER]');
+      const looksLikeOldNarrativeScanTemplate =
+        /buy-side equity research assistant specialized in real-time narrative scanning on X\.com/i.test(text) ||
+        /dual time-window narrative scan/i.test(text) ||
+        /\bPGY\b/i.test(text) ||
+        /\bPagaya\b/i.test(text);
+      if (alreadyGeneral || !looksLikeOldNarrativeScanTemplate) return prompt;
+      changed = true;
+      return { ...prompt, text: getNarrativeScanStarterPromptText() };
+    });
+    return changed ? { ...seriesItem, prompts: nextPrompts } : seriesItem;
+  }) : [];
+  return { series: nextSeries, changed };
+}
+
 function makeStarterPromptSeries() {
   return [
     {
@@ -1884,80 +2375,7 @@ function makeStarterPromptSeries() {
         {
           id: crypto.randomUUID(),
           name: 'Narrative Scan',
-          text: `You are a buy-side equity research assistant specialized in real-time narrative scanning on X.com.
-
-Task
-Perform a dual time-window narrative scan for (ticker:    ):
-Primary window: past 14 days (current market attention and pricing)
-Secondary window: days 15-30 prior (early signals, fading risks, or low-salience concerns)
-(Timezone: Asia/Taipei, UTC+8)
-
-Goal:
-Identify material price and implied volatility drivers, clearly distinguishing currently priced-in narratives from under-discussed or potential downside risks.
-
-Hard Rules (Strict - Do Not Violate)
-Every factual claim or narrative must be supported by exact X post URL(s).
-All timestamps must be in YYYY-MM-DD HH:MM (UTC+8) format.
-Output language: English.
-Keep all financial terms, metrics, company names, and technical jargon in English.
-Clearly distinguish facts, interpretations, and speculation.
-Do not extrapolate, smooth, or infer missing information.
-
-Workflow
-A) Narrative Collection & Clustering
-Use English keywords and semantic search. Core keywords include but are not limited to:
-PGY, Pagaya, AI lending, AI underwriting, personal loans, origination, delinquency, charge-off, ABS, securitization, funding, guidance, earnings, short interest, credit performance.
-
-Primary Scan (0-14 days): Identify currently dominant and actively discussed narratives.
-Secondary Scan (15-30 days): Always perform this scan. Label findings clearly as "early / fading / low-salience".
-
-B) Narrative Summary Table
-Present findings in a clean markdown table with the following columns:
-| Narrative_Type | Polarity | One-line Summary | Key Evidence | Confidence | Window | Uncertainty |
-
-Narrative_Type: Driver / Risk / Event / Technical / Sentiment
-Polarity: Bull / Bear / Mixed / Neutral
-Key Evidence: 1-2 representative posts with URL + timestamp (UTC+8)
-Confidence: High / Medium / Low
-
-Aim for balanced representation of Bull and Bear narratives.
-If bearish/risk narratives are scarce, explicitly note:
-"Bearish narratives are currently limited on X, which may reflect market focus on positive developments rather than absence of risk."
-
-C) Deep Dive: Top 5 Narratives (ranked by potential market impact)
-Select the top 5 narratives with the highest potential to influence near-term price or implied volatility (not based on popularity).
-
-Requirements:
-Include at least 1-2 Risk/Bear narratives if they exist in either window.
-For each narrative:
-- 2-3 representative X posts (including at least one from an informed/expert account)
-- Brief explanation of why the account is considered informed
-- Transmission mechanism
-- Impact_Horizon (1 week / 1 month / 1 quarter)
-- Price_Direction (Up / Down / Range / Unclear)
-- IV_Direction (Up / Down / Stable / Unclear)
-- Invalidation condition (one concrete, observable future event or data point)
-
-D) Unverified Rumors & Speculation
-List 2-5 notable unverified or speculative claims circulating on X (include both bullish and bearish if present).
-For each:
-- URL + timestamp
-- What concrete evidence would confirm or reject it
-
-If none are found, state clearly:
-"No significant unverified rumors identified in the scanned windows."
-
-E) Forward-looking Catalysts
-List up to 3 upcoming dates or events only if explicitly mentioned in the posts (e.g., earnings date, guidance update, lock-up expiration).
-If none:
-"No explicit forward-looking dates or events were mentioned in the scanned posts."
-
-Mandatory Closing Notes
-Note that the absence of bearish narratives on X does not equal the absence of risk. Credit, funding, and macroeconomic risks must still be validated through formal filings and data.
-All analysis is based solely on public discussion on X as of the scan date.
-
-Output Style
-Professional, concise, objective buy-side tone. Use clear markdown formatting. No filler text, no motivational language, and do not restate the prompt.`
+          text: getNarrativeScanStarterPromptText()
         },
         {
           id: crypto.randomUUID(),
@@ -2141,13 +2559,18 @@ async function loadSettings() {
     'customFlowPresets', 'cfDefaultPresetId',
     'promptLibraryInitialized',
     'schemaLibraryInitialized',
+    'narrativeScanState',
   ]);
 
   prompts         = d.prompts || [];
   const normalizedExtract = normalizeVisibleExtractAI(d.extractAI || 'gpt', d.extractGrokMode);
-  extractAI       = normalizedExtract.ai;
+  extractAI       = 'grok';
   extractGrokMode = normalizedExtract.grokMode;
   series          = d.promptSeries || [];
+  const starterMigration = migrateNarrativeScanStarterSeries(series);
+  if (starterMigration.changed) {
+    series = starterMigration.series;
+  }
   let migratedPromptSeries = false;
   let seededStarterPromptSeries = false;
   if (!series.length) {
@@ -2187,6 +2610,8 @@ async function loadSettings() {
 
   if (migratedPromptSeries) {
     await chrome.storage.local.set({ promptSeries: series, currentSeriesId });
+  } else if (starterMigration.changed) {
+    await chrome.storage.local.set({ promptSeries: series });
   } else if (seededStarterPromptSeries) {
     await chrome.storage.local.set({
       promptSeries: series,
@@ -2202,13 +2627,26 @@ async function loadSettings() {
     await chrome.storage.local.set({ extractSchemaId });
   }
 
+  narrativeScanState = normalizeNarrativeScanState(d.narrativeScanState);
+  if (!d.narrativeScanState) {
+    narrativeScanState.extract.grokMode = extractGrokMode;
+    narrativeScanState.output.schemaId = extractSchemaId || null;
+    narrativeScanState.output.targetAI = d.distillAI || 'gpt';
+    markNarrativeScanUpdated();
+    await chrome.storage.local.set({ narrativeScanState });
+  } else {
+    extractGrokMode = narrativeScanState.extract.grokMode;
+    if (narrativeScanState.output.schemaId) extractSchemaId = narrativeScanState.output.schemaId;
+  }
+
   applyTheme(d.uiTheme || 'nt-dark');
   applyPopupFontSize(d.popupFontSize || 'standard');
   applyPopupTextContrast(d.popupTextContrast || 'standard');
   setLanguage(d.uiLanguage || 'en', { persist: false });
 
-  $('delayInput').value        = d.delaySeconds || 35;
-  syncExtractDelayControls(d.delaySeconds || 35);
+  const initialDelaySeconds = Number.isFinite(Number(d.delaySeconds)) ? Math.max(0, parseInt(d.delaySeconds, 10)) : 0;
+  $('delayInput').value        = String(initialDelaySeconds);
+  syncExtractDelayControls(initialDelaySeconds);
   $('fullAutoToggle').checked  = d.fullAuto !== false;
   $('autoDownload').checked    = d.autoDownload !== false;
   $('extractFolder').value     = d.extractFolder || d.draftFolder || '';
@@ -2246,7 +2684,7 @@ function syncExtractDelayControls(delayValue) {
   const custom = $('delayCustomInput');
   if (!hidden || !preset || !custom) return;
 
-  const next = Number.isFinite(Number(delayValue)) ? Math.max(0, parseInt(delayValue, 10)) : 35;
+  const next = Number.isFinite(Number(delayValue)) ? Math.max(0, parseInt(delayValue, 10)) : 0;
   hidden.value = String(next);
 
   if (['0', '5', '10', '35'].includes(String(next))) {
@@ -2283,36 +2721,75 @@ function bindAll() {
   });
 
   // Extract run
-  $('startBtn').addEventListener('click', startExtract);
-  $('stopBtn').addEventListener('click', () => {
+  $('startBtn')?.addEventListener('click', startExtract);
+  $('stopBtn')?.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'STOP' });
     setExtractRunState('stopped');
     setRunUI(false); elog('已停止', 'warn');
   });
 
   // Extract result
-  $('captureCurrentReplyBtn').addEventListener('click', captureCurrentExtractReply);
-  $('saveExtractBtn').addEventListener('click', saveExtractResult);
+  $('captureCurrentReplyBtn')?.addEventListener('click', captureCurrentExtractReply);
+  $('saveExtractBtn')?.addEventListener('click', saveExtractResult);
+  $('extractResultText')?.addEventListener('input', () => {
+    const state = normalizeNarrativeScanState(narrativeScanState);
+    state.extract.draftText = getExtractResultContent();
+    state.extract.draftStatus = state.extract.draftText.trim() ? 'captured' : 'empty';
+    setNarrativeScanState(state);
+  });
+  $('continueToPhase2Btn')?.addEventListener('click', () => {
+    const draftText = String(getExtractResultContent() || '').trim();
+    if (!draftText) {
+      elog(currentLanguage === 'en' ? 'Capture or enter an extract draft before continuing.' : '請先截取或輸入第一輪整理稿，再繼續下一階段。', 'warn');
+      updateNarrativeScanPhaseUI();
+      return;
+    }
+    const next = normalizeNarrativeScanState(narrativeScanState);
+    next.phase = 'output_setup';
+    next.extract.promptText = prompts.map(p => String(p?.text || '').trim()).filter(Boolean).join('\n\n');
+    next.extract.grokMode = extractGrokMode;
+    next.extract.draftText = draftText;
+    next.extract.draftStatus = 'confirmed';
+    next.output.schemaId = extractSchemaId || null;
+    next.output.ready = true;
+    setNarrativeScanState(next);
+    const text = currentLanguage === 'en' ? 'Phase 2 unlocked. Choose an output format and AI next.' : '已解鎖第二階段，接著選擇輸出格式與 AI。';
+    setNarrativeScanGlobalStatus(text, 'success');
+    elog(text, 'success');
+  });
+  $('runPhase2Btn')?.addEventListener('click', () => {
+    runNarrativeScanPhase2();
+  });
+  $('saveFinalOutputBtn')?.addEventListener('click', () => {
+    saveNarrativeScanFinalOutput();
+  });
+  $('saveFinalHtmlBtn')?.addEventListener('click', () => {
+    saveNarrativeScanFinalHtml();
+  });
 
   // Extract pickers
-  $('extractSeriesSel').addEventListener('change', () => {
+  $('extractSeriesSel')?.addEventListener('change', () => {
     extractSeriesId = $('extractSeriesSel').value || null;
     chrome.storage.local.set({ extractSeriesId });
     prompts = [];
     chrome.storage.local.set({ prompts });
     renderPrompts();
     renderExtractPromptList();
+    resetNarrativeScanForNewExtract();
   });
-  $('extractSchemaSel').addEventListener('change', () => {
+  $('extractSchemaSel')?.addEventListener('change', () => {
     extractSchemaId = $('extractSchemaSel').value || null;
     chrome.storage.local.set({ extractSchemaId });
     updateExtractSchemaPreview();
+    const next = normalizeNarrativeScanState(narrativeScanState);
+    next.output.schemaId = extractSchemaId || null;
+    setNarrativeScanState(next);
   });
   if ($('delayPresetSel') && $('delayCustomInput') && $('delayInput')) {
     $('delayPresetSel').addEventListener('change', () => {
       if ($('delayPresetSel').value === 'custom') {
         $('delayCustomInput').style.display = '';
-        const next = parseInt($('delayCustomInput').value, 10) || parseInt($('delayInput').value, 10) || 35;
+        const next = parseInt($('delayCustomInput').value, 10) || parseInt($('delayInput').value, 10) || 0;
         $('delayInput').value = String(next);
         $('delayCustomInput').value = String(next);
       } else {
@@ -2358,6 +2835,24 @@ function bindAll() {
 
   // promptList
   $('promptList').addEventListener('click', e => {
+    const expandBtn = e.target.closest('[data-action="expandPromptPreview"]');
+    if (expandBtn) {
+      setEtlPromptEditorExpanded(true);
+      renderPrompts();
+      requestAnimationFrame(() => {
+        const editor = $('promptList')?.querySelector('[data-action="editPrompt"]');
+        editor?.focus();
+      });
+      return;
+    }
+    const collapseBtn = e.target.closest('[data-action="collapsePromptPreview"]');
+    if (collapseBtn) {
+      syncPromptEditsFromDom().then(() => {
+        setEtlPromptEditorExpanded(false);
+        renderPrompts();
+      });
+      return;
+    }
     const btn = e.target.closest('[data-action="delPrompt"]');
     if (btn) delPrompt(Number(btn.dataset.idx));
   });
@@ -2397,7 +2892,16 @@ function bindAll() {
         extractAI = key;
       }
       chrome.storage.local.set({ extractAI, extractGrokMode });
+      const next = normalizeNarrativeScanState(narrativeScanState);
+      next.extract.grokMode = extractGrokMode;
+      setNarrativeScanState(next);
       updateExtractAIModeUI();
+    }));
+  document.querySelectorAll('#outputAiSel .ai-pill').forEach(b =>
+    b.addEventListener('click', () => {
+      const next = normalizeNarrativeScanState(narrativeScanState);
+      next.output.targetAI = b.dataset.ai || 'gpt';
+      setNarrativeScanState(next);
     }));
 
   // Prompt series
@@ -2566,6 +3070,7 @@ function switchTab(name) {
   if (name === 'extract') { renderExtractPromptPicker(); renderExtractSchemaPicker(); renderExtractLibrary(); }
   if (name === 'flow')    { CustomFlowController._renderTaskPicker(); CustomFlowController._renderFormatPicker(); }
   chrome.storage.local.set({ lastTab: name });
+  if (name === 'extract') updateNarrativeScanPhaseUI();
 }
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
@@ -2576,21 +3081,60 @@ window.editPrompt = (i, v, persist = true) => {
   if (persist) chrome.storage.local.set({ prompts });
 };
 
+function setEtlPromptEditorExpanded(expanded) {
+  etlPromptEditorExpanded = expanded === true;
+}
+
+function highlightPromptTemplateTokens(text) {
+  const safe = esc(String(text || ''));
+  return safe.replace(/\[INSERT TICKER\]/g, '<mark class="ns-prompt-token">[INSERT TICKER]</mark>');
+}
+
 function renderPrompts() {
   const el = $('promptList');
   if (!prompts.length) {
     el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);font-size:11px">${t('no_prompt')}</div>`;
+    setEtlPromptEditorExpanded(false);
     if (extractRunState === 'idle') setExtractRunState('idle', { current: 0, total: 0 });
     return;
   }
   const ic = { pending: '○', running: '⏳', done: '✅', error: '❌' };
-  el.innerHTML = prompts.map((p, i) => `
-    <div class="pi ${p.status || ''}" id="pi${i}">
-      <span class="pi-n">#${i + 1}</span>
-      <textarea class="pi-txt" rows="${promptPreviewRows(p.text)}" data-action="editPrompt" data-idx="${i}">${esc(p.text)}</textarea>
-      <span class="pi-ico">${ic[p.status] || '○'}</span>
-      <button class="pi-del" data-action="delPrompt" data-idx="${i}">✕</button>
-    </div>`).join('');
+  el.innerHTML = prompts.map((p, i) => {
+    const text = String(p.text || '');
+    if (!etlPromptEditorExpanded) {
+      return `
+        <div class="ns-prompt-preview" data-action="expandPromptPreview" data-idx="${i}" id="pi${i}">
+          <div class="ns-prompt-preview-head">
+            <span class="ns-prompt-preview-name">${esc(p.name || `Prompt #${i + 1}`)}</span>
+            <span class="ns-prompt-preview-meta">${getPromptCountLabel(text.length)}</span>
+          </div>
+          <div class="ns-prompt-preview-body">${highlightPromptTemplateTokens(text)}</div>
+          <div class="ns-prompt-preview-tools">
+            <div></div>
+            <div class="ns-prompt-preview-actions">
+              <button class="btn btn-dashed btn-xs" type="button" data-action="expandPromptPreview" data-idx="${i}" data-i18n="etl_expand_prompt_hint">${esc(t('etl_expand_prompt_hint'))}</button>
+              <button class="btn btn-xs" type="button" data-action="expandPromptPreview" data-idx="${i}" data-i18n="etl_edit_prompt">${esc(t('etl_edit_prompt'))}</button>
+            </div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="pi ${p.status || ''}" id="pi${i}">
+        <span class="pi-n">#${i + 1}</span>
+        <div style="min-width:0">
+          <div class="ns-prompt-editor-tools">
+            <span></span>
+            <div class="ns-prompt-preview-actions">
+              <button class="btn btn-dashed btn-xs" type="button" data-action="collapsePromptPreview" data-idx="${i}" data-i18n="collapse">${esc(t('collapse'))}</button>
+            </div>
+          </div>
+          <textarea class="pi-txt" rows="${promptPreviewRows(text)}" data-action="editPrompt" data-idx="${i}">${esc(text)}</textarea>
+        </div>
+        <span class="pi-ico">${ic[p.status] || '○'}</span>
+        <button class="pi-del" data-action="delPrompt" data-idx="${i}">✕</button>
+      </div>`;
+  }).join('');
+  applyI18n(el);
   if (extractRunState === 'idle') setExtractRunState('idle', { current: 0, total: getExtractPromptTotal() });
 }
 
@@ -2606,6 +3150,46 @@ function getExtractPromptTotal() {
   return prompts.map(p => String(p?.text || '').trim()).filter(Boolean).length;
 }
 
+function setNarrativeScanGlobalStatus(text, level = 'idle') {
+  const progTxt = $('progTxt');
+  const statusStrip = $('extractGlobalStatus');
+  const progIcon = $('progIcon');
+  if (!progTxt || !statusStrip || !progIcon) return;
+
+  statusStrip.classList.remove('idle', 'waiting', 'running', 'success', 'done', 'error', 'stopped');
+
+  let nextIcon = '○';
+  let nextLevel = level;
+
+  if (level === 'info') nextLevel = 'idle';
+  if (level === 'warn') nextLevel = 'waiting';
+
+  switch (nextLevel) {
+    case 'waiting':
+    case 'running':
+      nextIcon = '◔';
+      break;
+    case 'success':
+    case 'done':
+      nextIcon = '✓';
+      break;
+    case 'error':
+      nextIcon = '!';
+      break;
+    case 'stopped':
+      nextIcon = '×';
+      break;
+    default:
+      nextIcon = '○';
+      nextLevel = 'idle';
+      break;
+  }
+
+  progTxt.textContent = text;
+  progIcon.textContent = nextIcon;
+  statusStrip.classList.add(nextLevel);
+}
+
 function setExtractRunState(state, opts = {}) {
   extractRunState = state;
   if (typeof opts.current === 'number') extractProgressCurrent = opts.current;
@@ -2613,49 +3197,40 @@ function setExtractRunState(state, opts = {}) {
 
   const total = extractProgressTotal;
   const current = extractProgressCurrent;
-  const fillPct = total > 0 ? Math.max(0, Math.min(100, Math.round((current / total) * 100))) : 0;
-  const prog = $('prog');
-  const progFill = $('progFill');
-  const progTxt = $('progTxt');
-  const progSubtxt = $('progSubtxt');
-  if (!prog || !progFill || !progTxt || !progSubtxt) return;
-
-  prog.classList.add('on');
+  let text = t('etl_progress_idle');
+  let level = 'idle';
 
   switch (state) {
     case 'idle':
-      progFill.style.width = '0%';
-      progTxt.textContent = total > 0 ? `0 / ${total}` : t('etl_progress_idle');
-      progSubtxt.textContent = currentLanguage === 'en' ? 'No prompts sent yet' : '尚未送出 Prompt';
+      text = total > 0 ? `0 / ${total}` : t('etl_progress_idle');
+      level = 'idle';
       break;
     case 'waiting':
-      progFill.style.width = `${fillPct}%`;
-      progTxt.textContent = total > 0 ? `${current} / ${total}` : t('etl_progress_idle');
-      progSubtxt.textContent = current > 0
-        ? (currentLanguage === 'en' ? `${current} prompt(s) sent` : `已送出 ${current} 個 Prompt`)
+      text = total > 0
+        ? (currentLanguage === 'en' ? `Sending ${current} / ${total}` : `送出中 ${current} / ${total}`)
         : (currentLanguage === 'en' ? 'Sending prompts...' : '正在送出 Prompt');
+      level = 'waiting';
       break;
     case 'prompt_done':
-      progFill.style.width = `${fillPct}%`;
-      progTxt.textContent = total > 0 ? `${current} / ${total}` : t('etl_progress_idle');
-      progSubtxt.textContent = currentLanguage === 'en' ? `Prompt ${current} sent` : `已送出第 ${current} 個 Prompt`;
+      text = total > 0
+        ? (currentLanguage === 'en' ? `Sent ${current} / ${total}` : `已送出 ${current} / ${total}`)
+        : (currentLanguage === 'en' ? `Prompt ${current} sent` : `已送出第 ${current} 個 Prompt`);
+      level = 'running';
       break;
     case 'all_done':
-      progFill.style.width = '100%';
-      progTxt.textContent = total > 0 ? `${total} / ${total}` : (currentLanguage === 'en' ? 'Done' : '完成');
-      progSubtxt.textContent = currentLanguage === 'en' ? 'All prompts sent' : '全部 Prompt 已送出';
+      text = currentLanguage === 'en' ? 'All prompts sent' : '全部 Prompt 已送出';
+      level = 'done';
       break;
     case 'error':
-      progFill.style.width = `${fillPct}%`;
-      progTxt.textContent = total > 0 ? `${current} / ${total}` : t('etl_progress_idle');
-      progSubtxt.textContent = currentLanguage === 'en' ? 'This run failed' : '本輪執行失敗';
+      text = currentLanguage === 'en' ? 'This run failed' : '本輪執行失敗';
+      level = 'error';
       break;
     case 'stopped':
-      progFill.style.width = `${fillPct}%`;
-      progTxt.textContent = total > 0 ? `${current} / ${total}` : t('etl_progress_idle');
-      progSubtxt.textContent = currentLanguage === 'en' ? 'Stopped manually' : '已手動停止';
+      text = currentLanguage === 'en' ? 'Stopped manually' : '已手動停止';
+      level = 'stopped';
       break;
   }
+  setNarrativeScanGlobalStatus(text, level);
 }
 
 async function startExtract() {
@@ -2663,14 +3238,15 @@ async function startExtract() {
   const promptTexts = prompts.map(p => p.text.trim()).filter(Boolean);
   if (!promptTexts.length) { elog('請先選擇 Prompt', 'error'); return; }
 
-  const schema = schemaTemplates.find(s => s.id === extractSchemaId);
-  const combined = promptTexts.map(pt => schema ? pt + '\n\n' + schema.text : pt);
+  const combined = promptTexts;
+  extractAI = 'grok';
 
   prompts.forEach(p => p.status = 'pending');
   chrome.storage.local.set({ prompts }); renderPrompts();
   if ($('extractResultSection')) $('extractResultSection').style.display = '';
   if ($('extractResultText')) $('extractResultText').value = '';
   lastExtractResult = null;
+  resetNarrativeScanForNewExtract(promptTexts.join('\n\n'));
   setExtractRunState('waiting', { current: 0, total: combined.length });
   setRunUI(true);
   const delaySeconds = Math.max(0, parseInt($('delayInput')?.value, 10) || 0);
@@ -2682,7 +3258,7 @@ async function startExtract() {
     grokMode: extractGrokMode,
   });
   elog(
-    `開始送出 ${combined.length} 個 Prompt 到 ${getExtractAITargetLabel()}${schema ? '（含 Schema: ' + schema.name + '）' : ''}；每則間隔 ${delaySeconds} 秒…`,
+    `開始送出 ${combined.length} 個 Prompt 到 ${getExtractAITargetLabel()}；每則間隔 ${delaySeconds} 秒…`,
     'info'
   );
 }
@@ -2730,6 +3306,120 @@ function setExtractResultContent(text) {
   lastExtractResult = next;
   if ($('extractResultText')) $('extractResultText').value = next;
   if ($('extractResultSection')) $('extractResultSection').style.display = '';
+  const state = normalizeNarrativeScanState(narrativeScanState);
+  state.extract.draftText = next;
+  state.extract.draftStatus = next.trim() ? 'captured' : 'empty';
+  setNarrativeScanState(state);
+}
+
+async function runNarrativeScanPhase2() {
+  const state = normalizeNarrativeScanState(narrativeScanState);
+  const draftText = String(state.extract.draftText || '').trim();
+  if (!draftText || state.extract.draftStatus !== 'confirmed') {
+    elog(currentLanguage === 'en' ? 'Confirm the extract draft before running Phase 2.' : '請先確認第一輪整理稿，再執行第二階段。', 'warn');
+    return;
+  }
+
+  const schema = schemaTemplates.find(s => s.id === state.output.schemaId);
+  if (!schema?.text) {
+    elog(currentLanguage === 'en' ? 'Choose an output schema before running Phase 2.' : '請先選擇第二階段的輸出 Schema。', 'warn');
+    return;
+  }
+
+  const targetAI = state.output.targetAI || 'gpt';
+  state.phase = 'final_output';
+  setNarrativeScanState(state);
+  activeDistillContext = 'narrative_scan';
+  narrativeScanPhase2TargetTabId = null;
+
+  const aiLabel = targetAI === 'grok'
+    ? (currentLanguage === 'en' ? 'Grok' : 'Grok')
+    : targetAI.toUpperCase();
+  const statusText = currentLanguage === 'en'
+    ? `Phase 2 started. Sending the confirmed extract draft to ${aiLabel}…`
+    : `第二階段開始，準備把已確認的整理稿送到 ${aiLabel}…`;
+  setNarrativeScanGlobalStatus(statusText, 'waiting');
+  elog(statusText, 'info');
+
+  chrome.runtime.sendMessage({
+    type: 'START_DISTILL',
+    source: 'narrative_scan',
+    content: draftText,
+    fmt: 'wiki',
+    targetAI,
+    grokMode: 'page',
+    wikiTpl: schema.text,
+    autoSave: false,
+    fullAuto: true,
+  });
+}
+
+function handleNarrativeScanDistillDone(msg) {
+  if (msg.sentOnly) {
+    narrativeScanPhase2TargetTabId = Number.isInteger(msg.targetTabId) ? msg.targetTabId : null;
+    const text = currentLanguage === 'en'
+      ? 'Phase 2 sent. Continue in the AI chat, or paste the reply below if you want to save it.'
+      : '第二階段已送出。你可以留在 AI 對話繼續討論，或把回覆貼到下方另存。';
+    setNarrativeScanGlobalStatus(text, 'success');
+    elog(text, 'success');
+    return;
+  }
+  const result = msg.results?.[0];
+  if (!result?.content) {
+    const text = currentLanguage === 'en'
+      ? 'Phase 2 finished without a captured result. Paste the AI reply below if you want to save it here.'
+      : '第二階段已完成，但沒有自動帶回結果。如果你想在這裡儲存，請手動貼上 AI 回覆。';
+    setNarrativeScanGlobalStatus(text, 'waiting');
+    elog(text, 'warn');
+    return;
+  }
+  setFinalOutputContent(result.content);
+  const state = normalizeNarrativeScanState(narrativeScanState);
+  state.phase = 'final_output';
+  setNarrativeScanState(state);
+  const text = currentLanguage === 'en' ? 'Phase 2 complete. Paste or review the reply below if you want to save it.' : '第二階段完成。如果你想儲存，可以在下方貼上或整理這份回覆。';
+  setNarrativeScanGlobalStatus(text, 'success');
+  elog(text, 'success');
+}
+
+async function saveNarrativeScanFinalOutput() {
+  const content = getFinalOutputContent().trim();
+  if (!content) {
+    elog(currentLanguage === 'en' ? 'No final output to save yet.' : '目前沒有可儲存的最終輸出。', 'warn');
+    return;
+  }
+  const name = makeNarrativeScanOutputName();
+  const stored = await chrome.storage.local.get(['library', 'distillFolder', 'extractFolder']);
+  const lib = stored.library || [];
+  lib.unshift({ name, fmt: 'structured', content, chars: content.length, date: new Date().toLocaleDateString('zh-TW') });
+  await chrome.storage.local.set({ library: lib });
+  chrome.runtime.sendMessage({
+    type: 'DOWNLOAD_MD',
+    name,
+    content,
+    folder: stored.distillFolder || stored.extractFolder || '',
+  });
+  renderExtractLibrary();
+  elog(currentLanguage === 'en' ? `Saved final output: ${name}` : `已儲存最終輸出：${name}`, 'success');
+}
+
+async function saveNarrativeScanFinalHtml() {
+  const content = getFinalOutputContent().trim();
+  if (!content) {
+    elog(currentLanguage === 'en' ? 'No final output to save yet.' : '目前沒有可儲存的最終輸出。', 'warn');
+    return;
+  }
+  const name = makeNarrativeScanHtmlName();
+  const html = wrapNarrativeScanResultHtml(name.replace(/\.html$/i, ''), content);
+  const stored = await chrome.storage.local.get(['distillFolder', 'extractFolder']);
+  chrome.runtime.sendMessage({
+    type: 'DOWNLOAD_TEXT',
+    name,
+    content: html,
+    mime: 'text/html;charset=utf-8',
+    folder: stored.distillFolder || stored.extractFolder || '',
+  });
+  elog(currentLanguage === 'en' ? `Saved final output: ${name}` : `已儲存最終輸出：${name}`, 'success');
 }
 
 function focusExtractResultEditor(placeCaretAtEnd = false) {
@@ -2897,6 +3587,43 @@ async function captureCurrentExtractReply() {
   }
 }
 
+async function captureNarrativeScanFinalReply() {
+  try {
+    let tabId = narrativeScanPhase2TargetTabId;
+    if (!tabId) {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      tabId = tabs[0]?.id || null;
+    }
+    if (!tabId) {
+      elog(t('extract_capture_no_page'), 'error');
+      return;
+    }
+    const state = normalizeNarrativeScanState(narrativeScanState);
+    const targetAI = state.output.targetAI || 'gpt';
+    const grokMode = targetAI === 'grok' ? 'page' : 'page';
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: grabCurrentAssistantReply,
+      args: [targetAI, grokMode],
+    });
+    const text = String(result?.result || '').trim();
+    if (!text) {
+      elog(t('extract_capture_no_result'), 'warn');
+      return;
+    }
+    setFinalOutputContent(text);
+    $('finalOutputText')?.focus();
+    elog(
+      currentLanguage === 'en'
+        ? 'Captured the current Phase 2 reply. You can refine it below before saving.'
+        : '已截取第二階段當前回覆，可在下方微調後再儲存。',
+      'success'
+    );
+  } catch (err) {
+    elog(t('extract_capture_failed', { message: err?.message || err }), 'error');
+  }
+}
+
 async function saveExtractResult() {
   const content = getExtractResultContent().trim();
   if (!content) { elog(t('extract_save_empty'), 'error'); return; }
@@ -2982,17 +3709,21 @@ function listenBg() {
       case 'LOG_EXTRACT': elog(msg.text, msg.level); break;
       case 'LOG_DISTILL':
         if (activeDistillContext === 'flow') CustomFlowController.handleLog(msg.text, msg.level);
+        else if (activeDistillContext === 'narrative_scan') elog(msg.text, msg.level);
         else if (DistillRunBlock.isInitialized) DistillRunBlock.handleLog(msg.text, msg.level);
         break;
 
       case 'EXTRACT_DONE':
         setRunUI(false);
         setExtractRunState('all_done', { current: msg.responses?.length || extractProgressTotal, total: msg.responses?.length || extractProgressTotal });
-        elog('✅ 全部 Prompt 已送出，請等待 Grok 回覆完成後，到下方手動截取', 'success');
+        elog(currentLanguage === 'en'
+          ? 'All prompts were sent. Wait for Grok to finish, then paste or try capture below.'
+          : '全部 Prompt 已送出。請等 Grok 回覆完成後，在下方手動貼上或嘗試截取。', 'success');
         break;
 
       case 'DISTILL_DONE':
         if (activeDistillContext === 'flow') CustomFlowController.handleDone(msg);
+        else if (activeDistillContext === 'narrative_scan') handleNarrativeScanDistillDone(msg);
         else if (DistillRunBlock.isInitialized) DistillRunBlock.handleDone(msg);
         activeDistillContext = null;
         break;
@@ -3005,6 +3736,10 @@ function listenBg() {
           CustomFlowController._setRunUI(false);
           CustomFlowController._setGlobalRunUI(false);
           CustomFlowController._setGlobalStatus('❌ ' + msg.text, 'error');
+        } else if (activeDistillContext === 'narrative_scan') {
+          const text = currentLanguage === 'en' ? `❌ Phase 2 failed: ${msg.text}` : `❌ 第二階段失敗：${msg.text}`;
+          setNarrativeScanGlobalStatus(text, 'error');
+          elog(text, 'error');
         } else if (DistillRunBlock.isInitialized) {
           DistillRunBlock.handleLog('❌ ' + msg.text, 'error');
           DistillRunBlock.setUI(false);
@@ -3064,8 +3799,10 @@ window.addFromLib = (sid, idx) => {
   if (!s) return;
   const p = s.prompts[idx];
   prompts = [{ name: p.name, text: p.text, status: 'pending' }];
+  setEtlPromptEditorExpanded(false);
   chrome.storage.local.set({ prompts });
   renderPrompts();
+  resetNarrativeScanForNewExtract(p.text);
   elog(t('load_prompt_success', { name: p.name }), 'success');
 };
 
@@ -3184,11 +3921,13 @@ function delSchema(idx) {
 // ── Extract Schema Picker ─────────────────────────────────────────────────────
 function renderExtractSchemaPicker() {
   const sel = $('extractSchemaSel');
+  if (!sel) return;
   sel.innerHTML = `<option value="">${t('pick_schema_optional')}</option>` +
     schemaTemplates.map(s =>
       `<option value="${s.id}"${s.id === extractSchemaId ? ' selected' : ''}>${esc(s.name)}</option>`
     ).join('');
   updateExtractSchemaPreview();
+  updateNarrativeScanPhaseUI();
 }
 
 function updateExtractSchemaPreview() {
