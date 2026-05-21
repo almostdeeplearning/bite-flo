@@ -536,6 +536,11 @@ Storage keys:
 - `extractFolder`
 - `distillFolder`
 
+Current user-facing semantics:
+
+- `extractFolder` — shown in Settings as the `Narrative Scan` folder; used for Narrative Scan extract / capture / final local outputs
+- `distillFolder` — shown in Settings as the `AI Flows` folder; used for AI Flows draft / review / save outputs
+
 ### Layout And Accessibility
 
 DOM classes:
@@ -604,7 +609,7 @@ DOM IDs:
 - `cfSeriesSel`
 - `cfClearPromptBtn`
 - `cfPromptList`
-- `cfSelectedPromptText` — `<pre>` prompt preview; `data-empty="1"` shows placeholder
+- `cfSelectedPromptText` — Task working draft editor / preview for the current run; edits only affect this execution and do not overwrite the Prompt Library source item
 
 JS owner: `CustomFlowController`
 
@@ -646,6 +651,11 @@ Visual split:
 - `05 Execute` — send / status / logs
 - `06 Review` — manual capture / review / save
 
+Top-of-tab status:
+
+- `AI Flows` now also exposes a top global workflow status strip above the block stack.
+- `cfGlobalStatus` remains the underlying status node / state source, but the primary user-facing status grammar is no longer confined to the Execute card.
+
 Review DOM IDs:
 - `cfResultName`
 - `cfResultEmpty`
@@ -662,7 +672,9 @@ Notes:
 - The old single-run `cfRunBtn` / `cfStopBtn` controls are no longer part of the visible UI.
 - The Run data model is still a single `run` block, but the visible UI is now split into `05 Execute` and `06 Review`.
 - `05 Execute` is now send-to-AI-first: when `cfAutoSave` is off, `runAll()` sends the prompt, shows `已送出至 AI，請等待回覆後手動截取`, and expects the user to finish from `06 Review`.
-- `06 Review` is the main manual recovery surface: `截取當前回覆` → editable textarea → `複製` / `儲存 .md` / `儲存 .html`.
+- `05 Execute` keeps a compact two-line-visible log area; log history remains scrollable, but logs are no longer the dominant visual surface.
+- `06 Review` is the main manual recovery surface: `Try Capture` → editable textarea → `Copy` / `Save .md` / `Save .html`.
+- `06 Review` result naming now uses a `Save as:` base-name field; the actual `.md` / `.html` extension is chosen by the save action, not typed into the input itself.
 - `cfAutoSave` remains wired to the older auto-recovery path in JS / background, but is no longer a visible main-path control in the Workflow UI.
 
 ### CustomFlowController

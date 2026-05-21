@@ -450,3 +450,11 @@
 - **Reason:** 本輪 `Narrative Scan` 的收斂主要是分開做的，已逐步長出自己的 CTA 樣式、全域狀態列、tooltip 與 warning 語法。若後續不刻意對齊 `AI Flows`，兩個主要工作流很容易因為各自演化而產生按鈕家族、卡片節奏、提示語氣與可選/必要步驟判讀上的落差，增加使用者切換心智成本。
 - **Alternatives considered:** 接受 `Narrative Scan` 與 `AI Flows` 長期維持各自獨立的 UI 語法（短期省事，但會放大整體產品的不一致感）；先強制兩者完全共用同一套卡片表面（會過早犧牲 flow-specific 的敘事與操作順序）；只在最後做視覺換皮、不整理互動語法（無法解決真正的使用心智不一致）。
 - **Expected impact:** 後續若再調整 workflow UI，會優先檢查兩個主要工作流在主 CTA、status、tooltip、warning、optional surface 等語法上是否仍能互相對照；同時保留底層 `schema / target_ai / send / review / save` 等能力可拆可合，避免為了某一個表面而焊死未來的自由組 flow 能力。
+
+## Decision 59
+- **Decision:** `Narrative Scan` 與 `AI Flows` 應先被視為兩種不同的 workflow product surface：前者是 scan-specific orchestration，後者是 general composition surface；後續模組化應優先抽 shared UI grammar 與共用工具面，而不是先抽共用 orchestration brain 或直接重構 `sidepanel.js`。
+- **Date:** 2026-05-21
+- **created:** 05-21 14
+- **Reason:** 目前兩條流程雖已逐步對齊卡片語法，但在 stage structure、source assumptions、manual capture philosophy、optionality 與 controller semantics 上仍有本質差異。若在責任邊界尚未定型前就直接共享 workflow brain，容易把還在變動的產品語意過早焊死，也會放大 `sidepanel.js` 拆檔時的重構風險。
+- **Alternatives considered:** 直接把兩條流程視為同一個 workflow engine 的兩種皮（抽象過早，會抹平實際差異）；繼續完全分開演化、不建立共享語法與接縫（會放大 UI 與未來模組化成本）；先重寫 `sidepanel.js` 再回頭定邊界（風險高，且容易把未定型流程提前固化）。
+- **Expected impact:** 後續架構工作會先建立 workflow architecture map、responsibility boundaries、workflow-level vs card-level state 判準，以及 shared workflow modules 的自然接縫；優先共享 card shell、CTA、tooltip、warning、status 與 save utilities，暫不共用 `Narrative Scan` / `AI Flows` 的 orchestration controller、capture selector 與 message routing。

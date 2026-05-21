@@ -62,9 +62,24 @@ const DistillRunBlock = {
       <div class="cf-card" data-cf-card="run">
         <div class="cf-card-head">
           <span class="cf-card-num">05</span>
-          <span class="cf-card-title" data-i18n="cf_card_execute">執行送出</span>
+          <div class="cf-card-title-row">
+            <span class="cf-card-title" data-i18n="cf_card_execute">執行送出</span>
+            <span class="card-help">
+              <button
+                type="button"
+                class="card-help-trigger"
+                data-tooltip-trigger
+                aria-expanded="false"
+                data-i18n-title="tooltip_more_info"
+                data-i18n-aria-label="tooltip_more_info"
+                title="顯示說明"
+                aria-label="顯示說明"
+              >i</button>
+              <span class="card-help-panel" data-i18n="cf_execute_helper">把目前的來源、Prompt、格式和 AI 設定組合起來，一次送出這條 workflow。</span>
+            </span>
+          </div>
           <div class="cf-delay-meta">
-            <span class="cf-delay-label" data-i18n="cf_delay_label">下一步前等</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_label">等待</span>
             <select class="cf-delay-sel" data-cf-delay-for="run">
               <option value="0">0</option>
               <option value="2">2</option>
@@ -75,6 +90,7 @@ const DistillRunBlock = {
             </select>
             <input class="cf-delay-custom" type="number" min="0" max="300" data-cf-custom-for="run" style="display:none" data-i18n-placeholder="seconds" placeholder="秒">
             <span class="cf-delay-unit" data-i18n="seconds">秒</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_suffix">後再進下一步</span>
           </div>
           <button class="btn btn-ghost btn-xs" data-cf-toggle="run" data-i18n="hidden">隱藏</button>
         </div>
@@ -82,16 +98,20 @@ const DistillRunBlock = {
           <div class="cf-run-bar cf-run-bar-inline">
             <div class="cf-run-main">
               <div class="cf-run-actions cf-run-actions-full">
-                <button class="btn btn-primary btn-sm" id="cfRunAllBtn" data-i18n="run_all">▶▶ 一鍵跑完全部</button>
+                <button class="btn btn-primary btn-sm etl-run-cta" id="cfRunAllBtn">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l7 3.5-7 3.5V1.5z"/></svg>
+                  <span data-i18n="run_all">▶▶ 一鍵跑完全部</span>
+                </button>
                 <button class="btn btn-danger btn-sm" id="cfStopAllBtn" style="display:none" data-i18n="stop">停止</button>
               </div>
             </div>
           </div>
           <div style="height:1px;background:var(--line);margin:14px 0"></div>
-          <div class="cf-run-status" id="cfGlobalStatus"><span class="label" data-i18n="status_label">狀態：</span><span data-i18n="status_ready">就緒</span></div>
           <div class="cf-subsection">
-            <div class="cf-subsection-label" data-i18n="logs">Logs</div>
-            <div class="cf-status-box" id="cfLog">
+            <div class="row row-between" style="margin-bottom:8px">
+              <div class="cf-subsection-label" data-i18n="logs">Logs</div>
+            </div>
+            <div class="cf-status-box cf-status-box-compact" id="cfLog">
               <span class="log-placeholder" data-i18n="cf_log_placeholder">執行紀錄會顯示在這裡。</span>
             </div>
           </div>
@@ -100,22 +120,40 @@ const DistillRunBlock = {
       <div class="cf-card cf-run-review-card" data-cf-linked-card="run">
         <div class="cf-card-head">
           <span class="cf-card-num">06</span>
-          <span class="cf-card-title" data-i18n="cf_card_review">回收與儲存</span>
+          <div class="cf-card-title-row">
+            <span class="cf-card-title" data-i18n="cf_card_review">回收與儲存</span>
+            <span class="card-help">
+              <button
+                type="button"
+                class="card-help-trigger"
+                data-tooltip-trigger
+                aria-expanded="false"
+                data-i18n-title="tooltip_more_info"
+                data-i18n-aria-label="tooltip_more_info"
+                title="顯示說明"
+                aria-label="顯示說明"
+              >i</button>
+              <span class="card-help-panel" data-i18n="cf_review_helper">把 AI 回覆帶回側欄、在本地微調，再決定是否複製或另存成 .md / .html。</span>
+            </span>
+          </div>
         </div>
         <div class="cf-card-body">
-          <div id="distillResponseSection">
-            <div class="cf-review-name-wrap">
-              <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && window.t ? t('cf_result_name_label') : 'Result name'}">
+            <div id="distillResponseSection">
+              <div class="cf-review-name-wrap">
+                <label class="cf-review-name-label" for="cfResultName" data-i18n="cf_save_as_label">Save as:</label>
+                <input class="input cf-review-name-input mono" id="cfResultName" value="" aria-label="${typeof currentLanguage !== 'undefined' && window.t ? t('cf_result_name_label') : 'Result name'}">
+              </div>
+              <div class="cf-review-tools">
+                <button class="btn btn-sm" id="cfCaptureReplyBtn" data-i18n="cf_try_capture">⊕ 嘗試截取</button>
+              </div>
+            <div class="section cf-review-result-box">
+              <div id="cfResultEmpty" class="cf-review-empty" data-i18n="cf_result_placeholder">把 AI 回覆貼到這裡，或按「截取當前回覆」帶回目前分頁的內容，再微調後儲存。</div>
+              <textarea class="result-pre result-editor" id="cfResultText" rows="10" style="display:none" data-i18n-placeholder="cf_result_placeholder" placeholder="把 AI 回覆貼到這裡，或按「截取當前回覆」帶回目前分頁的內容，再微調後儲存。"></textarea>
             </div>
-            <div class="cf-review-tools">
-                <button class="btn btn-xs" id="cfCaptureReplyBtn" data-i18n="cf_try_capture">⊕ 嘗試截取</button>
+            <div class="cf-review-actions">
                 <button class="btn btn-xs" id="cfCopyBtn" data-i18n="copy">複製</button>
                 <button class="btn btn-xs" id="cfSaveResultBtn" data-i18n="save_md">⬇ 儲存 .md</button>
                 <button class="btn btn-xs" id="cfSaveHtmlBtn" data-i18n="save_html">⬇ 儲存 .html</button>
-            </div>
-            <div class="section cf-review-result-box">
-              <div id="cfResultEmpty" class="cf-review-empty" data-i18n="cf_result_placeholder">AI 回覆完成後，按「截取當前回覆」，可在這裡微調後再儲存。</div>
-              <textarea class="result-pre result-editor" id="cfResultText" rows="10" style="display:none" data-i18n-placeholder="cf_result_placeholder" placeholder="AI 回覆完成後，按「截取當前回覆」，可在這裡微調後再儲存。"></textarea>
             </div>
           </div>
         </div>

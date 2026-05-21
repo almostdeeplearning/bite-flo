@@ -38,9 +38,24 @@ const DistillTaskBlock = {
       <div class="cf-card" data-cf-card="task">
         <div class="cf-card-head">
           <span class="cf-card-num">02</span>
-          <span class="cf-card-title" data-i18n="cf_card_task">選擇分析</span>
+          <div class="cf-card-title-row">
+            <span class="cf-card-title" data-i18n="cf_card_task">選擇分析</span>
+            <span class="card-help">
+              <button
+                type="button"
+                class="card-help-trigger"
+                data-tooltip-trigger
+                aria-expanded="false"
+                data-i18n-title="tooltip_more_info"
+                data-i18n-aria-label="tooltip_more_info"
+                title="顯示說明"
+                aria-label="顯示說明"
+              >i</button>
+              <span class="card-help-panel" data-i18n="cf_task_helper">選一個 Prompt 任務；你可以直接在這張卡微調這次要送出的 working draft，不會改到 Prompt Library 原始版本。</span>
+            </span>
+          </div>
           <div class="cf-delay-meta">
-            <span class="cf-delay-label" data-i18n="cf_delay_label">下一步前等</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_label">等待</span>
             <select class="cf-delay-sel" data-cf-delay-for="task">
               <option value="0">0</option>
               <option value="2">2</option>
@@ -51,16 +66,17 @@ const DistillTaskBlock = {
             </select>
             <input class="cf-delay-custom" type="number" min="0" max="300" data-cf-custom-for="task" style="display:none" data-i18n-placeholder="seconds" placeholder="秒">
             <span class="cf-delay-unit" data-i18n="seconds">秒</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_suffix">後再進下一步</span>
           </div>
           <button class="btn btn-ghost btn-xs" data-cf-toggle="task" data-i18n="hidden">隱藏</button>
         </div>
         <div class="cf-card-body">
           <div class="row" style="gap:8px;margin-bottom:8px">
-            <select id="cfSeriesSel" class="input" style="flex:1;height:30px;font-size:11px;padding:4px 8px"></select>
+            <select id="cfSeriesSel" class="select-compact" style="flex:1"></select>
             <button class="btn btn-xs" id="cfClearPromptBtn">✕</button>
           </div>
-          <select id="cfPromptSel" class="input" style="width:100%;height:30px;font-size:11px;padding:4px 8px;margin-bottom:8px"></select>
-          <pre class="selected-prompt-preview cf-preview-panel" id="cfSelectedPromptText" data-empty="1"></pre>
+          <select id="cfPromptSel" class="select-compact" style="width:100%;margin-bottom:8px"></select>
+          <textarea class="result-pre result-editor cf-preview-panel cf-working-draft" id="cfSelectedPromptText" rows="4" data-i18n-placeholder="cf_prompt_preview_empty" placeholder="No prompt selected yet."></textarea>
           <div class="row" style="justify-content:flex-end;margin-top:6px">
             <button class="btn btn-ghost btn-xs" id="cfPromptPreviewToggleBtn" data-i18n="expand">展開</button>
           </div>

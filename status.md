@@ -9,6 +9,11 @@
 - `Narrative Scan` 頂部已改為全域 workflow status strip；第二階段現已改為 `START_DISTILL` send-only + 手動回收，不再自動回填或自動存檔。
 
 ## Progress
+- **AI Flows grammar 對齊 + 下載資料夾語意收斂完成（2026-05-21, created: 05-21 15）：**
+  - `AI Flows` 已補齊 top global status strip、Task working draft、較一致的 CTA / tooltip / warning / review-save 語法，並將 Execute logs 收斂為低噪音但仍可見的兩行狀態視窗。
+  - `AI Flows` 的 `Review` 已整理為更明確的工作台：`Save as:` + base name、`Try Capture`、結果 textarea、`Copy / Save .md / Save .html`。
+  - `Narrative Scan` 與 `AI Flows` 的主要按鈕家族、`Try Capture` 語法與 `Save .md` 語法已再對齊一輪；`Narrative Scan` 第二階段可見 Output AI 也已收斂為 `GPT / Grok Inline / Grok Page`。
+  - 本機資料夾邏輯現已真正按 tab 分流：`Narrative Scan` 的 extract 與最終輸出都走 `extractFolder`；`AI Flows` 的草稿與 review 輸出維持走 `distillFolder`。storage key 名稱暫不變，僅對齊實際用途與 Settings 文案。
 - **Side Panel 遷移完成（2026-05-03）**
 - **Distill Tab 下架（Phase 1，2026-05-05）：** Topnav 入口已移除；`Distill*Block` 保留供 Custom Flow 共用。
 - **Custom Flow Tab 完成並測試通過（2026-05-03）：** 含 Preset 儲存 / 載入 / 刪除。
@@ -136,6 +141,7 @@
   - `Confirm Review & Continue`、`Send to Output AI` 已改為 full-width 主 CTA，讓 Card 01–03 的提交語法一致。
 
 ## Problems
+- `AI Flows` 的 `Run Workflow` 目前仍有使用者實測會意外觸發本地 Downloads / 資料夾被打開；依目前 code path 推論，`source: "flow"` 理應走 `handleDistillSendOnly(...)` 而非 autosave finalize 路徑，表示實際 runtime 可能仍有某段 legacy save/download 行為被誤觸發。
 - 若 Grok 頁面 DOM 改版，`injectToGrok` 的輸入框 selector 可能需要更新（ETL 與 Distill 共用此函數）。
 - Starter Prompt / Schema 只會在 first-run 初始化時 seed；若 storage 中已經有既有 `promptSeries` / `schemaTemplates`，新的 starter 內容不會主動覆蓋既有使用者資料。
 - Custom Flow 「一鍵跑完全部」在未選 Prompt 等情境下，目前無錯誤提示。
@@ -159,6 +165,12 @@
 - `Narrative Scan` 雖已開始讀 draft layout 決定 render 順序，但 card type 與 block 的 mapping 仍寫在 `src/sidepanel.js` 內；這層目前仍是 hardcoded glue，而非真正可重用的 modular renderer。
 
 ## Next Steps
+- 診斷：針對 `AI Flows > Run Workflow` 的意外本地下載問題，先做最小診斷而非直接改功能。下一輪應確認：
+  - `Run Workflow` 送出的 `START_DISTILL` payload 是否確實為 `source: "flow"`、`autoSave: false`
+  - background 實際走到的是 `handleDistillSendOnly(...)` 還是某條 autosave finalize path
+  - 真正呼叫 `chrome.downloads.download(...)` 的 call site 是哪一段 legacy 路徑
+- 架構：先整理 `Narrative Scan` / `AI Flows` 的 workflow architecture map、responsibility boundaries 與 modularization seams，再決定是否拆 `sidepanel.js`。
+- 對齊：先以 shared UI grammar 為主軸對齊兩條 workflow 的 CTA、tooltip、warning、status 與 card shell；暫不嘗試共用 orchestration brain。
 - 清理：手動刪除 `src/blocks/ETLStep1/2/3Block.js` 三個舊檔案。
 - 驗證：逐一測 Grok page / Grok inline 的 Stage 1 注入與 `Try Capture` selector。
 - 驗證：逐一測 Workflow `06 Review` 在 `GPT / Grok page / Grok inline` 下的 `截取當前回覆`、`儲存 .md`、`儲存 .html`。

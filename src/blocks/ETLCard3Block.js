@@ -33,10 +33,10 @@ const ETLCard3Block = {
           <pre class="selected-prompt-preview" id="extractSchemaPreview" data-empty="1" style="margin-top:6px;max-height:80px;overflow:auto"></pre>
           <div class="ai-pills ai-pills-fluid" id="outputAiSel" style="margin-top:12px">
             <button class="ai-pill active" data-ai="gpt">GPT</button>
-            <button class="ai-pill" data-ai="gemini">Gemini</button>
-            <button class="ai-pill" data-ai="claude">Claude</button>
-            <button class="ai-pill" data-ai="grok">Grok</button>
+            <button class="ai-pill" data-ai="grok-inline">Grok Inline</button>
+            <button class="ai-pill" data-ai="grok-page">Grok Page</button>
           </div>
+          <span class="ns-inline-micro-hint" id="outputInlineHint" data-i18n="grok_inline_micro_hint">先打開 Grok inline panel</span>
           <div style="margin-top:12px">
             <button class="btn btn-primary etl-run-cta" id="runPhase2Btn">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l7 3.5-7 3.5V1.5z"/></svg>

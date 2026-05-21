@@ -64,8 +64,8 @@ This document summarizes the current data contracts used by the extension. It is
 | Key | Type | Purpose |
 |---|---|---|
 | `autoDownload` | `boolean` | Download markdown files automatically |
-| `extractFolder` | `string` | Downloads subfolder for X ETL output |
-| `distillFolder` | `string` | Downloads subfolder for Distill output |
+| `extractFolder` | `string` | Downloads subfolder used by `Narrative Scan` local outputs |
+| `distillFolder` | `string` | Downloads subfolder used by `AI Flows` local outputs |
 | `draftFolder` | `string` | Legacy fallback folder |
 
 ### UI Preferences
@@ -97,6 +97,7 @@ Notes:
 
 ```ts
 type AiTarget = 'gpt' | 'gemini' | 'claude' | 'grok';
+type NarrativeOutputTarget = 'gpt' | 'grok-inline' | 'grok-page';
 
 type PromptItem = {
   text: string;
@@ -156,7 +157,7 @@ type NarrativeScanState = {
   };
   output: {
     schemaId: string | null;
-    targetAI: AiTarget;
+    targetAI: NarrativeOutputTarget;
     ready: boolean;
   };
   updatedAt: string | null;
@@ -362,6 +363,7 @@ Current implementation note:
 - The two-phase 4-card workflow and `narrativeScanState` gating are now wired.
 - Stage 1 uses `START_EXTRACT` and remains Grok-only.
 - Stage 2 now uses `START_DISTILL` with `source: "narrative_scan"` and `autoSave: false`.
+- The visible Narrative Scan Output Setup surface is currently restricted to `GPT`, `Grok Inline`, and `Grok Page`; internal routing normalizes those output targets before sending `START_DISTILL`.
 - `background.js` treats `source: "narrative_scan"` as a send-only handoff, so `DISTILL_DONE` may arrive with `sentOnly: true` and no auto-captured result payload.
 
 The schema template system replaces the old post-structuring concept. `grokTpl` / `structureTpl` may still appear in older notes, but they are deprecated docs residue rather than active runtime storage keys or supported runtime contracts. There is no intermediate structured table review stage.

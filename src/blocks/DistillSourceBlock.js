@@ -45,7 +45,7 @@ const DistillSourceBlock = {
           <span class="cf-card-num">01</span>
           <span class="cf-card-title" data-i18n="cf_card_source">擷取內容</span>
           <div class="cf-delay-meta">
-            <span class="cf-delay-label" data-i18n="cf_delay_label">下一步前等</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_label">等待</span>
             <select class="cf-delay-sel" data-cf-delay-for="source">
               <option value="0">0</option>
               <option value="2">2</option>
@@ -56,6 +56,7 @@ const DistillSourceBlock = {
             </select>
             <input class="cf-delay-custom" type="number" min="0" max="300" data-cf-custom-for="source" style="display:none" data-i18n-placeholder="seconds" placeholder="秒">
             <span class="cf-delay-unit" data-i18n="seconds">秒</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_suffix">後再進下一步</span>
           </div>
           <button class="btn btn-ghost btn-xs" data-cf-toggle="source" data-i18n="hidden">隱藏</button>
         </div>
@@ -69,7 +70,7 @@ const DistillSourceBlock = {
           </div>
           <textarea class="ta cf-source-textarea" id="cfRawText" rows="4" data-i18n-placeholder="cf_source_placeholder" placeholder="手動貼上貼文或長文內容，或點「嘗試抓取當前頁面」自動帶入..."></textarea>
           <div class="row" style="justify-content:flex-end;margin-top:10px">
-            <button class="btn" id="cfSaveDraftBtn" data-i18n="save_flow_draft">存草稿</button>
+            <button class="btn btn-xs" id="cfSaveDraftBtn" data-i18n="save_md">⬇ 儲存 .md</button>
           </div>
         </div>
       </div>

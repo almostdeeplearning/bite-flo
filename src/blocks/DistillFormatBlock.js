@@ -47,9 +47,24 @@ const DistillFormatBlock = {
       <div class="cf-card" data-cf-card="format">
         <div class="cf-card-head">
           <span class="cf-card-num">03</span>
-          <span class="cf-card-title" data-i18n="cf_card_format">選擇格式</span>
+          <div class="cf-card-title-row">
+            <span class="cf-card-title" data-i18n="cf_card_format">選擇格式</span>
+            <span class="card-help">
+              <button
+                type="button"
+                class="card-help-trigger"
+                data-tooltip-trigger
+                aria-expanded="false"
+                data-i18n-title="tooltip_more_info"
+                data-i18n-aria-label="tooltip_more_info"
+                title="顯示說明"
+                aria-label="顯示說明"
+              >i</button>
+              <span class="card-help-panel" data-i18n="cf_format_helper">只有在你想把 AI 回覆整理成特定格式時，才需要套用 Schema。</span>
+            </span>
+          </div>
           <div class="cf-delay-meta">
-            <span class="cf-delay-label" data-i18n="cf_delay_label">下一步前等</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_label">等待</span>
             <select class="cf-delay-sel" data-cf-delay-for="format">
               <option value="0">0</option>
               <option value="2">2</option>
@@ -60,12 +75,13 @@ const DistillFormatBlock = {
             </select>
             <input class="cf-delay-custom" type="number" min="0" max="300" data-cf-custom-for="format" style="display:none" data-i18n-placeholder="seconds" placeholder="秒">
             <span class="cf-delay-unit" data-i18n="seconds">秒</span>
+            <span class="cf-delay-label" data-i18n="cf_delay_suffix">後再進下一步</span>
           </div>
           <button class="btn btn-ghost btn-xs" data-cf-toggle="format" data-i18n="hidden">隱藏</button>
         </div>
         <div class="cf-card-body">
           <div class="row" style="gap:8px;margin-bottom:6px">
-            <select id="cfSchemaSel" class="input" style="flex:1;height:30px;font-size:11px;padding:4px 8px">
+            <select id="cfSchemaSel" class="select-compact" style="flex:1">
               <option value="" data-i18n="etl_schema_none">-不選擇schema格式-</option>
             </select>
             <button class="btn btn-xs" id="cfClearSchemaBtn">✕</button>

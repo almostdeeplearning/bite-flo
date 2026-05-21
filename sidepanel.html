@@ -1513,6 +1513,21 @@ body.font-large .cf-source-textarea { font-size: 16px; }
 .cf-preview-panel.is-expanded {
   max-height: 260px;
 }
+.cf-working-draft {
+  min-height: 92px;
+  max-height: 110px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.cf-working-draft.is-expanded {
+  min-height: 220px;
+  max-height: 420px;
+}
+.cf-working-draft:disabled {
+  color: var(--text3);
+  background: var(--bg3);
+  cursor: not-allowed;
+}
 .selected-prompt-preview[data-empty]::before {
   content: attr(data-empty-label);
   font-style: italic;
@@ -2071,39 +2086,65 @@ body.font-large .cf-source-textarea { font-size: 16px; }
   background: var(--bg);
   padding: 10px 12px;
 }
+.cf-status-box-compact {
+  min-height: 54px;
+  max-height: 54px;
+}
 .cf-status-box .ll {
   display: block;
   font-size: 11px;
   line-height: 1.6;
 }
 .cf-review-name-wrap {
-  margin-bottom: 8px;
-}
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+.cf-review-name-label {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
 .cf-review-name-input {
-  width: 100%;
-  font-size: 9px;
-  letter-spacing: 0.3px;
-  text-transform: none;
+    width: 100%;
+    flex: 1 1 auto;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    text-transform: none;
   padding: 5px 8px;
   border-radius: 10px;
 }
 .cf-review-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+.cf-review-tools .btn {
+    width: auto;
+    justify-content: center;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+#cfCaptureReplyBtn {
+    flex: 0 0 auto;
+    padding-inline: 9px;
+  }
+.cf-review-actions {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 10px;
-}
-.cf-review-tools .btn {
-  width: auto;
-  justify-content: center;
-  white-space: nowrap;
-  font-size: 10px;
-}
-#cfCaptureReplyBtn {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding-inline: 9px;
+  margin-top: 10px;
 }
 #cfCopyBtn {
   flex: 0 0 auto;
@@ -2640,6 +2681,11 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
     <!-- ════ TAB: CUSTOM FLOW ════ -->
     <div class="panel" id="tab-flow">
 
+      <div class="extract-global-status idle" id="cfFlowStatus" aria-live="polite">
+        <span class="extract-global-status-icon" id="cfFlowStatusIcon" aria-hidden="true">○</span>
+        <div class="extract-global-status-text" id="cfFlowStatusText" data-i18n="cf_flow_status_idle">No prompts sent yet</div>
+      </div>
+
       <div class="cf-preset-bar cf-preset-bar-top">
         <span class="cf-preset-label" data-i18n="preset_label">Preset：</span>
         <select class="select-compact cf-preset-sel" id="cfPresetSel">
@@ -2768,11 +2814,11 @@ html[data-lang="zh"] .topnav-tabs .nav-label {
         <div class="label" data-i18n="settings_download_paths">下載路徑</div>
         <div class="section">
           <div class="sr">
-            <label data-i18n="settings_extract_folder">X ETL 資料夾（相對於 Downloads）</label>
+            <label data-i18n="settings_extract_folder">Narrative Scan 資料夾（相對於 Downloads）</label>
             <input class="input" id="extractFolder" placeholder="biteflo/extract">
           </div>
           <div class="sr">
-            <label data-i18n="settings_distill_folder">長文整理 資料夾（相對於 Downloads）</label>
+            <label data-i18n="settings_distill_folder">AI Flows 資料夾（相對於 Downloads）</label>
             <input class="input" id="distillFolder" placeholder="biteflo/distill">
           </div>
         </div>
