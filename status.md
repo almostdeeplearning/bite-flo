@@ -165,6 +165,7 @@
 - `Narrative Scan` 雖已開始讀 draft layout 決定 render 順序，但 card type 與 block 的 mapping 仍寫在 `src/sidepanel.js` 內；這層目前仍是 hardcoded glue，而非真正可重用的 modular renderer。
 
 ## Next Steps
+- 決策：先不要把 `Schema` 庫擴成系列。若要承接「先提案、再追問、再生成 HTML / 圖」這類需求，應沿 `Custom Flow / AI Flows` 路線思考可儲存的多步驟 preset，而不是調整 `schemaTemplates` 的資料模型。
 - 診斷：針對 `AI Flows > Run Workflow` 的意外本地下載問題，先做最小診斷而非直接改功能。下一輪應確認：
   - `Run Workflow` 送出的 `START_DISTILL` payload 是否確實為 `source: "flow"`、`autoSave: false`
   - background 實際走到的是 `handleDistillSendOnly(...)` 還是某條 autosave finalize path

@@ -458,3 +458,11 @@
 - **Reason:** 目前兩條流程雖已逐步對齊卡片語法，但在 stage structure、source assumptions、manual capture philosophy、optionality 與 controller semantics 上仍有本質差異。若在責任邊界尚未定型前就直接共享 workflow brain，容易把還在變動的產品語意過早焊死，也會放大 `sidepanel.js` 拆檔時的重構風險。
 - **Alternatives considered:** 直接把兩條流程視為同一個 workflow engine 的兩種皮（抽象過早，會抹平實際差異）；繼續完全分開演化、不建立共享語法與接縫（會放大 UI 與未來模組化成本）；先重寫 `sidepanel.js` 再回頭定邊界（風險高，且容易把未定型流程提前固化）。
 - **Expected impact:** 後續架構工作會先建立 workflow architecture map、responsibility boundaries、workflow-level vs card-level state 判準，以及 shared workflow modules 的自然接縫；優先共享 card shell、CTA、tooltip、warning、status 與 save utilities，暫不共用 `Narrative Scan` / `AI Flows` 的 orchestration controller、capture selector 與 message routing。
+
+## Decision 60
+- **Decision:** 不將 `Schema` 庫擴充為 `系列`；若使用者需要可重複使用的多步驟 `Prompt + 可選 Schema` 編排，應掛在 `Custom Flow / AI Flows` 路線下，先朝可儲存的多步驟 preset 發展。
+- **Date:** 2026-05-25
+- **created:** 05-25 15
+- **Reason:** 使用者提出的需求本質是多步驟輸出流程，例如先請 AI 提議視覺表現、再追問缺失資訊、最後產出 HTML 或圖解。這種需求的核心是 workflow step orchestration，而不是一組格式模板的分組管理。若將 `Schema` 做成系列，會把格式約束、任務指令與流程腳本混在一起，破壞目前 `Prompt` / `Schema` / `Workflow` 的責任邊界。
+- **Alternatives considered:** 直接為 `Schema` 庫新增系列概念（容易與 workflow 語意重疊）；把這類多步驟需求繼續塞在 `Prompt` 系列中（短期可行但會逐漸污染 Prompt 系列的語意）；直接跳到完整 workflow engine / DSL（超出目前 incremental slice 與低風險修改策略）。
+- **Expected impact:** `Schema` 會繼續維持為輸出格式模板庫；`Prompt` 系列仍可承擔同一來源上的任務指令集合；真正需要跨步驟保存的 `Prompt + 可選 Schema` 組合，將由既有 `Custom Flow / AI Flows` 方向承接。短期應優先思考「可儲存的多步驟 preset」，而不是新增 `Schema` 系列或調整既有 `schemaTemplates` storage model。
